@@ -4,10 +4,12 @@ import type {
   SSMonthlyIncome,
   Scenario
 } from '../models/RetirementTypes';
+import type { TaxConfigurationSet } from '../models/TaxTypes';
 
 const INPUTS_KEY = 'retirement-planner-inputs',
   INCOME_KEY = 'retirement-planner-income',
-  SCENARIO_KEY = 'retirement-planner-scenarios';
+  SCENARIO_KEY = 'retirement-planner-scenarios',
+  TAX_CONFIG_KEY = 'retirement-planner-tax-config';
 
 export function loadPlannerInputs(d: PlannerInputs): PlannerInputs {
   //console.log('loadPlannerInputs: d = ', d);
@@ -67,4 +69,19 @@ export function loadScenarios(d: Scenario[]): Scenario[] {
 export function saveScenarios(v: Scenario[]): void {
   //console.log('saveScenarios: v = ', v);
   localStorage.setItem(SCENARIO_KEY, JSON.stringify(v));
+}
+
+export function loadTaxConfigurations(d: TaxConfigurationSet): TaxConfigurationSet {
+  //console.log('loadTaxConfigurations: d = ', d);
+  try {
+    const v = localStorage.getItem(TAX_CONFIG_KEY);
+    return v ? (JSON.parse(v) as TaxConfigurationSet) : d;
+  } catch {
+    return d;
+  }
+}
+
+export function saveTaxConfigurations(c: TaxConfigurationSet): void {
+  //console.log('saveTaxConfigurations: c = ', c);
+  localStorage.setItem(TAX_CONFIG_KEY, JSON.stringify(c));
 }

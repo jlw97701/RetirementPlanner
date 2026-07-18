@@ -7,11 +7,13 @@ import {
   Scenario
 } from '../models/RetirementTypes';
 
-import type { FederalTaxConfig, StateTaxConfig } from '../models/TaxTypes';
-
-import { RMD_FACTORS } from '../data/rmdFactors';
 import { calculateFederalTax, calculateStateTax } from './TaxEngine';
 import { calculateAnnualSocialSecurity } from './SocialSecurityEngine';
+import { EconomicScenario } from './EconomicScenarioEngine';
+import { RMD_FACTORS } from '../data/rmdFactors';
+
+import type { FederalTaxConfig, StateTaxConfig } from '../models/TaxTypes';
+import { calculatePortfolioReturn } from './PortfolioService';
 
 const WITHDRAWAL_TOLERANCE = 0.01;
 const MAX_SOLVER_ITERATIONS = 100;
@@ -19,6 +21,7 @@ const MAX_SOLVER_ITERATIONS = 100;
 interface RetirementCalculationContext {
   federalTaxConfig: FederalTaxConfig;
   stateTaxConfig: StateTaxConfig;
+  economicScenario: EconomicScenario;
 }
 
 interface WithdrawalEvaluation {
@@ -270,12 +273,44 @@ export function calculateRetirementProjection(
   for (let age = inputs.startAge; age <= inputs.endAge; age++) {
     const yearIndex = age - inputs.startAge;
     const year = startYear + yearIndex;
-    const spending = inputs.annualSpend * Math.pow(1 + inputs.inflation, yearIndex);
+
+    // jlw - TO DO: Spending inflation should also come from the scenario
+
+    //const spending = inputs.annualSpend * Math.pow(1 + inputs.inflation, yearIndex);
+    let spending = inputs.annualSpend;
+
+    for (let yearIndex = 0; yearIndex < projectionYears; yearIndex++) {
+      const economicYear = context.economicScenario.years[yearIndex];
+
+      if (yearIndex > 0) {
+        spending *= 1 + economicYear.inflation;
+      }
+
+      // Calculate projection year...
+    }
+
     const socialSecurity = calculateAnnualSocialSecurity(year, age, inputs, ssIncome, colaSettings, scenario);
     const startTradIra = tradIra;
     const startRothIra = rothIra;
-    const tradGrowth = startTradIra * inputs.expectedReturn;
-    const rothGrowth = startRothIra * inputs.expectedReturn;
+
+    /*
+     * Use an economic scenario to calculate the portfolio return for this year.
+     * If no scenario is provided, use the expected return from inputs.
+     */
+    // const tradGrowth = startTradIra * inputs.expectedReturn;
+    // const rothGrowth = startRothIra * inputs.expectedReturn;
+    const economicYear = context.economicScenario.years[yearIndex];
+
+    if (!economicYear) {
+      throw new Error(`Economic assumptions are missing for projection year ${year}.`);
+    }
+
+    // jlw - TO DO: add input panel for asset allocation and use that instead of equal weights
+    
+    const portfolioReturn = calculatePortfolioReturn(economicYear, inputs.assetAllocation);
+
+    const tradGrowth = startTradIra * portfolioReturn;
+    const rothGrowth = startRothIra * portfolioReturn;
 
     /*
      * This model applies the annual return before distributions.

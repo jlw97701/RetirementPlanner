@@ -1,7 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
-import { DEFAULT_COLA_SETTINGS, DEFAULT_INPUTS, DEFAULT_MONTHLY_SS, DEFAULT_SCENARIOS, DEFAULT_TAX_CONFIG } from '../data/defaults';
+
+import {
+  DEFAULT_COLA_SETTINGS,
+  DEFAULT_INPUTS,
+  DEFAULT_MONTHLY_SS,
+  DEFAULT_SCENARIOS,
+  DEFAULT_TAX_CONFIG
+} from '../data/defaults';
+
 import { calculateRetirementProjection } from '../services/RetirementEngine';
 import { summarizeScenario } from '../services/ScenarioService';
+
 import {
   loadPlannerInputs,
   loadSocialSecurityIncome,
@@ -10,9 +19,10 @@ import {
   savePlannerInputs,
   saveSocialSecurityIncome,
   saveSSCOLASettings,
-  saveScenarios
+  saveScenarios,
+  loadTaxConfigurations,
+  saveTaxConfigurations
 } from '../services/PlannerStorage';
-import { loadTaxConfigurations, saveTaxConfigurations } from '../services/TaxConfigRepository';
 
 export function useRetirementModel() {
   const [inputs, setInputs] = useState(() => loadPlannerInputs(DEFAULT_INPUTS));
@@ -37,7 +47,8 @@ export function useRetirementModel() {
         .map((s) => {
           const rows = calculateRetirementProjection(inputs, ssIncome, colaSettings, s, {
             federalTaxConfig: federal,
-            stateTaxConfig: state
+            stateTaxConfig: state,
+            economicScenario: undefined
           });
           return {
             scenario: s,

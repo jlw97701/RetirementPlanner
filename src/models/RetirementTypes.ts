@@ -47,14 +47,6 @@ export interface Scenario {
   rothConvType: RothConversionType;
 }
 
-export interface EconomicYear {
-    inflation: number;
-    socialSecurityCola: number;
-    stockReturn: number;
-    bondReturn: number;
-    cashReturn: number;
-}
-
 export interface RetirementYear {
   age: number;
   year: number;
