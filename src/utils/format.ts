@@ -8,5 +8,10 @@ export function formatMoney(v: number): string {
 }
 
 export function formatDecimal(v: number): number {
-  return Math.round((v / 100) * 1000) / 1000;
+  return Math.round(v * 1000) / 1000;
+}
+
+export function roundRate(value: number, decimalPlaces = 4): number {
+  const scale = 10 ** decimalPlaces;
+  return Math.round(value * scale) / scale;
 }

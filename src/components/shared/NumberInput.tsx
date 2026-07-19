@@ -2,6 +2,7 @@ export function NumberInput({
   label,
   value,
   min = 0,
+  max = 99999999,
   step = 1,
   readonly = false,
   selected = false,
@@ -10,6 +11,7 @@ export function NumberInput({
   label: string;
   value: number;
   min?: number;
+  max?: number;
   step?: number;
   readonly?: boolean;
   selected?: boolean;
@@ -22,6 +24,7 @@ export function NumberInput({
         type="number"
         value={value}
         min={min}
+        max={max}
         step={step}
         readOnly={readonly}
         className={selected ? 'selected' : ''}

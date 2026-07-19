@@ -150,10 +150,11 @@ export interface MonteCarloAssumptions {
    * 3 = cash return
    */
   correlationMatrix: readonly [
-    readonly [number, number, number, number],
-    readonly [number, number, number, number],
-    readonly [number, number, number, number],
-    readonly [number, number, number, number]
+    readonly [number, number, number, number, number],
+    readonly [number, number, number, number, number],
+    readonly [number, number, number, number, number],
+    readonly [number, number, number, number, number],
+    readonly [number, number, number, number, number]
   ];
 
   /**
@@ -421,21 +422,27 @@ function validateVariableAssumption(name: string, assumption: MonteCarloVariable
 }
 
 function validateCorrelationMatrix(matrix: MonteCarloAssumptions['correlationMatrix']): void {
-  for (let row = 0; row < 4; row++) {
-    for (let column = 0; column < 4; column++) {
+  const size = matrix.length;
+
+  for (let row = 0; row < size; row++) {
+    if (matrix[row].length !== size) {
+      throw new EconomicScenarioError('Correlation matrix must be square.');
+    }
+
+    for (let column = 0; column < size; column++) {
       const value = matrix[row][column];
 
       if (!Number.isFinite(value) || value < -1 || value > 1) {
         throw new EconomicScenarioError('Correlation values must be between -1 and 1.');
       }
 
-      if (Math.abs(matrix[row][column] - matrix[column][row]) > MATRIX_TOLERANCE) {
-        throw new EconomicScenarioError('The correlation matrix must be symmetric.');
+      if (Math.abs(value - matrix[column][row]) > MATRIX_TOLERANCE) {
+        throw new EconomicScenarioError('Correlation matrix must be symmetric.');
       }
     }
 
     if (Math.abs(matrix[row][row] - 1) > MATRIX_TOLERANCE) {
-      throw new EconomicScenarioError('Every correlation matrix diagonal value must equal 1.');
+      throw new EconomicScenarioError('Every diagonal value must equal 1.');
     }
   }
 }
@@ -463,7 +470,14 @@ function validateHistoricalYear(item: HistoricalEconomicYear): void {
     throw new EconomicScenarioError('Every historical year must be an integer.');
   }
 
-  const values = [item.inflation, item.socialSecurityCola, item.stockReturn, item.bondReturn, item.cashReturn, item.otherReturn];
+  const values = [
+    item.inflation,
+    item.socialSecurityCola,
+    item.stockReturn,
+    item.bondReturn,
+    item.cashReturn,
+    item.otherReturn
+  ];
 
   if (values.some((value) => !Number.isFinite(value))) {
     throw new EconomicScenarioError(`Historical data for ${item.year} contains a non-finite value.`);

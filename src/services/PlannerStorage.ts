@@ -14,92 +14,168 @@ const INPUTS_KEY = 'retirement-planner-inputs',
   SCENARIO_KEY = 'retirement-planner-scenarios',
   TAX_CONFIG_KEY = 'retirement-planner-tax-config';
 
-export function loadPlannerInputs(d: PlannerInputs): PlannerInputs {
-  //console.log('loadPlannerInputs: d = ', d);
+export function loadPlannerInputs(defaults: PlannerInputs): PlannerInputs {
+  //console.log('loadPlannerInputs: defaults = ', defaults);
   try {
-    const v = localStorage.getItem(INPUTS_KEY);
-    return v ? { ...d, ...JSON.parse(v) } : d;
+    const stored = localStorage.getItem(INPUTS_KEY);
+
+    if (!stored) {
+      return defaults;
+    }
+
+    const parsed = JSON.parse(stored) as Partial<PlannerInputs>;
+
+    const inputs: PlannerInputs = {
+      ...defaults,
+      ...parsed
+    };
+
+    if (!Number.isInteger(inputs.ssEstimateYear) || inputs.ssEstimateYear < 1900 || inputs.ssEstimateYear > 2200) {
+      inputs.ssEstimateYear = defaults.ssEstimateYear;
+    }
+
+    return inputs;
   } catch {
-    return d;
+    return defaults;
   }
 }
 
-export function savePlannerInputs(v: PlannerInputs): void {
-  //console.log('savePlannerInputs: v = ', v);
-  localStorage.setItem(INPUTS_KEY, JSON.stringify(v));
+export function savePlannerInputs(value: PlannerInputs): void {
+  //console.log('savePlannerInputs: value = ', value);
+  localStorage.setItem(INPUTS_KEY, JSON.stringify(value));
 }
 
-export function loadSocialSecurityIncome(d: SSMonthlyIncome[]): SSMonthlyIncome[] {
-  //console.log('loadSocialSecurityIncome: d = ', d);
+export function loadSocialSecurityIncome(defaults: SSMonthlyIncome[]): SSMonthlyIncome[] {
+  //console.log('loadSocialSecurityIncome: defaults = ', defaults);
   try {
-    const v = localStorage.getItem(INCOME_KEY);
-    return v ? (JSON.parse(v) as SSMonthlyIncome[]) : d;
+    const stored = localStorage.getItem(INCOME_KEY);
+
+    if (!stored) {
+      return defaults;
+    }
+
+    const parsed = JSON.parse(stored) as Partial<SSMonthlyIncome>;
+
+    const income: SSMonthlyIncome[] = {
+      ...defaults,
+      ...parsed
+    };
+
+    return income;
   } catch {
-    return d;
+    return defaults;
   }
 }
 
-export function saveSocialSecurityIncome(v: SSMonthlyIncome[]): void {
-  //console.log('saveSocialSecurityIncome: v = ', v);
-  localStorage.setItem(INCOME_KEY, JSON.stringify(v));
+export function saveSocialSecurityIncome(value: SSMonthlyIncome[]): void {
+  //console.log('saveSocialSecurityIncome: value = ', value);
+  localStorage.setItem(INCOME_KEY, JSON.stringify(value));
 }
 
-export function loadSSCOLASettings(d: SSColaSettings): SSColaSettings {
-  //console.log('loadSSCOLASettings: d = ', d);
+export function loadSSCOLASettings(defaults: SSColaSettings): SSColaSettings {
+  //console.log('loadSSCOLASettings: defaults = ', defaults);
   try {
-    const v = localStorage.getItem(COLA_KEY);
-    return v ? (JSON.parse(v) as SSColaSettings) : d;
+    const stored = localStorage.getItem(COLA_KEY);
+
+    if (!stored) {
+      return defaults;
+    }
+
+    const parsed = JSON.parse(stored) as Partial<SSColaSettings>;
+
+    const cola: SSColaSettings = {
+      ...defaults,
+      ...parsed
+    };
+
+    return cola;
   } catch {
-    return d;
+    return defaults;
   }
 }
 
-export function saveSSCOLASettings(v: SSColaSettings): void {
-  //console.log('saveSSCOLASettings: v = ', v);
-  localStorage.setItem(COLA_KEY, JSON.stringify(v));
+export function saveSSCOLASettings(value: SSColaSettings): void {
+  //console.log('saveSSCOLASettings: value = ', value);
+  localStorage.setItem(COLA_KEY, JSON.stringify(value));
 }
 
-export function loadAssetAllocation(d: AssetAllocation): AssetAllocation {
-  //onsole.log('loadAssetAllocation: d = ', d);
+export function loadAssetAllocation(defaults: AssetAllocation): AssetAllocation {
+  //onsole.log('loadAssetAllocation: defaults = ', defaults);
   try {
-    const v = localStorage.getItem(ASSET_ALLOCATION_KEY);
-    return v ? (JSON.parse(v) as AssetAllocation) : d;
+    const stored = localStorage.getItem(ASSET_ALLOCATION_KEY);
+
+    if (!stored) {
+      return defaults;
+    }
+
+    const parsed = JSON.parse(stored) as Partial<AssetAllocation>;
+
+    const assets: AssetAllocation = {
+      ...defaults,
+      ...parsed
+    };
+
+    return assets;
   } catch {
-    return d;
+    return defaults;
   }
 }
 
-export function saveAssetAllocation(v: AssetAllocation): void {
-  //console.log('saveAssetAllocation: v = ', v);
-  localStorage.setItem(ASSET_ALLOCATION_KEY, JSON.stringify(v));
+export function saveAssetAllocation(value: AssetAllocation): void {
+  //console.log('saveAssetAllocation: value = ', value);
+  localStorage.setItem(ASSET_ALLOCATION_KEY, JSON.stringify(value));
 }
 
-export function loadRetirementScenarios(d: RetirementScenario[]): RetirementScenario[] {
-  //console.log('loadScenarios: d = ', d);
+export function loadRetirementScenarios(defaults: RetirementScenario[]): RetirementScenario[] {
+  //console.log('loadScenarios: defaults = ', defaults);
   try {
-    const v = localStorage.getItem(SCENARIO_KEY);
-    return v ? (JSON.parse(v) as RetirementScenario[]) : d;
+    const stored = localStorage.getItem(SCENARIO_KEY);
+
+    if (!stored) {
+      return defaults;
+    }
+
+    const parsed = JSON.parse(stored) as Partial<RetirementScenario>;
+
+    const scenarios: RetirementScenario[] = {
+      ...defaults,
+      ...parsed
+    };
+
+    return scenarios;
   } catch {
-    return d;
+    return defaults;
   }
 }
 
-export function saveRetirementScenarios(v: RetirementScenario[]): void {
-  //console.log('saveScenarios: v = ', v);
-  localStorage.setItem(SCENARIO_KEY, JSON.stringify(v));
+export function saveRetirementScenarios(value: RetirementScenario[]): void {
+  //console.log('saveScenarios: value = ', value);
+  localStorage.setItem(SCENARIO_KEY, JSON.stringify(value));
 }
 
-export function loadTaxConfigurations(d: TaxConfigurationSet): TaxConfigurationSet {
-  //console.log('loadTaxConfigurations: d = ', d);
+export function loadTaxConfigurations(defaults: TaxConfigurationSet): TaxConfigurationSet {
+  //console.log('loadTaxConfigurations: defaults = ', defaults);
   try {
-    const v = localStorage.getItem(TAX_CONFIG_KEY);
-    return v ? (JSON.parse(v) as TaxConfigurationSet) : d;
+    const stored = localStorage.getItem(TAX_CONFIG_KEY);
+
+    if (!stored) {
+      return defaults;
+    }
+
+    const parsed = JSON.parse(stored) as Partial<TaxConfigurationSet>;
+
+    const config: TaxConfigurationSet = {
+      ...defaults,
+      ...parsed
+    };
+
+    return config;
   } catch {
-    return d;
+    return defaults;
   }
 }
 
-export function saveTaxConfigurations(c: TaxConfigurationSet): void {
-  //console.log('saveTaxConfigurations: c = ', c);
-  localStorage.setItem(TAX_CONFIG_KEY, JSON.stringify(c));
+export function saveTaxConfigurations(value: TaxConfigurationSet): void {
+  //console.log('saveTaxConfigurations: value = ', value);
+  localStorage.setItem(TAX_CONFIG_KEY, JSON.stringify(value));
 }

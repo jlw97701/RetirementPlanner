@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Calculator, ArrowLeft, TableConfig } from 'lucide-react';
 import { PlannerInputsPanel } from './components/inputs/PlannerInputsPanel';
 import { ScenarioCards } from './components/scenarios/ScenarioCards';
@@ -24,12 +24,17 @@ export default function App() {
   } = useRetirementModel();
 
   const [selectedId, setSelectedId] = useState(projections[0]?.scenario.id ?? '');
-
   const [showTaxTables, setShowTaxTables] = useState(false);
-
   const selected = projections.find((p) => p.scenario.id === selectedId) ?? projections[0];
-
   const summaries = projections.map((p) => p.summary);
+
+  useEffect(() => {
+    const selectedStillExists = projections.some((projection) => projection.scenario.id === selectedId);
+
+    if (!selectedStillExists) {
+      setSelectedId(projections[0]?.scenario.id ?? '');
+    }
+  }, [projections, selectedId]);
 
   return (
     <div className="app">

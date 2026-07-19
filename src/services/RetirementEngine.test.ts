@@ -21,7 +21,6 @@ describe('calculateRetirementProjection', () => {
       startAge: 75,
       endAge: 76,
       horizonAge: 76,
-      rmdStartAge: 75,
       stopConvAge: 75,
       tradIra: 50_000,
       rothIra: 5_000,

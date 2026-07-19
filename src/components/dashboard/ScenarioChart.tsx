@@ -7,6 +7,8 @@ import { RothConversionType, type RetirementYear, type RetirementScenario } from
 import { formatMoney } from '../../utils/format';
 
 export function ScenarioChart({ rows, scenario }: { rows: RetirementYear[]; scenario: RetirementScenario }) {
+  const title = scenario.claimAge === null ? 'Actual Social Security' : `Social Security at ${scenario.claimAge}`;
+
   const data = rows.map((r) => ({
     age: r.age,
     Traditional: Math.round(r.endTradlIra),
@@ -20,7 +22,9 @@ export function ScenarioChart({ rows, scenario }: { rows: RetirementYear[]; scen
   return (
     <section className="panel">
       <h2>
-        <TrendingUp /> Socal Security at {scenario.claimAge} | {' '}
+        <TrendingUp />
+        {title}
+        {' | '}
         {scenario.rothConvType === RothConversionType.None
           ? 'No'
           : scenario.rothConvType === RothConversionType.Base

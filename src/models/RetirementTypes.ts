@@ -12,25 +12,42 @@ export enum ColaStrategyType {
   MonteCarlo
 }
 
+export enum SSBenefitValueType {
+  CurrentDollars,
+  ClaimYearDollars,
+  ActualCurrentBenefit
+}
+export type SSClaimAge = 62 | 63 | 64 | 65 | 66 | 67 | 70;
+
 export interface PlannerInputs {
   birthDate: string;
   startAge: number;
   endAge: number;
   horizonAge: number;
-  rmdStartAge: number;
   stopConvAge: number;
+
   taxableAcct: number;
   tradIra: number;
   rothIra: number;
   annualSpend: number;
   rothBaseConv: number;
   rothAggressiveConv: number;
-  //expectedReturn: number;
   inflation: number;
+
+  ssBenefitValueType: SSBenefitValueType;
+  /*
+   * Applies to CurrentDollars estimates.
+   */
+  ssEstimateYear: number;
+  /*
+   * Applies to ActualCurrentBenefit.
+   */
+  actualMonthlySS: number;
+  actualBenefitYear: number;
 }
 
 export interface SSMonthlyIncome {
-  age: 62 | 63 | 64 | 65 | 66 | 67 | 70;
+  age: SSClaimAge;
   amount: number;
 }
 
@@ -51,7 +68,10 @@ export interface AssetAllocation {
 
 export interface RetirementScenario {
   id: string;
-  claimAge: 62 | 63 | 64 | 65 | 66 | 67 | 70;
+  /*
+   * Null means the user is already receiving an actual benefit.
+   */
+  claimAge: SSClaimAge | null;
   rothConvType: RothConversionType;
 }
 
@@ -89,13 +109,13 @@ export interface RetirementYear {
   endRothIra: number;
   endTaxableAcct: number;
   endPortfolio: number;
-  
+
   unfundedNeed: number;
 }
 
 export interface ScenarioSummary {
   scenarioId: string;
-  claimAge: 62 | 63 | 64 | 65 | 66 | 67 | 70;
+  claimAge: SSClaimAge | null;
   rothConvType: RothConversionType;
   horizonPortfolioAge: number;
   endPortfolioAge: number;

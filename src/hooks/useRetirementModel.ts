@@ -7,14 +7,15 @@ import {
   DEFAULT_COLA_SETTINGS,
   DEFAULT_ASSET_ALLOCATION,
   DEFAULT_RETIREMENT_SCENARIOS,
-  DEFAULT_TAX_CONFIG
+  DEFAULT_TAX_CONFIG,
+  ACTUAL_BENEFIT_SCENARIOS
 } from '../data/defaults';
 
 import { COLA_HISTORY } from '../data/colaHistory';
 
-import { PlannerInputs } from '../models/RetirementTypes';
+import { SSBenefitValueType, type PlannerInputs } from '../models/RetirementTypes';
 
-import { EconomicScenarioConfig, EconomicScenarioEngine } from '../services/EconomicScenarioEngine';
+import { EconomicScenarioEngine } from '../services/EconomicScenarioEngine';
 import { calculateRetirementProjection } from '../services/RetirementEngine';
 import { summarizeRetirementScenario } from '../services/ScenarioService';
 
@@ -34,6 +35,7 @@ import {
 } from '../services/PlannerStorage';
 
 import { EconomicScenarioMethod } from '../services/EconomicScenarioEngine';
+import { projectFutureCOLA } from '../services/SocialSecurityEngine';
 
 function getProjectionPeriod(inputs: PlannerInputs): {
   startYear: number;
@@ -83,40 +85,73 @@ export function useRetirementModel() {
   // jlw - TO DO: Allow users to select the economic scenario method and parameters in the UI, and then pass those values to the EconomicScenarioEngine.
   // jlw - TO DO: Allow users to enter investment return assumptions in the UI, and then pass those values to the EconomicScenarioEngine.
 
-  const economicScenarioEngine = new EconomicScenarioEngine();
   const period = getProjectionPeriod(inputs);
 
-  const economicScenarioConfig: EconomicScenarioConfig = {
-    method: EconomicScenarioMethod.DETERMINISTIC,
-    startYear: period.startYear,
-    years: period.yearCount,
-    inflation: inputs.inflation,
-    stockReturn: 0.07,
-    bondReturn: 0.035,
-    cashReturn: 0.025,
-    otherReturn: 0.05,
-    knownSocialSecurityColas: COLA_HISTORY
-  };
+  const activeScenarios = useMemo(
+    () =>
+      inputs.ssBenefitValueType === SSBenefitValueType.ActualCurrentBenefit ? ACTUAL_BENEFIT_SCENARIOS : scenarios,
+    [inputs.ssBenefitValueType, scenarios]
+  );
 
-  const economicScenario = economicScenarioEngine.generate(economicScenarioConfig);
+  const economicScenario = useMemo(() => {
+    const engine = new EconomicScenarioEngine();
 
+    return engine.generate({
+      method: EconomicScenarioMethod.DETERMINISTIC,
+      startYear: period.startYear,
+      years: period.yearCount,
+      inflation: inputs.inflation,
+      socialSecurityCola: projectFutureCOLA(colaSettings, inputs),
+      stockReturn: 0.07,
+      bondReturn: 0.035,
+      cashReturn: 0.025,
+      otherReturn: 0.05,
+      knownSocialSecurityColas: COLA_HISTORY
+    });
+  }, [period.startYear, period.yearCount, inputs.inflation, colaSettings]);
+
+  // const projections = useMemo(
+  //   () =>
+  //     scenarios
+  //       .map((s) => {
+  //         const rows = calculateRetirementProjection(inputs, ssIncome, colaSettings, assetAllocation, s, {
+  //           federalTaxConfig,
+  //           stateTaxConfig,
+  //           economicScenario
+  //         });
+  //         return {
+  //           scenario: s,
+  //           rows,
+  //           summary: summarizeRetirementScenario(inputs, s, rows)
+  //         };
+  //       }),
+  //   [inputs, ssIncome, colaSettings, assetAllocation, scenarios, federalTaxConfig, stateTaxConfig, economicScenario]
+  // );
   const projections = useMemo(
     () =>
-      scenarios
-        .filter((s) => s.claimAge >= inputs.startAge)
-        .map((s) => {
-          const rows = calculateRetirementProjection(inputs, ssIncome, colaSettings, assetAllocation, s, {
-            federalTaxConfig,
-            stateTaxConfig,
-            economicScenario
-          });
-          return {
-            scenario: s,
-            rows,
-            summary: summarizeRetirementScenario(inputs, s, rows)
-          };
-        }),
-    [inputs, ssIncome, colaSettings, assetAllocation, scenarios, federalTaxConfig, stateTaxConfig, economicScenario]
+      activeScenarios.map((scenario) => {
+        const rows = calculateRetirementProjection(inputs, ssIncome, colaSettings, assetAllocation, scenario, {
+          federalTaxConfig,
+          stateTaxConfig,
+          economicScenario
+        });
+
+        return {
+          scenario,
+          rows,
+          summary: summarizeRetirementScenario(inputs, scenario, rows)
+        };
+      }),
+    [
+      inputs,
+      ssIncome,
+      colaSettings,
+      assetAllocation,
+      activeScenarios,
+      federalTaxConfig,
+      stateTaxConfig,
+      economicScenario
+    ]
   );
   //console.log('useRetirementModel: projections = ', projections);
 
@@ -131,6 +166,7 @@ export function useRetirementModel() {
     setAssetAllocation,
     scenarios,
     setScenarios,
+    activeScenarios,
     taxConfig,
     setTaxConfig,
     projections

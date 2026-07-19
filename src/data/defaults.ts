@@ -8,20 +8,20 @@ import {
   RothConversionType,
   ColaStrategyType,
   SSColaSettings,
-  AssetAllocation
+  AssetAllocation,
+  SSBenefitValueType
 } from '../models/RetirementTypes';
 
 import type { TaxConfigurationSet } from '../models/TaxTypes';
 import { COLA_HISTORY } from './colaHistory';
 import { calculateHistoricalAverageCOLA, calculateMonteCarloCOLA } from '../services/SocialSecurityEngine';
-import { formatDecimal } from '../utils/format';
+import { roundRate } from '../utils/format';
 
 export const DEFAULT_INPUTS: PlannerInputs = {
   birthDate: '3/30/1964',
   startAge: 62,
   endAge: 95,
   horizonAge: 80,
-  rmdStartAge: 75,
   stopConvAge: 75,
   taxableAcct: 25000,
   tradIra: 600000,
@@ -29,8 +29,11 @@ export const DEFAULT_INPUTS: PlannerInputs = {
   annualSpend: 60000,
   rothBaseConv: 30000,
   rothAggressiveConv: 60000,
-  //expectedReturn: 0.055,
-  inflation: 0.03
+  inflation: 0.03,
+  ssBenefitValueType: SSBenefitValueType.CurrentDollars,
+  ssEstimateYear: 2026,
+  actualMonthlySS: 0,
+  actualBenefitYear: 2026
 };
 
 export const DEFAULT_MONTHLY_SS: SSMonthlyIncome[] = [
@@ -47,7 +50,7 @@ export const DEFAULT_COLA_SETTINGS: SSColaSettings = {
   strategy: ColaStrategyType.InflationRate,
   fixedRate: 0.03,
   averageRate: calculateHistoricalAverageCOLA(),
-  lastRate: formatDecimal(Object.values(COLA_HISTORY)[Object.values(COLA_HISTORY).length - 1]),
+  lastRate: roundRate(Object.values(COLA_HISTORY)[Object.values(COLA_HISTORY).length - 1]),
   monteCarloRate: calculateMonteCarloCOLA()
 };
 
@@ -135,6 +138,11 @@ export const DEFAULT_RETIREMENT_SCENARIOS: RetirementScenario[] = [
     rothConvType: RothConversionType.Aggressive
   },
   {
+    id: 'ss67-none',
+    claimAge: 67,
+    rothConvType: 0
+  },
+  {
     id: 'ss67-base',
     claimAge: 67,
     rothConvType: RothConversionType.Base
@@ -157,6 +165,24 @@ export const DEFAULT_RETIREMENT_SCENARIOS: RetirementScenario[] = [
   {
     id: 'ss70-aggressive',
     claimAge: 70,
+    rothConvType: RothConversionType.Aggressive
+  }
+];
+
+export const ACTUAL_BENEFIT_SCENARIOS: RetirementScenario[] = [
+  {
+    id: 'actual-ss-none',
+    claimAge: null,
+    rothConvType: RothConversionType.None
+  },
+  {
+    id: 'actual-ss-base',
+    claimAge: null,
+    rothConvType: RothConversionType.Base
+  },
+  {
+    id: 'actual-ss-aggressive',
+    claimAge: null,
     rothConvType: RothConversionType.Aggressive
   }
 ];

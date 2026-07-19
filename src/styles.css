@@ -257,6 +257,7 @@ tr:hover td {
   input {
     width: stretch;
     padding-left: 30px !important;
+    cursor: pointer;
   }
 }
 
