@@ -1,12 +1,14 @@
 import { COLA_HISTORY } from '../data/colaHistory';
 import { DEFAULT_COLA_SETTINGS } from '../data/defaults';
+
 import {
   ColaStrategyType,
   type PlannerInputs,
   type SSColaSettings,
   type SSMonthlyIncome,
-  type Scenario
+  type RetirementScenario
 } from '../models/RetirementTypes';
+
 import { formatDecimal } from '../utils/format';
 
 function projectFutureCOLA(colaSettings: SSColaSettings, inputs: PlannerInputs): number {
@@ -51,7 +53,7 @@ export function calculateHistoricalAverageCOLA(): number {
 export function calculateMonteCarloCOLA(): number {
   // For demonstration purposes, we will return a random value between 1% and 5%.
   // In a real application, you would implement a proper Monte Carlo simulation here.
-  const randomRate = (Math.random() * (0.05 - 0.01) + 0.01) *100;
+  const randomRate = (Math.random() * (0.05 - 0.01) + 0.01) * 100;
   return formatDecimal(randomRate);
 }
 
@@ -61,7 +63,7 @@ export function calculateAnnualSocialSecurity(
   inputs: PlannerInputs,
   ssIncome: SSMonthlyIncome[],
   colaSettings: SSColaSettings,
-  scenario: Scenario
+  scenario: RetirementScenario
 ): number {
   if (age < scenario.claimAge) return 0;
   const monthly = ssIncome.find((i) => i.age === scenario.claimAge)?.amount ?? 0;

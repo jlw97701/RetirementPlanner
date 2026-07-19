@@ -1,9 +1,10 @@
 export function formatMoney(v: number): string {
-  return v.toLocaleString(undefined, {
+  const s = v.toLocaleString(undefined, {
     style: 'currency',
     currency: 'USD',
     maximumFractionDigits: 0
   });
+  return s === '-$0' ? '$0' : s;
 }
 
 export function formatDecimal(v: number): number {

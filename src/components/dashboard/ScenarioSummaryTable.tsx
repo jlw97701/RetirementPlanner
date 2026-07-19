@@ -17,7 +17,7 @@ export function ScenarioSummaryTable({
   return (
     <section className="panel">
       <h2>
-        <Summary /> Scenario summary
+        <Summary /> Scenario Summary
       </h2>
       <div className="table-container">
         <table className="sticky-table selectable">

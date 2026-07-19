@@ -1,62 +1,122 @@
 import { useEffect, useMemo, useState } from 'react';
+import { isValid } from 'date-fns';
 
 import {
-  DEFAULT_COLA_SETTINGS,
   DEFAULT_INPUTS,
   DEFAULT_MONTHLY_SS,
-  DEFAULT_SCENARIOS,
+  DEFAULT_COLA_SETTINGS,
+  DEFAULT_ASSET_ALLOCATION,
+  DEFAULT_RETIREMENT_SCENARIOS,
   DEFAULT_TAX_CONFIG
 } from '../data/defaults';
 
+import { COLA_HISTORY } from '../data/colaHistory';
+
+import { PlannerInputs } from '../models/RetirementTypes';
+
+import { EconomicScenarioConfig, EconomicScenarioEngine } from '../services/EconomicScenarioEngine';
 import { calculateRetirementProjection } from '../services/RetirementEngine';
-import { summarizeScenario } from '../services/ScenarioService';
+import { summarizeRetirementScenario } from '../services/ScenarioService';
 
 import {
   loadPlannerInputs,
-  loadSocialSecurityIncome,
-  loadSSCOLASettings,
-  loadScenarios,
   savePlannerInputs,
+  loadSocialSecurityIncome,
   saveSocialSecurityIncome,
+  loadSSCOLASettings,
   saveSSCOLASettings,
-  saveScenarios,
+  loadAssetAllocation,
+  saveAssetAllocation,
+  loadRetirementScenarios,
+  saveRetirementScenarios,
   loadTaxConfigurations,
   saveTaxConfigurations
 } from '../services/PlannerStorage';
+
+import { EconomicScenarioMethod } from '../services/EconomicScenarioEngine';
+
+function getProjectionPeriod(inputs: PlannerInputs): {
+  startYear: number;
+  endYear: number;
+  yearCount: number;
+} {
+  const birthDate = new Date(inputs.birthDate);
+  //console.log('getProjectionPeriod: birthDate = ', birthDate, ', inputs.birthDate = ', inputs.birthDate);
+
+  if (!isValid(birthDate)) {
+    throw new Error(`Invalid birth date: ${inputs.birthDate}`);
+  }
+
+  if (inputs.endAge < inputs.startAge) {
+    throw new Error('endAge cannot be less than startAge.');
+  }
+
+  const startYear = birthDate.getFullYear() + inputs.startAge;
+  const endYear = birthDate.getFullYear() + inputs.endAge;
+
+  return {
+    startYear,
+    endYear,
+    yearCount: inputs.endAge - inputs.startAge + 1
+  };
+}
 
 export function useRetirementModel() {
   const [inputs, setInputs] = useState(() => loadPlannerInputs(DEFAULT_INPUTS));
   const [ssIncome, setSSIncome] = useState(() => loadSocialSecurityIncome(DEFAULT_MONTHLY_SS));
   const [colaSettings, setColaSettings] = useState(() => loadSSCOLASettings(DEFAULT_COLA_SETTINGS));
-  const [scenarios, setScenarios] = useState(() => loadScenarios(DEFAULT_SCENARIOS));
+  const [assetAllocation, setAssetAllocation] = useState(() => loadAssetAllocation(DEFAULT_ASSET_ALLOCATION));
+  const [scenarios, setScenarios] = useState(() => loadRetirementScenarios(DEFAULT_RETIREMENT_SCENARIOS));
   const [taxConfig, setTaxConfig] = useState(() => loadTaxConfigurations(DEFAULT_TAX_CONFIG));
 
   useEffect(() => savePlannerInputs(inputs), [inputs]);
   useEffect(() => saveSocialSecurityIncome(ssIncome), [ssIncome]);
   useEffect(() => saveSSCOLASettings(colaSettings), [colaSettings]);
-  useEffect(() => saveScenarios(scenarios), [scenarios]);
+  useEffect(() => saveRetirementScenarios(scenarios), [scenarios]);
   useEffect(() => saveTaxConfigurations(taxConfig), [taxConfig]);
+  useEffect(() => savePlannerInputs(inputs), [inputs]);
+  useEffect(() => saveAssetAllocation(assetAllocation), [assetAllocation]);
 
-  const federal = taxConfig.federal[0],
-    state = taxConfig.state[0];
+  const federalTaxConfig = taxConfig.federal[0],
+    stateTaxConfig = taxConfig.state[0];
+
+  // jlw - TO DO: Allow users to select the economic scenario method and parameters in the UI, and then pass those values to the EconomicScenarioEngine.
+  // jlw - TO DO: Allow users to enter investment return assumptions in the UI, and then pass those values to the EconomicScenarioEngine.
+
+  const economicScenarioEngine = new EconomicScenarioEngine();
+  const period = getProjectionPeriod(inputs);
+
+  const economicScenarioConfig: EconomicScenarioConfig = {
+    method: EconomicScenarioMethod.DETERMINISTIC,
+    startYear: period.startYear,
+    years: period.yearCount,
+    inflation: inputs.inflation,
+    stockReturn: 0.07,
+    bondReturn: 0.035,
+    cashReturn: 0.025,
+    otherReturn: 0.05,
+    knownSocialSecurityColas: COLA_HISTORY
+  };
+
+  const economicScenario = economicScenarioEngine.generate(economicScenarioConfig);
 
   const projections = useMemo(
     () =>
       scenarios
         .filter((s) => s.claimAge >= inputs.startAge)
         .map((s) => {
-          const rows = calculateRetirementProjection(inputs, ssIncome, colaSettings, s, {
-            federalTaxConfig: federal,
-            stateTaxConfig: state,
-            economicScenario: undefined
+          const rows = calculateRetirementProjection(inputs, ssIncome, colaSettings, assetAllocation, s, {
+            federalTaxConfig,
+            stateTaxConfig,
+            economicScenario
           });
           return {
             scenario: s,
             rows,
-            summary: summarizeScenario(inputs, s, rows)
+            summary: summarizeRetirementScenario(inputs, s, rows)
           };
         }),
-    [inputs, ssIncome, colaSettings, scenarios, federal, state]
+    [inputs, ssIncome, colaSettings, assetAllocation, scenarios, federalTaxConfig, stateTaxConfig, economicScenario]
   );
   //console.log('useRetirementModel: projections = ', projections);
 
@@ -67,6 +127,8 @@ export function useRetirementModel() {
     setSSIncome,
     colaSettings,
     setColaSettings,
+    assetAllocation,
+    setAssetAllocation,
     scenarios,
     setScenarios,
     taxConfig,

@@ -1,17 +1,22 @@
 import { useState } from 'react';
 import DatePicker from 'react-datepicker';
 import { Calendar } from 'lucide-react';
+
 import { AccordionPanel } from '../shared/AccordionPanel';
 import { NumberInput } from '../shared/NumberInput';
+import { Dropdown } from '../shared/Dropdown';
+
 import {
+  AssetAllocation,
   ColaStrategyType,
   type PlannerInputs,
   type SSColaSettings,
   type SSMonthlyIncome
 } from '../../models/RetirementTypes';
-import 'react-datepicker/dist/react-datepicker.css';
-import { Dropdown } from '../shared/Dropdown';
+
 import { COLA_HISTORY } from '../../data/colaHistory';
+
+import 'react-datepicker/dist/react-datepicker.css';
 
 interface InputsInterface {
   inputs: PlannerInputs;
@@ -20,6 +25,8 @@ interface InputsInterface {
   setSSIncome: (v: SSMonthlyIncome[]) => void;
   colaSettings: SSColaSettings;
   setColaSettings: (v: SSColaSettings) => void;
+  assetAllocation: AssetAllocation;
+  setAssetAllocation: (v: AssetAllocation) => void;
 }
 
 export function PlannerInputsPanel({
@@ -28,7 +35,9 @@ export function PlannerInputsPanel({
   ssIncome,
   setSSIncome,
   colaSettings,
-  setColaSettings
+  setColaSettings,
+  assetAllocation,
+  setAssetAllocation
 }: InputsInterface) {
   //console.log('PlannerInputsPanel: inputs = ', inputs);
   //console.log('PlannerInputsPanel: income = ', income);
@@ -58,11 +67,11 @@ export function PlannerInputsPanel({
   return (
     <aside className="sidebar">
       <div className="accordion-group">
-        <AccordionPanel 
-        title="Planner Inputs" 
-        info="<h3>Planner Inputs</h3><p>Enter your personal information and financial assumptions. These inputs will be used to calculate your retirement projections.</p>Note: The retirement planner assumes that you will not make any additional contributions to your retirement accounts after the current year. If you plan to make additional contributions, please adjust your account balances accordingly.</p><p>This model factors in Required Minimum Distributions (RMDs). Information on RMDs can be found at <a href='https://www.irs.gov/retirement-plans/required-minimum-distributions-rmds' target='_blank' rel='noopener noreferrer'>https://www.irs.gov/retirement-plans/required-minimum-distributions-rmds</a>.</p><p>Inflation is calculated from the Consumer Price Index (CPI) by the Bureau of Labor Statistics. Information on historical inflation can be found at <a href='https://www.usinflationcalculator.com/inflation/historical-inflation-rates/' target='_blank' rel='noopener noreferrer'>https://www.usinflationcalculator.com/inflation/historical-inflation-rates/</a>.</p>"
-        isOpen={expandedIndex === 0} 
-        onToggle={() => setSelectedPanel(0)}>
+        <AccordionPanel
+          title="Planner Inputs"
+          info="<h3>Planner Inputs</h3><p>Enter your personal information and financial assumptions. These inputs will be used to calculate your retirement projections.</p>Note: The retirement planner assumes that you will not make any additional contributions to your retirement accounts after the current year. If you plan to make additional contributions, please adjust your account balances accordingly.</p><p>This model factors in Required Minimum Distributions (RMDs). Information on RMDs can be found at <a href='https://www.irs.gov/retirement-plans/required-minimum-distributions-rmds' target='_blank' rel='noopener noreferrer'>https://www.irs.gov/retirement-plans/required-minimum-distributions-rmds</a>.</p><p>Inflation is calculated from the Consumer Price Index (CPI) by the Bureau of Labor Statistics. Information on historical inflation can be found at <a href='https://www.usinflationcalculator.com/inflation/historical-inflation-rates/' target='_blank' rel='noopener noreferrer'>https://www.usinflationcalculator.com/inflation/historical-inflation-rates/</a>.</p>"
+          isOpen={expandedIndex === 0}
+          onToggle={() => setSelectedPanel(0)}>
           <label className="input-row">
             <span>Birth Date:</span>
             <DatePicker
@@ -102,6 +111,12 @@ export function PlannerInputsPanel({
             onChange={(v) => updateInput('stopConvAge', v)}
           />
           <NumberInput
+            label="Taxable Savings"
+            value={inputs.taxableAcct}
+            step={1000}
+            onChange={(v) => updateInput('taxableAcct', v)}
+          />
+          <NumberInput
             label="Traditional IRA"
             value={inputs.tradIra}
             step={1000}
@@ -126,23 +141,17 @@ export function PlannerInputsPanel({
             onChange={(v) => updateInput('rothAggressiveConv', v)}
           />
           <NumberInput
-            label="Expected return"
-            value={inputs.expectedReturn}
-            step={0.001}
-            onChange={(v) => updateInput('expectedReturn', v)}
-          />
-          <NumberInput
             label="Inflation"
             value={inputs.inflation}
             step={0.001}
             onChange={(v) => updateInput('inflation', v)}
           />
         </AccordionPanel>
-        <AccordionPanel 
-        title="SSI Inputs" 
-        info="<h3>Social Security Income</h3><p>Enter your expected Social Security income at each age. These values will be used to calculate your total income and taxes.</p><p>Information on Social Security benefits can be found at <a href='https://www.ssa.gov/benefits/retirement/' target='_blank' rel='noopener noreferrer'>https://www.ssa.gov/benefits/retirement/</a>.</p><p>Note: The Social Security Administration (SSA) provides an online tool called the <a href='https://www.ssa.gov/myaccount/' target='_blank' rel='noopener noreferrer'>my Social Security</a> account, where you can view your estimated benefits based on your earnings history and expected retirement age.</p>"
-        isOpen={expandedIndex === 1} 
-        onToggle={() => setSelectedPanel(1)}>
+        <AccordionPanel
+          title="SSI Inputs"
+          info="<h3>Social Security Income</h3><p>Enter your expected Social Security income at each age. These values will be used to calculate your total income and taxes.</p><p>Information on Social Security benefits can be found at <a href='https://www.ssa.gov/benefits/retirement/' target='_blank' rel='noopener noreferrer'>https://www.ssa.gov/benefits/retirement/</a>.</p><p>Note: The Social Security Administration (SSA) provides an online tool called the <a href='https://www.ssa.gov/myaccount/' target='_blank' rel='noopener noreferrer'>my Social Security</a> account, where you can view your estimated benefits based on your earnings history and expected retirement age.</p>"
+          isOpen={expandedIndex === 1}
+          onToggle={() => setSelectedPanel(1)}>
           {ssIncome.map((ss, i) => (
             <NumberInput
               key={i}
@@ -194,6 +203,36 @@ export function PlannerInputsPanel({
             value={colaSettings.monteCarloRate}
             readonly={true}
             selected={selectedStrategy === ColaStrategyType.MonteCarlo}
+          />
+        </AccordionPanel>
+        <AccordionPanel
+          title="Portfolio"
+          info="<h3>Asset Allocation</h3><p>Portfolio asset allocation refers to the distribution of your investments across different asset classes, such as stocks, bonds, and cash. The allocation you choose can significantly impact your portfolio's risk and return profile.</p>"
+          isOpen={expandedIndex === 1}
+          onToggle={() => setSelectedPanel(1)}>
+          <NumberInput
+            label="Stocks"
+            value={assetAllocation.stocks}
+            step={0.001}
+            onChange={(v) => setAssetAllocation({ ...assetAllocation, stocks: v })}
+          />
+          <NumberInput
+            label="Bonds"
+            value={assetAllocation.bonds}
+            step={0.001}
+            onChange={(v) => setAssetAllocation({ ...assetAllocation, bonds: v })}
+          />
+          <NumberInput
+            label="Cash"
+            value={assetAllocation.cash}
+            step={0.001}
+            onChange={(v) => setAssetAllocation({ ...assetAllocation, cash: v })}
+          />
+          <NumberInput
+            label="Other"
+            value={assetAllocation.other}
+            step={0.001}
+            onChange={(v) => setAssetAllocation({ ...assetAllocation, other: v })}
           />
         </AccordionPanel>
       </div>

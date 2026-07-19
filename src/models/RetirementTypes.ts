@@ -19,12 +19,13 @@ export interface PlannerInputs {
   horizonAge: number;
   rmdStartAge: number;
   stopConvAge: number;
+  taxableAcct: number;
   tradIra: number;
   rothIra: number;
   annualSpend: number;
   rothBaseConv: number;
   rothAggressiveConv: number;
-  expectedReturn: number;
+  //expectedReturn: number;
   inflation: number;
 }
 
@@ -41,7 +42,14 @@ export interface SSColaSettings {
   monteCarloRate: number;
 }
 
-export interface Scenario {
+export interface AssetAllocation {
+  stocks: number;
+  bonds: number;
+  cash: number;
+  other: number;
+}
+
+export interface RetirementScenario {
   id: string;
   claimAge: 62 | 63 | 64 | 65 | 66 | 67 | 70;
   rothConvType: RothConversionType;
@@ -52,14 +60,19 @@ export interface RetirementYear {
   year: number;
   spending: number;
   socialSecurity: number;
+
   startTradIra: number;
   startRothIra: number;
+  startTaxableAcct: number;
+
   tradGrowth: number;
   rothGrowth: number;
+
   rmd: number;
   tradCashWithdraw: number;
   rothConv: number;
   traditionalDist: number;
+
   taxableSS: number;
   federalAgi: number;
   federalTaxableIncome: number;
@@ -67,10 +80,16 @@ export interface RetirementYear {
   stateTaxableIncome: number;
   stateTax: number;
   totalTax: number;
+
+  taxableAcctDeposit: number;
+  taxableAcctWithdraw: number;
   rothWithdraw: number;
+
   endTradlIra: number;
   endRothIra: number;
+  endTaxableAcct: number;
   endPortfolio: number;
+  
   unfundedNeed: number;
 }
 

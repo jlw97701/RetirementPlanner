@@ -40,6 +40,11 @@ export interface EconomicYear {
   cashReturn: number;
 
   /**
+   * Nominal annual return for other investments.
+   */
+  otherReturn: number;
+
+  /**
    * Optional historical source year when replaying historical data.
    */
   sourceYear?: number;
@@ -52,6 +57,7 @@ export interface HistoricalEconomicYear {
   stockReturn: number;
   bondReturn: number;
   cashReturn: number;
+  otherReturn: number;
 }
 
 export interface DeterministicScenarioConfig {
@@ -64,6 +70,7 @@ export interface DeterministicScenarioConfig {
   stockReturn: number;
   bondReturn: number;
   cashReturn: number;
+  otherReturn: number;
 
   /**
    * Official or manually supplied COLAs override projected values.
@@ -132,6 +139,7 @@ export interface MonteCarloAssumptions {
   stockReturn: MonteCarloVariableAssumption;
   bondReturn: MonteCarloVariableAssumption;
   cashReturn: MonteCarloVariableAssumption;
+  otherReturn: MonteCarloVariableAssumption;
 
   /**
    * Correlation matrix in this exact variable order:
@@ -222,7 +230,8 @@ export class EconomicScenarioEngine {
         ),
         stockReturn: config.stockReturn,
         bondReturn: config.bondReturn,
-        cashReturn: config.cashReturn
+        cashReturn: config.cashReturn,
+        otherReturn: config.otherReturn
       };
     });
 
@@ -320,6 +329,7 @@ export class EconomicScenarioEngine {
         random.nextStandardNormal(),
         random.nextStandardNormal(),
         random.nextStandardNormal(),
+        random.nextStandardNormal(),
         random.nextStandardNormal()
       ];
 
@@ -333,6 +343,8 @@ export class EconomicScenarioEngine {
 
       const cashReturn = sampleVariable(config.assumptions.cashReturn, correlatedNormals[3]);
 
+      const otherReturn = sampleVariable(config.assumptions.otherReturn, correlatedNormals[4]);
+
       const projectionYear = config.startYear + index;
 
       const projectedCola = deriveSocialSecurityCola(inflation, config.assumptions);
@@ -343,7 +355,8 @@ export class EconomicScenarioEngine {
         socialSecurityCola: getKnownOrProjectedCola(projectionYear, config.knownSocialSecurityColas, projectedCola),
         stockReturn,
         bondReturn,
-        cashReturn
+        cashReturn,
+        otherReturn
       });
     }
 
@@ -381,6 +394,8 @@ function validateMonteCarloAssumptions(assumptions: MonteCarloAssumptions): void
   validateVariableAssumption('bondReturn', assumptions.bondReturn);
 
   validateVariableAssumption('cashReturn', assumptions.cashReturn);
+
+  validateVariableAssumption('otherReturn', assumptions.otherReturn);
 
   validateCorrelationMatrix(assumptions.correlationMatrix);
 
@@ -448,7 +463,7 @@ function validateHistoricalYear(item: HistoricalEconomicYear): void {
     throw new EconomicScenarioError('Every historical year must be an integer.');
   }
 
-  const values = [item.inflation, item.socialSecurityCola, item.stockReturn, item.bondReturn, item.cashReturn];
+  const values = [item.inflation, item.socialSecurityCola, item.stockReturn, item.bondReturn, item.cashReturn, item.otherReturn];
 
   if (values.some((value) => !Number.isFinite(value))) {
     throw new EconomicScenarioError(`Historical data for ${item.year} contains a non-finite value.`);
@@ -467,6 +482,7 @@ function mapHistoricalYear(
     stockReturn: source.stockReturn,
     bondReturn: source.bondReturn,
     cashReturn: source.cashReturn,
+    otherReturn: source.otherReturn,
     sourceYear: source.year
   };
 }

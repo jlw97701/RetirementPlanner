@@ -4,16 +4,17 @@ import {
   PlannerInputs,
   SSMonthlyIncome,
   SSColaSettings,
-  Scenario
+  RetirementScenario,
+  AssetAllocation
 } from '../models/RetirementTypes';
 
 import { calculateFederalTax, calculateStateTax } from './TaxEngine';
 import { calculateAnnualSocialSecurity } from './SocialSecurityEngine';
-import { EconomicScenario } from './EconomicScenarioEngine';
+import { EconomicScenario, EconomicYear } from './EconomicScenarioEngine';
 import { RMD_FACTORS } from '../data/rmdFactors';
 
 import type { FederalTaxConfig, StateTaxConfig } from '../models/TaxTypes';
-import { calculatePortfolioReturn } from './PortfolioService';
+import { isValid } from 'date-fns';
 
 const WITHDRAWAL_TOLERANCE = 0.01;
 const MAX_SOLVER_ITERATIONS = 100;
@@ -80,17 +81,13 @@ function evaluateTraditionalWithdrawal(
     tradCashWithdraw,
     rothConv,
     traditionalDist,
-
     taxableSS: federal.taxableSS,
     federalAgi: federal.agi,
     federalTaxableIncome: federal.taxableIncome,
     federalTax: federal.tax,
-
     stateTaxableIncome: state.taxableIncome,
     stateTax: state.tax,
-
     totalTax,
-
     cashSurplus: socialSecurity + tradCashWithdraw - spending - totalTax
   };
 }
@@ -200,7 +197,7 @@ function solveTraditionalWithdrawal(
   };
 }
 
-function getAnnualRothConversion(inputs: PlannerInputs, scenario: Scenario): number {
+function getAnnualRothConversion(inputs: PlannerInputs, scenario: RetirementScenario): number {
   switch (scenario.rothConvType) {
     case RothConversionType.Base:
       return inputs.rothBaseConv;
@@ -214,13 +211,9 @@ function getAnnualRothConversion(inputs: PlannerInputs, scenario: Scenario): num
 }
 
 function getBirthYear(birthDate: string): number {
-  /*
-   * Appending a time avoids some UTC/local-time parsing inconsistencies
-   * for ISO date-only strings.
-   */
   const parsedDate = new Date(birthDate);
 
-  if (Number.isNaN(parsedDate.getTime())) {
+  if (!isValid(parsedDate)) {
     throw new Error(`Invalid birth date: ${birthDate}`);
   }
 
@@ -243,71 +236,108 @@ function validateProjectionInputs(inputs: PlannerInputs): void {
   if (inputs.inflation <= -1) {
     throw new Error('Inflation must be greater than -100%.');
   }
+}
 
-  if (inputs.expectedReturn <= -1) {
-    throw new Error('Expected return must be greater than -100%.');
+function calculatePortfolioReturn(economicYear: EconomicYear, allocation: AssetAllocation): number {
+  const totalWeight = allocation.stocks + allocation.bonds + allocation.cash + allocation.other;
+
+  if (Math.abs(totalWeight - 1) > 0.000001) {
+    throw new Error('Asset-allocation weights must total 100%.');
   }
+
+  return (
+    allocation.stocks * economicYear.stockReturn +
+    allocation.bonds * economicYear.bondReturn +
+    allocation.cash * economicYear.cashReturn +
+    allocation.other * economicYear.otherReturn
+  );
 }
 
 export function calculateRetirementProjection(
   inputs: PlannerInputs,
   ssIncome: SSMonthlyIncome[],
   colaSettings: SSColaSettings,
-  scenario: Scenario,
+  assetAllocation: AssetAllocation,
+  retirementScenario: RetirementScenario,
   context: RetirementCalculationContext
 ): RetirementYear[] {
   //console.log('calculateRetirementProjection: inputs=', inputs);
   //console.log('calculateRetirementProjection: ssIncome=', ssIncome);
   //console.log('calculateRetirementProjection: colaSettings=', colaSettings);
-  //console.log('calculateRetirementProjection: scenario=', scenario);
+  //console.log('calculateRetirementProjection: retirementScenario=', retirementScenario);
   validateProjectionInputs(inputs);
 
-  const years: RetirementYear[] = [];
   const birthYear = getBirthYear(inputs.birthDate);
   const startYear = birthYear + inputs.startAge;
-  const configuredAnnualRothConv = getAnnualRothConversion(inputs, scenario);
+  const projectionYears = inputs.endAge - inputs.startAge + 1;
+  const configuredAnnualRothConv = getAnnualRothConversion(inputs, retirementScenario);
+  const years: RetirementYear[] = [];
 
   let tradIra = inputs.tradIra;
   let rothIra = inputs.rothIra;
+  let taxableAcct = inputs.taxableAcct;
+
+  if (inputs.tradIra < 0 || inputs.rothIra < 0 || inputs.taxableAcct < 0) {
+    throw new Error('Account balances cannot be negative.');
+  }
+
+  if (projectionYears <= 0) {
+    throw new Error(`Invalid projection range: startAge=${inputs.startAge}, endAge=${inputs.endAge}.`);
+  }
+
+  if (context.economicScenario.years.length < projectionYears) {
+    throw new Error(
+      `Economic scenario contains ${context.economicScenario.years.length} years, but the retirement projection requires ${projectionYears}.`
+    );
+  }
 
   for (let age = inputs.startAge; age <= inputs.endAge; age++) {
     const yearIndex = age - inputs.startAge;
     const year = startYear + yearIndex;
 
-    // jlw - TO DO: Spending inflation should also come from the scenario
-
-    //const spending = inputs.annualSpend * Math.pow(1 + inputs.inflation, yearIndex);
+    // Spending inflation should also come from the scenario
     let spending = inputs.annualSpend;
 
-    for (let yearIndex = 0; yearIndex < projectionYears; yearIndex++) {
+    for (let age = inputs.startAge; age <= inputs.endAge; age++) {
+      // Calculate this year using spending
+      const yearIndex = age - inputs.startAge;
       const economicYear = context.economicScenario.years[yearIndex];
-
       if (yearIndex > 0) {
         spending *= 1 + economicYear.inflation;
       }
-
-      // Calculate projection year...
     }
 
-    const socialSecurity = calculateAnnualSocialSecurity(year, age, inputs, ssIncome, colaSettings, scenario);
+    // Social Security should similarly apply each year's COLA sequentially:
+    const baseAnnualSS = (ssIncome.find((i) => i.age === retirementScenario.claimAge)?.amount ?? 0) * 12;
+
+    let socialSecurity = 0;
+
+    for (let age = inputs.startAge; age <= inputs.endAge; age++) {
+      const yearIndex = age - inputs.startAge;
+      const economicYear = context.economicScenario.years[yearIndex];
+
+      if (age === retirementScenario.claimAge) {
+        socialSecurity = baseAnnualSS;
+      } else if (age > retirementScenario.claimAge) {
+        socialSecurity *= 1 + economicYear.socialSecurityCola;
+      }
+    }
+
     const startTradIra = tradIra;
     const startRothIra = rothIra;
+    const startTaxableAcct = taxableAcct;
 
     /*
      * Use an economic scenario to calculate the portfolio return for this year.
      * If no scenario is provided, use the expected return from inputs.
      */
-    // const tradGrowth = startTradIra * inputs.expectedReturn;
-    // const rothGrowth = startRothIra * inputs.expectedReturn;
     const economicYear = context.economicScenario.years[yearIndex];
 
     if (!economicYear) {
       throw new Error(`Economic assumptions are missing for projection year ${year}.`);
     }
 
-    // jlw - TO DO: add input panel for asset allocation and use that instead of equal weights
-    
-    const portfolioReturn = calculatePortfolioReturn(economicYear, inputs.assetAllocation);
+    const portfolioReturn = calculatePortfolioReturn(economicYear, assetAllocation);
 
     const tradGrowth = startTradIra * portfolioReturn;
     const rothGrowth = startRothIra * portfolioReturn;
@@ -319,8 +349,11 @@ export function calculateRetirementProjection(
      */
     const availableTradIra = Math.max(0, startTradIra + tradGrowth);
     const availableRothIra = Math.max(0, startRothIra + rothGrowth);
+    const availableTaxableAcct = startTaxableAcct; // Assumes a non-interest-bearing account
+
     const rmdFactor = RMD_FACTORS[age];
-    const rmd = age >= inputs.rmdStartAge ? Math.min(availableTradIra, availableTradIra / (rmdFactor ?? 8.9)) : 0;
+    const rmd = age >= inputs.rmdStartAge ? Math.min(startTradIra, startTradIra / rmdFactor) : 0;
+
     const requestedRothConversion =
       age < inputs.stopConvAge ? Math.min(configuredAnnualRothConv, Math.max(0, availableTradIra - rmd)) : 0;
 
@@ -344,10 +377,24 @@ export function calculateRetirementProjection(
       federalTax,
       stateTaxableIncome,
       stateTax,
-      totalTax
+      totalTax,
+      cashSurplus
     } = withdrawalSolution;
 
-    const remainingCashNeed = Math.max(0, spending + totalTax - socialSecurity - tradCashWithdraw);
+    /*
+     * Preserve excess Social Security or mandatory traditional
+     * distributions in the non-interest-bearing taxable cash account.
+     */
+    const taxableAcctDeposit = Math.max(0, cashSurplus);
+
+    /*
+     * Traditional withdrawals retain first priority. Taxable cash is used
+     * only when the traditional-withdrawal solver cannot cover the entire
+     * spending and tax requirement.
+     */
+    const cashNeedAfterTraditional = Math.max(0, -cashSurplus);
+    const taxableAcctWithdraw = Math.min(availableTaxableAcct, cashNeedAfterTraditional);
+    const cashNeedAfterTaxable = cashNeedAfterTraditional - taxableAcctWithdraw;
 
     /*
      * The conversion is added to the Roth balance before any Roth
@@ -357,25 +404,33 @@ export function calculateRetirementProjection(
      * conversions, and earnings.
      */
     const rothFundsAvailable = availableRothIra + rothConv;
-    const rothWithdraw = Math.min(rothFundsAvailable, remainingCashNeed);
-    const unfundedNeed = Math.max(0, remainingCashNeed - rothWithdraw);
+    const rothWithdraw = Math.min(rothFundsAvailable, cashNeedAfterTaxable);
+    const unfundedNeed = Math.max(0, cashNeedAfterTaxable - rothWithdraw);
 
     tradIra = Math.max(0, availableTradIra - traditionalDist);
     rothIra = Math.max(0, rothFundsAvailable - rothWithdraw);
+    taxableAcct = Math.max(0, availableTaxableAcct + taxableAcctDeposit - taxableAcctWithdraw);
+
+    const endPortfolio = tradIra + rothIra + taxableAcct;
 
     years.push({
       age,
       year,
       spending,
       socialSecurity,
+
       startTradIra,
       startRothIra,
+      startTaxableAcct,
+
       tradGrowth,
       rothGrowth,
+
       rmd,
       tradCashWithdraw,
       rothConv,
       traditionalDist,
+
       taxableSS,
       federalAgi,
       federalTaxableIncome,
@@ -383,10 +438,16 @@ export function calculateRetirementProjection(
       stateTaxableIncome,
       stateTax,
       totalTax,
+
+      taxableAcctDeposit,
+      taxableAcctWithdraw,
       rothWithdraw,
+
       endTradlIra: tradIra,
       endRothIra: rothIra,
-      endPortfolio: tradIra + rothIra,
+      endTaxableAcct: taxableAcct,
+      endPortfolio: endPortfolio,
+
       unfundedNeed
     });
   }

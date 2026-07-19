@@ -1,13 +1,16 @@
 import type {
+  AssetAllocation,
   PlannerInputs,
   SSColaSettings,
   SSMonthlyIncome,
-  Scenario
+  RetirementScenario
 } from '../models/RetirementTypes';
 import type { TaxConfigurationSet } from '../models/TaxTypes';
 
 const INPUTS_KEY = 'retirement-planner-inputs',
   INCOME_KEY = 'retirement-planner-income',
+  COLA_KEY = 'retirement-planner-cola',
+  ASSET_ALLOCATION_KEY = 'retirement-planner-asset-allocation',
   SCENARIO_KEY = 'retirement-planner-scenarios',
   TAX_CONFIG_KEY = 'retirement-planner-tax-config';
 
@@ -36,10 +39,15 @@ export function loadSocialSecurityIncome(d: SSMonthlyIncome[]): SSMonthlyIncome[
   }
 }
 
+export function saveSocialSecurityIncome(v: SSMonthlyIncome[]): void {
+  //console.log('saveSocialSecurityIncome: v = ', v);
+  localStorage.setItem(INCOME_KEY, JSON.stringify(v));
+}
+
 export function loadSSCOLASettings(d: SSColaSettings): SSColaSettings {
   //console.log('loadSSCOLASettings: d = ', d);
   try {
-    const v = localStorage.getItem('retirement-planner-cola');
+    const v = localStorage.getItem(COLA_KEY);
     return v ? (JSON.parse(v) as SSColaSettings) : d;
   } catch {
     return d;
@@ -48,25 +56,35 @@ export function loadSSCOLASettings(d: SSColaSettings): SSColaSettings {
 
 export function saveSSCOLASettings(v: SSColaSettings): void {
   //console.log('saveSSCOLASettings: v = ', v);
-  localStorage.setItem('retirement-planner-cola', JSON.stringify(v));
+  localStorage.setItem(COLA_KEY, JSON.stringify(v));
 }
 
-export function saveSocialSecurityIncome(v: SSMonthlyIncome[]): void {
-  //console.log('saveSocialSecurityIncome: v = ', v);
-  localStorage.setItem(INCOME_KEY, JSON.stringify(v));
-}
-
-export function loadScenarios(d: Scenario[]): Scenario[] {
-  //console.log('loadScenarios: d = ', d);
+export function loadAssetAllocation(d: AssetAllocation): AssetAllocation {
+  //onsole.log('loadAssetAllocation: d = ', d);
   try {
-    const v = localStorage.getItem(SCENARIO_KEY);
-    return v ? (JSON.parse(v) as Scenario[]) : d;
+    const v = localStorage.getItem(ASSET_ALLOCATION_KEY);
+    return v ? (JSON.parse(v) as AssetAllocation) : d;
   } catch {
     return d;
   }
 }
 
-export function saveScenarios(v: Scenario[]): void {
+export function saveAssetAllocation(v: AssetAllocation): void {
+  //console.log('saveAssetAllocation: v = ', v);
+  localStorage.setItem(ASSET_ALLOCATION_KEY, JSON.stringify(v));
+}
+
+export function loadRetirementScenarios(d: RetirementScenario[]): RetirementScenario[] {
+  //console.log('loadScenarios: d = ', d);
+  try {
+    const v = localStorage.getItem(SCENARIO_KEY);
+    return v ? (JSON.parse(v) as RetirementScenario[]) : d;
+  } catch {
+    return d;
+  }
+}
+
+export function saveRetirementScenarios(v: RetirementScenario[]): void {
   //console.log('saveScenarios: v = ', v);
   localStorage.setItem(SCENARIO_KEY, JSON.stringify(v));
 }

@@ -1,13 +1,16 @@
 import { federal2026Single } from './federal2026';
 import { oregon2026Single } from './oregon2026';
+
 import {
   PlannerInputs,
   SSMonthlyIncome,
-  Scenario,
+  RetirementScenario,
   RothConversionType,
   ColaStrategyType,
-  SSColaSettings
+  SSColaSettings,
+  AssetAllocation
 } from '../models/RetirementTypes';
+
 import type { TaxConfigurationSet } from '../models/TaxTypes';
 import { COLA_HISTORY } from './colaHistory';
 import { calculateHistoricalAverageCOLA, calculateMonteCarloCOLA } from '../services/SocialSecurityEngine';
@@ -20,12 +23,13 @@ export const DEFAULT_INPUTS: PlannerInputs = {
   horizonAge: 80,
   rmdStartAge: 75,
   stopConvAge: 75,
+  taxableAcct: 25000,
   tradIra: 600000,
   rothIra: 0,
   annualSpend: 60000,
   rothBaseConv: 30000,
   rothAggressiveConv: 60000,
-  expectedReturn: 0.055,
+  //expectedReturn: 0.055,
   inflation: 0.03
 };
 
@@ -47,7 +51,14 @@ export const DEFAULT_COLA_SETTINGS: SSColaSettings = {
   monteCarloRate: calculateMonteCarloCOLA()
 };
 
-export const DEFAULT_SCENARIOS: Scenario[] = [
+export const DEFAULT_ASSET_ALLOCATION: AssetAllocation = {
+  stocks: 0.6,
+  bonds: 0.3,
+  cash: 0.1,
+  other: 0
+};
+
+export const DEFAULT_RETIREMENT_SCENARIOS: RetirementScenario[] = [
   {
     id: 'ss62-none',
     claimAge: 62,

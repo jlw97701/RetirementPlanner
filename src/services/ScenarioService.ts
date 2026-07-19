@@ -1,17 +1,11 @@
-import type {
-  PlannerInputs,
-  RetirementYear,
-  Scenario,
-  ScenarioSummary
-} from '../models/RetirementTypes';
+import type { PlannerInputs, RetirementYear, RetirementScenario, ScenarioSummary } from '../models/RetirementTypes';
 
-export function summarizeScenario(
+export function summarizeRetirementScenario(
   inputs: PlannerInputs,
-  scenario: Scenario,
+  scenario: RetirementScenario,
   rows: RetirementYear[]
 ): ScenarioSummary {
-  const h =
-      rows.find((r) => r.age === inputs.horizonAge) ?? rows[rows.length - 1],
+  const h = rows.find((r) => r.age === inputs.horizonAge) ?? rows[rows.length - 1],
     f = rows[rows.length - 1];
   return {
     scenarioId: scenario.id,
@@ -20,10 +14,7 @@ export function summarizeScenario(
     horizonPortfolioAge: h.endPortfolio,
     endPortfolioAge: f.endPortfolio,
     totalTaxes: rows.reduce((s, r) => s + r.totalTax, 0),
-    totalSSToHorizon: rows
-      .filter((r) => r.age <= inputs.horizonAge)
-      .reduce((s, r) => s + r.socialSecurity, 0),
-    depletionAge:
-      rows.find((r) => r.endPortfolio <= 1 && r.unfundedNeed > 0)?.age ?? null
+    totalSSToHorizon: rows.filter((r) => r.age <= inputs.horizonAge).reduce((s, r) => s + r.socialSecurity, 0),
+    depletionAge: rows.find((r) => r.endPortfolio <= 1 && r.unfundedNeed > 0)?.age ?? null
   };
 }

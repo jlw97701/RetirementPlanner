@@ -16,6 +16,8 @@ export default function App() {
     setSSIncome,
     colaSettings,
     setColaSettings,
+    assetAllocation,
+    setAssetAllocation,
     taxConfig,
     setTaxConfig,
     projections
@@ -76,6 +78,8 @@ export default function App() {
             setSSIncome={setSSIncome}
             colaSettings={colaSettings}
             setColaSettings={setColaSettings}
+            assetAllocation={assetAllocation}
+            setAssetAllocation={setAssetAllocation}
           />
           <section className="content">
             {/* <ScenarioCards
