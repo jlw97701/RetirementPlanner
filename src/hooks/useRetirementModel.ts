@@ -93,6 +93,10 @@ export function useRetirementModel() {
     [inputs.ssBenefitValueType, scenarios]
   );
 
+  if (!Array.isArray(activeScenarios)) {
+    throw new Error('Active retirement scenarios must be an array.');
+  }
+
   const economicScenario = useMemo(() => {
     const engine = new EconomicScenarioEngine();
 

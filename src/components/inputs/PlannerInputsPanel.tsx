@@ -81,15 +81,15 @@ export function PlannerInputsPanel({
   const ssBenefitValueOptions = [
     {
       value: SSBenefitValueType.CurrentDollars,
-      label: 'Current-Dollar Estimates'
+      label: `Current Dollars (${inputs.ssEstimateYear})`
     },
     {
       value: SSBenefitValueType.ClaimYearDollars,
-      label: 'Claim-Year Estimates'
+      label: 'Claim-Year Dollars'
     },
     {
       value: SSBenefitValueType.ActualCurrentBenefit,
-      label: 'Already Receiving Benefits'
+      label: 'Receiving Benefits'
     }
   ];
 
@@ -186,7 +186,7 @@ export function PlannerInputsPanel({
         </AccordionPanel>
         <AccordionPanel
           title="SSI Inputs"
-          info="<h3>Social Security Income</h3><p>Enter your expected Social Security income at each age. These values will be used to calculate your total income and taxes.</p><p>Information on Social Security benefits can be found at <a href='https://www.ssa.gov/benefits/retirement/' target='_blank' rel='noopener noreferrer'>https://www.ssa.gov/benefits/retirement/</a>.</p><p>Note: The Social Security Administration (SSA) provides an online tool called the <a href='https://www.ssa.gov/myaccount/' target='_blank' rel='noopener noreferrer'>my Social Security</a> account, where you can view your estimated benefits based on your earnings history and expected retirement age.</p>"
+          info="<h3>Social Security Income</h3><p>Enter your expected Social Security income at each age. These values will be used to calculate your total income and taxes.</p><p>Current-dollar estimates are adjusted from the estimate year to each claiming year. Claim-year estimates are used exactly as entered.</p><p>If you are already receiving Social Security, enter the monthly benefit and the year that amount applies to. Claim-age estimates are ignored, and the scenarios compare Roth conversion strategies only.</p><p>Information on Social Security benefits can be found at <a href='https://www.ssa.gov/benefits/retirement/' target='_blank' rel='noopener noreferrer'>https://www.ssa.gov/benefits/retirement/</a>.</p><p>Note: The Social Security Administration (SSA) provides an online tool called the <a href='https://www.ssa.gov/myaccount/' target='_blank' rel='noopener noreferrer'>my Social Security</a> account, where you can view your estimated benefits based on your earnings history and expected retirement age.</p>"
           isOpen={expandedIndex === 1}
           onToggle={() => setSelectedPanel(1)}>
           <Dropdown
@@ -195,28 +195,6 @@ export function PlannerInputsPanel({
             selectedValue={selectedBenefitValue}
             onChange={(v) => setInputs({ ...inputs, ssBenefitValueType: Number(v) as SSBenefitValueType })}
           />
-          {/* <div className="input-row">
-            <label>
-              <span>Estimate Year:</span>
-            </label>
-            <DatePicker
-              icon={<Calendar />}
-              showIcon
-              showYearPicker
-              dateFormat="yyyy"
-              selected={new Date(inputs.ssEstimateYear, 0, 1)}
-              disabled={inputs.ssBenefitValueType !== SSBenefitValueType.CurrentDollars}
-              onChange={(value: Date | null) => {
-                if (!value) {
-                  return;
-                }
-                setInputs({
-                  ...inputs,
-                  ssEstimateYear: value.getFullYear()
-                });
-              }}
-            />
-          </div> */}
           {inputs.ssBenefitValueType === SSBenefitValueType.ActualCurrentBenefit && (
             <>
               <NumberInput

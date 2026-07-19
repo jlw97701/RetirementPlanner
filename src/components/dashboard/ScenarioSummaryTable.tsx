@@ -31,6 +31,7 @@ export function ScenarioSummaryTable({
               <th>Roth</th>
               <th>Age {inputs.horizonAge}</th>
               <th>Age {inputs.endAge}</th>
+              <th>First Annual SS</th>
               <th>SS to {inputs.horizonAge}</th>
               <th>Total taxes</th>
               <th>Depletion</th>
@@ -52,6 +53,7 @@ export function ScenarioSummaryTable({
                 </td>
                 <td>{formatMoney(s.horizonPortfolioAge)}</td>
                 <td>{formatMoney(s.endPortfolioAge)}</td>
+                <td>{formatMoney(s.firstAnnualSS)}</td>
                 <td>{formatMoney(s.totalSSToHorizon)}</td>
                 <td>{formatMoney(s.totalTaxes)}</td>
                 <td>{s.depletionAge ?? '—'}</td>

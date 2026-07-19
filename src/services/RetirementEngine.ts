@@ -426,26 +426,18 @@ export function calculateRetirementProjection(
       throw new Error(`Economic assumptions are missing for projection year ${year}.`);
     }
 
-    // Do we keep the "spending" change???
-    // if (yearIndex > 0) {
-    //   spending *= 1 + economicYear.inflation;
-    // }
+    if (yearIndex > 0) {
+      spending *= 1 + economicYear.inflation;
+    }
 
-    // if (age < retirementScenario.claimAge) {
-    //   socialSecurity = 0;
-    // } else if (age === retirementScenario.claimAge) {
-    //   socialSecurity = baseAnnualSS;
-    // } else if (age > inputs.startAge) {
-    //   socialSecurity *= 1 + economicYear.socialSecurityCola;
-    // }
     if (alreadyReceivingBenefits) {
       if (yearIndex > 0) {
         socialSecurity *= 1 + economicYear.socialSecurityCola;
       }
     } else {
-      if (age < claimAge) {
+      if (claimAge !== null && age < claimAge) {
         socialSecurity = 0;
-      } else if (age === claimAge) {
+      } else if (claimAge !== null && age === claimAge) {
         socialSecurity = baseAnnualSS;
       } else if (age > inputs.startAge) {
         socialSecurity *= 1 + economicYear.socialSecurityCola;

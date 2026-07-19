@@ -54,14 +54,9 @@ export function loadSocialSecurityIncome(defaults: SSMonthlyIncome[]): SSMonthly
       return defaults;
     }
 
-    const parsed = JSON.parse(stored) as Partial<SSMonthlyIncome>;
+    const parsed: unknown = JSON.parse(stored);
 
-    const income: SSMonthlyIncome[] = {
-      ...defaults,
-      ...parsed
-    };
-
-    return income;
+    return Array.isArray(parsed) ? (parsed as SSMonthlyIncome[]) : defaults;
   } catch {
     return defaults;
   }
@@ -127,7 +122,6 @@ export function saveAssetAllocation(value: AssetAllocation): void {
 }
 
 export function loadRetirementScenarios(defaults: RetirementScenario[]): RetirementScenario[] {
-  //console.log('loadScenarios: defaults = ', defaults);
   try {
     const stored = localStorage.getItem(SCENARIO_KEY);
 
@@ -135,14 +129,13 @@ export function loadRetirementScenarios(defaults: RetirementScenario[]): Retirem
       return defaults;
     }
 
-    const parsed = JSON.parse(stored) as Partial<RetirementScenario>;
+    const parsed: unknown = JSON.parse(stored);
 
-    const scenarios: RetirementScenario[] = {
-      ...defaults,
-      ...parsed
-    };
+    if (!Array.isArray(parsed)) {
+      return defaults;
+    }
 
-    return scenarios;
+    return parsed as RetirementScenario[];
   } catch {
     return defaults;
   }

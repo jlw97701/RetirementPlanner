@@ -117,6 +117,7 @@ export interface ScenarioSummary {
   scenarioId: string;
   claimAge: SSClaimAge | null;
   rothConvType: RothConversionType;
+  firstAnnualSS: number;
   horizonPortfolioAge: number;
   endPortfolioAge: number;
   totalTaxes: number;

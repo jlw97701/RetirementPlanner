@@ -3,11 +3,6 @@ import { roundRate } from '../utils/format';
 import { ColaStrategyType, type PlannerInputs, type SSColaSettings } from '../models/RetirementTypes';
 
 export function getDefaultRmdStartAge(birthDate: string): number {
-  /*
-   * People born before July 1, 1949 generally had the
-   * age-70½ rules. This annual model cannot represent that
-   * accurately with an integer starting age.
-   */
   const birth = new Date(birthDate);
 
   if (!Number.isFinite(birth.getTime())) {
@@ -24,10 +19,12 @@ export function getDefaultRmdStartAge(birthDate: string): number {
     return 73;
   }
 
-  if (year >= 1950) {
+  const julyFirst1949 = new Date(1949, 6, 1);
+
+  if (year === 1950 || (year === 1949 && birth >= julyFirst1949)) {
     return 72;
   }
-
+  
   return 71;
 }
 
