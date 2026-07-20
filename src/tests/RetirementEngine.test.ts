@@ -14,7 +14,7 @@ import { EconomicScenarioMethod, type EconomicScenario } from '../services/Econo
 import { calculateRetirementProjection } from '../services/RetirementEngine';
 
 describe('calculateRetirementProjection', () => {
-  function createTestProjection(inputOverrides: Partial<PlannerInputs> = {}) {
+  function createTestProjection(inputOverrides: Partial<PlannerInputs> = {}, economicInflation = 0) {
     const inputs = {
       ...DEFAULT_INPUTS,
       birthDate: '1964-03-30',
@@ -71,7 +71,7 @@ describe('calculateRetirementProjection', () => {
       years: [
         {
           year: 2039,
-          inflation: 0,
+          inflation: economicInflation,
           socialSecurityCola: 0,
           stockReturn: 0,
           bondReturn: 0,
@@ -80,7 +80,7 @@ describe('calculateRetirementProjection', () => {
         },
         {
           year: 2040,
-          inflation: 0,
+          inflation: economicInflation,
           socialSecurityCola: 0,
           stockReturn: 0,
           bondReturn: 0,
@@ -193,13 +193,7 @@ describe('calculateRetirementProjection', () => {
   });
 
   test('reports ending portfolio in start-year dollars', () => {
-    const rows = createTestProjection();
-
-    /*
-     * Override the fixture's second economic
-     * year inflation to 10%, or extend the helper
-     * to accept economic scenario overrides.
-     */
+    const rows = createTestProjection({}, 0.1);
 
     expect(rows[0].inflationIndex).toBeCloseTo(1, 8);
 

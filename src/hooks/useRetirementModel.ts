@@ -37,6 +37,12 @@ import { EconomicScenarioMethod } from '../services/EconomicScenarioEngine';
 import { projectFutureCOLA } from '../services/SocialSecurityEngine';
 import { getProjectionPeriod } from '../utils/projectionDates';
 
+/**
+ * Main application hook
+ * Loads and saves retirement-planner settings, constructs the economic scenario, 
+ * selects the applicable retirement scenarios, calculates each projection, 
+ * and exposes the resulting data and state setters to the UI.
+ */
 export function useRetirementModel() {
   const [inputs, setInputs] = useState(() => loadPlannerInputs(DEFAULT_INPUTS));
   const [ssIncome, setSSIncome] = useState(() => loadSocialSecurityIncome(DEFAULT_MONTHLY_SS));

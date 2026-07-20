@@ -6,11 +6,17 @@ import type {
   RetirementScenario
 } from '../models/RetirementTypes';
 import type { TaxConfigurationSet } from '../models/TaxTypes';
+import {
+  ASSET_ALLOCATION_PROFILES,
+  CUSTOM_ALLOCATION_ID,
+  type AssetAllocationPreferences
+} from '../data/assetAllocationProfiles';
 
 const INPUTS_KEY = 'retirement-planner-inputs',
   INCOME_KEY = 'retirement-planner-income',
   COLA_KEY = 'retirement-planner-cola',
   ASSET_ALLOCATION_KEY = 'retirement-planner-asset-allocation',
+  ASSET_ALLOCATION_PREFERENCES_KEY = 'retirement-planner-asset-allocation-preferences',
   SCENARIO_KEY = 'retirement-planner-scenarios',
   TAX_CONFIG_KEY = 'retirement-planner-tax-config';
 
@@ -119,6 +125,46 @@ export function loadAssetAllocation(defaults: AssetAllocation): AssetAllocation 
 export function saveAssetAllocation(value: AssetAllocation): void {
   //console.log('saveAssetAllocation: value = ', value);
   localStorage.setItem(ASSET_ALLOCATION_KEY, JSON.stringify(value));
+}
+
+export function loadAssetAllocationPreferences(defaults: AssetAllocationPreferences): AssetAllocationPreferences {
+  try {
+    const stored = localStorage.getItem(ASSET_ALLOCATION_PREFERENCES_KEY);
+
+    if (!stored) {
+      return defaults;
+    }
+
+    const parsed = JSON.parse(stored) as Partial<AssetAllocationPreferences>;
+    const custom = parsed.customAllocation;
+
+    const validSelections = new Set<string>([
+      CUSTOM_ALLOCATION_ID,
+      ...ASSET_ALLOCATION_PROFILES.map((profile) => profile.id)
+    ]);
+
+    if (
+      typeof parsed.selection !== 'string' ||
+      !validSelections.has(parsed.selection) ||
+      !custom ||
+      ![custom.stocks, custom.bonds, custom.cash, custom.other].every(
+        (value) => typeof value === 'number' && Number.isFinite(value) && value >= 0
+      )
+    ) {
+      return defaults;
+    }
+
+    return {
+      selection: parsed.selection as AssetAllocationPreferences['selection'],
+      customAllocation: custom
+    };
+  } catch {
+    return defaults;
+  }
+}
+
+export function saveAssetAllocationPreferences(value: AssetAllocationPreferences): void {
+  localStorage.setItem(ASSET_ALLOCATION_PREFERENCES_KEY, JSON.stringify(value));
 }
 
 export function loadRetirementScenarios(defaults: RetirementScenario[]): RetirementScenario[] {

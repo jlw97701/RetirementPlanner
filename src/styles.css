@@ -128,6 +128,51 @@ header p {
   }
 }
 
+.input-help {
+  margin: 10px 0;
+  color: #526174;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.allocation-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 12px;
+  margin-top: 10px;
+  color: #526174;
+  font-size: 13px;
+}
+
+.allocation-total {
+  margin: 8px 0;
+  font-weight: 600;
+  text-align: right;
+}
+
+.allocation-total.valid {
+  color: #108533;
+}
+
+.allocation-total.invalid {
+  color: #b42318;
+}
+
+.apply-allocation-button {
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  padding: 9px 12px;
+  background: #3182bd;
+  color: white;
+  cursor: pointer;
+}
+
+.apply-allocation-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .scenario-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

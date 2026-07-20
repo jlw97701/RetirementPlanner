@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import DatePicker from 'react-datepicker';
 import { Calendar, Settings } from 'lucide-react';
 import { format } from 'date-fns';
@@ -20,6 +20,15 @@ import { COLA_HISTORY } from '../../data/colaHistory';
 
 import 'react-datepicker/dist/react-datepicker.css';
 import { parseIsoDate } from '../../utils/projectionDates';
+import {
+  ASSET_ALLOCATION_PROFILES,
+  CUSTOM_ALLOCATION_ID,
+  getAssetAllocationProfile,
+  identifyAssetAllocationProfile,
+  type AssetAllocationPreferences,
+  type AssetAllocationSelection
+} from '../../data/assetAllocationProfiles';
+import { loadAssetAllocationPreferences, saveAssetAllocationPreferences } from '../../services/PlannerStorage';
 
 interface InputsInterface {
   inputs: PlannerInputs;
@@ -46,6 +55,17 @@ export function PlannerInputsPanel({
   //console.log('PlannerInputsPanel: income = ', income);
 
   const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
+  const initialAllocationPreferences: AssetAllocationPreferences = {
+    selection: identifyAssetAllocationProfile(assetAllocation) ?? CUSTOM_ALLOCATION_ID,
+    customAllocation: { ...assetAllocation }
+  };
+  const [allocationPreferences, setAllocationPreferences] = useState<AssetAllocationPreferences>(() =>
+    loadAssetAllocationPreferences(initialAllocationPreferences)
+  );
+  const selectedAllocation = allocationPreferences.selection;
+  const customAllocation = allocationPreferences.customAllocation;
+
+  useEffect(() => saveAssetAllocationPreferences(allocationPreferences), [allocationPreferences]);
 
   const setSelectedPanel = (index: number) =>
     setExpandedIndex((prevIndex: number | null) => (prevIndex === index ? null : index));
@@ -113,6 +133,40 @@ export function PlannerInputsPanel({
   ];
 
   const selectedBenefitValue = ssBenefitValueOptions.find((o) => o.value === inputs.ssBenefitValueType)?.value ?? 0;
+
+  const assetAllocationOptions = [
+    ...ASSET_ALLOCATION_PROFILES.map((profile) => ({ value: profile.id, label: profile.label })),
+    { value: CUSTOM_ALLOCATION_ID, label: 'Custom' }
+  ];
+
+  const selectedAllocationProfile =
+    selectedAllocation === CUSTOM_ALLOCATION_ID ? null : getAssetAllocationProfile(selectedAllocation);
+
+  const customAllocationTotal =
+    customAllocation.stocks + customAllocation.bonds + customAllocation.cash + customAllocation.other;
+  const customAllocationIsValid =
+    [customAllocation.stocks, customAllocation.bonds, customAllocation.cash, customAllocation.other].every(
+      (value) => Number.isFinite(value) && value >= 0
+    ) && Math.abs(customAllocationTotal - 1) <= 0.000001;
+
+  const selectAssetAllocation = (value: string | number) => {
+    const selection = String(value) as AssetAllocationSelection;
+
+    if (selection === CUSTOM_ALLOCATION_ID) {
+      setAllocationPreferences((current) => ({ ...current, selection }));
+      return;
+    }
+
+    setAllocationPreferences((current) => ({ ...current, selection }));
+    setAssetAllocation({ ...getAssetAllocationProfile(selection).allocation });
+  };
+
+  const updateCustomAllocation = (key: keyof AssetAllocation, percent: number) => {
+    setAllocationPreferences((current) => ({
+      ...current,
+      customAllocation: { ...current.customAllocation, [key]: percent / 100 }
+    }));
+  };
 
   return (
     <aside className="sidebar">
@@ -466,9 +520,8 @@ export function PlannerInputsPanel({
           info={`
             <h3>Portfolio Asset Allocation</h3>
             <p>
-              Enter the percentage of the invested portfolio allocated to stocks, bonds,
-              cash equivalents, and other investments. The four allocations must total
-              100%.
+              Select a predefined allocation or create a custom mix of stocks, bonds,
+              cash equivalents, and other investments. A custom allocation must total 100%.
             </p>
             <p>
               The same allocation and calculated return are applied to the Traditional
@@ -481,6 +534,13 @@ export function PlannerInputsPanel({
               account. The portfolio allocation does not apply to that account.
             </p>
             <p>
+              <strong>Other</strong> may include investments such as REITs, precious
+              metals, or cryptocurrency. These assets can have substantially different
+              risks and returns, so they are excluded from the predefined allocations.
+              Use a custom allocation only if you understand the investment and the
+              model's simplified return assumption for this category.
+            </p>
+            <p>
               The current projection uses deterministic return assumptions for each asset
               class. These projections illustrate possible outcomes and do not guarantee
               future investment performance.
@@ -488,34 +548,70 @@ export function PlannerInputsPanel({
           `}
           isOpen={expandedIndex === 3}
           onToggle={() => setSelectedPanel(3)}>
-          <NumberInput
-            label="Stocks"
-            value={assetAllocation.stocks}
-            min={0}
-            step={0.001}
-            onChange={(v) => setAssetAllocation({ ...assetAllocation, stocks: v })}
+          <Dropdown
+            label="Allocation Method"
+            options={assetAllocationOptions}
+            selectedValue={selectedAllocation}
+            onChange={selectAssetAllocation}
           />
-          <NumberInput
-            label="Bonds"
-            value={assetAllocation.bonds}
-            min={0}
-            step={0.001}
-            onChange={(v) => setAssetAllocation({ ...assetAllocation, bonds: v })}
-          />
-          <NumberInput
-            label="Cash"
-            value={assetAllocation.cash}
-            min={0}
-            step={0.001}
-            onChange={(v) => setAssetAllocation({ ...assetAllocation, cash: v })}
-          />
-          <NumberInput
-            label="Other"
-            value={assetAllocation.other}
-            min={0}
-            step={0.001}
-            onChange={(v) => setAssetAllocation({ ...assetAllocation, other: v })}
-          />
+
+          {selectedAllocationProfile && <p className="input-help">{selectedAllocationProfile.description}</p>}
+
+          {selectedAllocation === CUSTOM_ALLOCATION_ID && (
+            <>
+              <NumberInput
+                label="Stocks %"
+                value={customAllocation.stocks * 100}
+                min={0}
+                max={100}
+                step={1}
+                onChange={(value) => updateCustomAllocation('stocks', value)}
+              />
+              <NumberInput
+                label="Bonds %"
+                value={customAllocation.bonds * 100}
+                min={0}
+                max={100}
+                step={1}
+                onChange={(value) => updateCustomAllocation('bonds', value)}
+              />
+              <NumberInput
+                label="Cash %"
+                value={customAllocation.cash * 100}
+                min={0}
+                max={100}
+                step={1}
+                onChange={(value) => updateCustomAllocation('cash', value)}
+              />
+              <NumberInput
+                label="Other %"
+                value={customAllocation.other * 100}
+                min={0}
+                max={100}
+                step={1}
+                onChange={(value) => updateCustomAllocation('other', value)}
+              />
+              <div className={customAllocationIsValid ? 'allocation-total valid' : 'allocation-total invalid'}>
+                Total: {(customAllocationTotal * 100).toFixed(1)}%
+              </div>
+              <button
+                type="button"
+                className="apply-allocation-button"
+                disabled={!customAllocationIsValid}
+                onClick={() => setAssetAllocation({ ...customAllocation })}>
+                Apply Custom Allocation
+              </button>
+            </>
+          )}
+
+          {selectedAllocation !== CUSTOM_ALLOCATION_ID && (
+            <div className="allocation-summary">
+              <span>Stocks: {(assetAllocation.stocks * 100).toFixed(0)}%</span>
+              <span>Bonds: {(assetAllocation.bonds * 100).toFixed(0)}%</span>
+              <span>Cash: {(assetAllocation.cash * 100).toFixed(0)}%</span>
+              <span>Other: {(assetAllocation.other * 100).toFixed(0)}%</span>
+            </div>
+          )}
         </AccordionPanel>
       </div>
     </aside>
