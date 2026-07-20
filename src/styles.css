@@ -112,6 +112,9 @@ header p {
     border: 1px solid #cbd5e1;
     border-radius: 8px;
     padding: 8px;
+    &:focus-visible {
+      outline-color: #93c5fd;
+    }
     &:read-only {
       background-color: #f1f5f9;
       outline: none;
@@ -220,40 +223,46 @@ tr:hover td {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  .accordion-panel {
-    .collapsible {
-      display: flex;
-      gap: 5px;
-      align-items: center;
-      margin-top: 0;
+}
+
+.accordion-panel,
+.collapsible-panel {
+  .collapsible {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    margin-top: 0;
+    cursor: pointer;
+    .collapsible-button {
+      flex: auto;
+      text-align: end;
       cursor: pointer;
-      .collapsible-button {
-        cursor: pointer;
-      }
       .collapsible-icon {
         display: inline-block;
         transform: rotate(0deg);
         transition: transform 0.3s ease-in-out;
-      }
-      .collapsible-icon.rotated {
-        transform: rotate(-90deg);
-      }
-      .collapsible-button {
-        flex: auto;
-        text-align: end;
-      }
-      button {
-        background-color: transparent;
-        border: none;
+        &.rotated {
+          transform: rotate(-90deg);
+        }
       }
     }
-    h2 {
-      margin-bottom: 0;
+    button {
+      background-color: transparent;
+      border: none;
     }
+  }
+  h2 {
+    margin-bottom: 0;
+  }
+  section {
+    margin-top: 10px;
   }
 }
 
 .react-datepicker-wrapper {
+  .react-datepicker__calendar-icon {
+    padding: 11px;
+  }
   input {
     width: stretch;
     padding-left: 30px !important;

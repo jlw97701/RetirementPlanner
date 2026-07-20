@@ -1,19 +1,21 @@
 import { Table } from 'lucide-react';
-import type { RetirementYear } from '../../models/RetirementTypes';
 import { formatMoney } from '../../utils/format';
+import { CollapsiblePanel } from '../shared/CollapsiblePanel';
+import type { RetirementYear } from '../../models/RetirementTypes';
 
 export function YearDetailsTable({ rows }: { rows: RetirementYear[] }) {
   return (
-    <section className="panel table-panel">
-      <h2>
-        <Table /> Year-by-year details
-      </h2>
+    <CollapsiblePanel
+      title="Year-By-Year Details"
+      icon={<Table />}
+      info="<h3>Year-By-Year Details</h3><p>Each row represents January 1 through December 31. 'Age' is the age attained during that calendar year.</p>">
       <div className="table-container">
         <table className="sticky-table">
           <thead>
             <tr>
               <th>Age</th>
               <th>Year</th>
+              {/* <th>Period</th> */}
               <th>Spending</th>
               <th>Social Sec</th>
               <th>Trad Dist</th>
@@ -48,6 +50,6 @@ export function YearDetailsTable({ rows }: { rows: RetirementYear[] }) {
           </tbody>
         </table>
       </div>
-    </section>
+    </CollapsiblePanel>
   );
 }

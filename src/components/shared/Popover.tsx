@@ -28,7 +28,7 @@ export interface PopoverProps extends Omit<HTMLAttributes<HTMLDivElement>, 'cont
   trigger: ReactNode;
 
   /** Popover contents. */
-  children: ReactNode;
+  children?: ReactNode;
   html?: string;
 
   /** Preferred position relative to the trigger. */

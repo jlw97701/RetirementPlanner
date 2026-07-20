@@ -1,13 +1,19 @@
 import { Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-
 import { TrendingUp } from 'lucide-react';
-
+import { formatMoney } from '../../utils/format';
+import { CollapsiblePanel } from '../shared/CollapsiblePanel';
 import { RothConversionType, type RetirementYear, type RetirementScenario } from '../../models/RetirementTypes';
 
-import { formatMoney } from '../../utils/format';
-
 export function ScenarioChart({ rows, scenario }: { rows: RetirementYear[]; scenario: RetirementScenario }) {
-  const title = scenario.claimAge === null ? 'Actual Social Security' : `Social Security at ${scenario.claimAge}`;
+  let title = scenario.claimAge === null ? 'Actual Social Security' : `Social Security at ${scenario.claimAge}`;
+  title +=
+    ' | ' +
+    (scenario.rothConvType === RothConversionType.None
+      ? 'No'
+      : scenario.rothConvType === RothConversionType.Base
+        ? 'Base'
+        : 'Aggressive') +
+    ' Roth Conversion';
 
   const data = rows.map((r) => ({
     age: r.age,
@@ -20,18 +26,7 @@ export function ScenarioChart({ rows, scenario }: { rows: RetirementYear[]; scen
   const customOrder = ['Traditional', 'Roth', 'Savings', 'Total'];
 
   return (
-    <section className="panel">
-      <h2>
-        <TrendingUp />
-        {title}
-        {' | '}
-        {scenario.rothConvType === RothConversionType.None
-          ? 'No'
-          : scenario.rothConvType === RothConversionType.Base
-            ? 'Base'
-            : 'Aggressive'}{' '}
-        Roth Conversion
-      </h2>
+    <CollapsiblePanel title={title} icon={<TrendingUp />}>
       <ResponsiveContainer width="100%" height={320}>
         <LineChart data={data}>
           <XAxis dataKey="age" />
@@ -47,6 +42,6 @@ export function ScenarioChart({ rows, scenario }: { rows: RetirementYear[]; scen
           <Line type="monotone" dataKey="Total" stroke="#3182bd" strokeWidth={3} dot={false} />
         </LineChart>
       </ResponsiveContainer>
-    </section>
+    </CollapsiblePanel>
   );
 }

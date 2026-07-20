@@ -48,7 +48,7 @@ export default function App() {
         </div>
         <button className="header-button" onClick={() => setShowTaxTables((v) => !v)}>
           {showTaxTables ? <ArrowLeft /> : <TableConfig />}
-          {showTaxTables ? 'Back to planner' : 'Configure tax tables'}
+          {showTaxTables ? 'Back' : 'Tax Tables'}
         </button>
       </header>
       {showTaxTables ? (

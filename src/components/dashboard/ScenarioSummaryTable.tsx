@@ -1,7 +1,8 @@
 import { Summary } from 'lucide-react';
 import { RothConversionType, SSBenefitValueType, type ScenarioSummary } from '../../models/RetirementTypes';
-import type { PlannerInputs } from '../../models/RetirementTypes';
 import { formatMoney } from '../../utils/format';
+import { CollapsiblePanel } from '../shared/CollapsiblePanel';
+import type { PlannerInputs } from '../../models/RetirementTypes';
 
 export function ScenarioSummaryTable({
   summaries,
@@ -15,10 +16,10 @@ export function ScenarioSummaryTable({
   onSelect: (id: string) => void;
 }) {
   return (
-    <section className="panel">
-      <h2>
-        <Summary /> Scenario Summary
-      </h2>
+    <CollapsiblePanel
+      title="Scenario Summary"
+      icon={<Summary />}
+      info="<h3>Scenario Summary</h3><p>Each projection row represents one complete calendar year. The first row begins January 1 of the calendar year in which the user reaches 'Start Age'. Account balances are January 1 balances. Spending, returns, Social Security, conversions, RMDs, and taxes are full-calendar-year amounts.</p>">
       <div className="table-container">
         <table className="sticky-table selectable">
           <thead>
@@ -31,7 +32,7 @@ export function ScenarioSummaryTable({
               <th>Roth</th>
               <th>Age {inputs.horizonAge}</th>
               <th>Age {inputs.endAge}</th>
-              <th>First Annual SS</th>
+              <th>First-Year SS</th>
               <th>SS to {inputs.horizonAge}</th>
               <th>Total taxes</th>
               <th>Depletion</th>
@@ -62,6 +63,6 @@ export function ScenarioSummaryTable({
           </tbody>
         </table>
       </div>
-    </section>
+    </CollapsiblePanel>
   );
 }

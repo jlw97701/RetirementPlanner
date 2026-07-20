@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { isValid } from 'date-fns';
 
 import {
   DEFAULT_INPUTS,
@@ -13,7 +12,7 @@ import {
 
 import { COLA_HISTORY } from '../data/colaHistory';
 
-import { SSBenefitValueType, type PlannerInputs } from '../models/RetirementTypes';
+import { SSBenefitValueType } from '../models/RetirementTypes';
 
 import { EconomicScenarioEngine } from '../services/EconomicScenarioEngine';
 import { calculateRetirementProjection } from '../services/RetirementEngine';
@@ -36,32 +35,7 @@ import {
 
 import { EconomicScenarioMethod } from '../services/EconomicScenarioEngine';
 import { projectFutureCOLA } from '../services/SocialSecurityEngine';
-
-function getProjectionPeriod(inputs: PlannerInputs): {
-  startYear: number;
-  endYear: number;
-  yearCount: number;
-} {
-  const birthDate = new Date(inputs.birthDate);
-  //console.log('getProjectionPeriod: birthDate = ', birthDate, ', inputs.birthDate = ', inputs.birthDate);
-
-  if (!isValid(birthDate)) {
-    throw new Error(`Invalid birth date: ${inputs.birthDate}`);
-  }
-
-  if (inputs.endAge < inputs.startAge) {
-    throw new Error('endAge cannot be less than startAge.');
-  }
-
-  const startYear = birthDate.getFullYear() + inputs.startAge;
-  const endYear = birthDate.getFullYear() + inputs.endAge;
-
-  return {
-    startYear,
-    endYear,
-    yearCount: inputs.endAge - inputs.startAge + 1
-  };
-}
+import { getProjectionPeriod } from '../utils/projectionDates';
 
 export function useRetirementModel() {
   const [inputs, setInputs] = useState(() => loadPlannerInputs(DEFAULT_INPUTS));
@@ -85,7 +59,7 @@ export function useRetirementModel() {
   // jlw - TO DO: Allow users to select the economic scenario method and parameters in the UI, and then pass those values to the EconomicScenarioEngine.
   // jlw - TO DO: Allow users to enter investment return assumptions in the UI, and then pass those values to the EconomicScenarioEngine.
 
-  const period = getProjectionPeriod(inputs);
+  const period = getProjectionPeriod(inputs.birthDate, inputs.startAge, inputs.endAge);
 
   const activeScenarios = useMemo(
     () =>
@@ -114,38 +88,23 @@ export function useRetirementModel() {
     });
   }, [period.startYear, period.yearCount, inputs.inflation, colaSettings]);
 
-  // const projections = useMemo(
-  //   () =>
-  //     scenarios
-  //       .map((s) => {
-  //         const rows = calculateRetirementProjection(inputs, ssIncome, colaSettings, assetAllocation, s, {
-  //           federalTaxConfig,
-  //           stateTaxConfig,
-  //           economicScenario
-  //         });
-  //         return {
-  //           scenario: s,
-  //           rows,
-  //           summary: summarizeRetirementScenario(inputs, s, rows)
-  //         };
-  //       }),
-  //   [inputs, ssIncome, colaSettings, assetAllocation, scenarios, federalTaxConfig, stateTaxConfig, economicScenario]
-  // );
   const projections = useMemo(
     () =>
-      activeScenarios.map((scenario) => {
-        const rows = calculateRetirementProjection(inputs, ssIncome, colaSettings, assetAllocation, scenario, {
-          federalTaxConfig,
-          stateTaxConfig,
-          economicScenario
-        });
+      activeScenarios
+        // .filter((scenario) => scenario.claimAge === null || scenario.claimAge >= inputs.startAge)
+        .map((scenario) => {
+          const rows = calculateRetirementProjection(inputs, ssIncome, colaSettings, assetAllocation, scenario, {
+            federalTaxConfig,
+            stateTaxConfig,
+            economicScenario
+          });
 
-        return {
-          scenario,
-          rows,
-          summary: summarizeRetirementScenario(inputs, scenario, rows)
-        };
-      }),
+          return {
+            scenario,
+            rows,
+            summary: summarizeRetirementScenario(inputs, scenario, rows)
+          };
+        }),
     [
       inputs,
       ssIncome,

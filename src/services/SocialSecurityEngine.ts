@@ -1,13 +1,10 @@
-import { COLA_HISTORY } from '../data/colaHistory';
-import { roundRate } from '../utils/format';
 import { ColaStrategyType, type PlannerInputs, type SSColaSettings } from '../models/RetirementTypes';
+import { COLA_HISTORY } from '../data/colaHistory';
+import { formatDecimal } from '../utils/format';
+import { parseIsoDate } from '../utils/projectionDates';
 
 export function getDefaultRmdStartAge(birthDate: string): number {
-  const birth = new Date(birthDate);
-
-  if (!Number.isFinite(birth.getTime())) {
-    throw new Error(`Invalid birth date: ${birthDate}`);
-  }
+  const birth = parseIsoDate(birthDate);
 
   const year = birth.getFullYear();
 
@@ -24,7 +21,7 @@ export function getDefaultRmdStartAge(birthDate: string): number {
   if (year === 1950 || (year === 1949 && birth >= julyFirst1949)) {
     return 72;
   }
-  
+
   return 71;
 }
 
@@ -108,12 +105,13 @@ export function calculateHistoricalAverageCOLA(): number {
     return 0.03;
   }
 
-  return roundRate(rates.reduce((sum, rate) => sum + rate, 0) / rates.length);
+  return formatDecimal(rates.reduce((sum, rate) => sum + rate, 0) / rates.length);
 }
 
 export function calculateMonteCarloCOLA(): number {
+  // jlw - TO DO: implement monte carlo modeling
   // For demonstration purposes, we will return a random value between 1% and 5%.
   // In a real application, you would implement a proper Monte Carlo simulation here.
   const randomRate = Math.random() * (0.05 - 0.01) + 0.01;
-  return roundRate(randomRate);
+  return formatDecimal(randomRate);
 }

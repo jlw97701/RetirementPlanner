@@ -17,7 +17,7 @@ export enum SSBenefitValueType {
   ClaimYearDollars,
   ActualCurrentBenefit
 }
-export type SSClaimAge = 62 | 63 | 64 | 65 | 66 | 67 | 70;
+export type SSClaimAge = 62 | 63 | 64 | 65 | 66 | 67 | 68 | 69 | 70;
 
 export interface PlannerInputs {
   birthDate: string;
@@ -26,23 +26,19 @@ export interface PlannerInputs {
   horizonAge: number;
   stopConvAge: number;
 
-  taxableAcct: number;
+  // Accounts and spending
   tradIra: number;
   rothIra: number;
+  taxableAcct: number;
   annualSpend: number;
   rothBaseConv: number;
   rothAggressiveConv: number;
   inflation: number;
 
-  ssBenefitValueType: SSBenefitValueType;
-  /*
-   * Applies to CurrentDollars estimates.
-   */
-  ssEstimateYear: number;
-  /*
-   * Applies to ActualCurrentBenefit.
-   */
-  actualMonthlySS: number;
+  // SS benefit estimates
+  ssBenefitValueType: SSBenefitValueType; // determines how SS estimates are adjusted annually
+  ssEstimateYear: number; // applies to CurrentDollars estimates
+  actualMonthlySS: number; // applies to ActualCurrentBenefit
   actualBenefitYear: number;
 }
 
@@ -78,6 +74,7 @@ export interface RetirementScenario {
 export interface RetirementYear {
   age: number;
   year: number;
+
   spending: number;
   socialSecurity: number;
 

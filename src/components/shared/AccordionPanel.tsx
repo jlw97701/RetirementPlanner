@@ -1,19 +1,21 @@
 import { useCollapse } from 'react-collapsed';
-import { Settings, ChevronLeft, Info } from 'lucide-react';
+import { ChevronLeft, Info } from 'lucide-react';
 import { Popover } from './Popover';
 
 export function AccordionPanel({
   title,
+  icon,
   info,
-  children,
-  isOpen,
+  isOpen = true,
+  children, // content
   onToggle
 }: {
   title: string;
+  icon?: any;
   info?: string;
-  children: any;
-  isOpen: boolean;
-  onToggle: (v: any) => void;
+  isOpen?: boolean;
+  children?: any;
+  onToggle?: (v: any) => void;
 }) {
   const { getCollapseProps, getToggleProps } = useCollapse({
     isExpanded: isOpen
@@ -23,7 +25,7 @@ export function AccordionPanel({
     <div className="accordion-panel panel">
       <div className="collapsible" {...getToggleProps({ onClick: onToggle })}>
         <h2>
-          <Settings /> {title}
+          {icon} {title}
         </h2>
         {info && (
           <Popover trigger={<Info />} html={info} />
@@ -34,7 +36,7 @@ export function AccordionPanel({
           </span>
         </button>
       </div>
-      <div {...getCollapseProps()}>{children}</div>
+      <section {...getCollapseProps()}>{children}</section>
     </div>
   );
 }

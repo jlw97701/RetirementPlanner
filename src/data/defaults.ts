@@ -15,10 +15,10 @@ import {
 import type { TaxConfigurationSet } from '../models/TaxTypes';
 import { COLA_HISTORY } from './colaHistory';
 import { calculateHistoricalAverageCOLA, calculateMonteCarloCOLA } from '../services/SocialSecurityEngine';
-import { roundRate } from '../utils/format';
+import { formatDecimal } from '../utils/format';
 
 export const DEFAULT_INPUTS: PlannerInputs = {
-  birthDate: '3/30/1964',
+  birthDate: '1964-03-30', // Using ISO date strings avoids ambiguous parsing
   startAge: 62,
   endAge: 95,
   horizonAge: 80,
@@ -43,6 +43,8 @@ export const DEFAULT_MONTHLY_SS: SSMonthlyIncome[] = [
   { age: 65, amount: 3311 },
   { age: 66, amount: 3582 },
   { age: 67, amount: 3854 },
+  { age: 68, amount: 4124 }, // ???
+  { age: 69, amount: 4394 }, // ???
   { age: 70, amount: 4831 }
 ];
 
@@ -50,7 +52,7 @@ export const DEFAULT_COLA_SETTINGS: SSColaSettings = {
   strategy: ColaStrategyType.InflationRate,
   fixedRate: 0.03,
   averageRate: calculateHistoricalAverageCOLA(),
-  lastRate: roundRate(Object.values(COLA_HISTORY)[Object.values(COLA_HISTORY).length - 1]),
+  lastRate: formatDecimal(Object.values(COLA_HISTORY)[Object.values(COLA_HISTORY).length - 1]),
   monteCarloRate: calculateMonteCarloCOLA()
 };
 
@@ -150,6 +152,36 @@ export const DEFAULT_RETIREMENT_SCENARIOS: RetirementScenario[] = [
   {
     id: 'ss67-aggressive',
     claimAge: 67,
+    rothConvType: RothConversionType.Aggressive
+  },
+  {
+    id: 'ss68-none',
+    claimAge: 68,
+    rothConvType: 0
+  },
+  {
+    id: 'ss68-base',
+    claimAge: 68,
+    rothConvType: RothConversionType.Base
+  },
+  {
+    id: 'ss68-aggressive',
+    claimAge: 68,
+    rothConvType: RothConversionType.Aggressive
+  },
+  {
+    id: 'ss69-none',
+    claimAge: 69,
+    rothConvType: 0
+  },
+  {
+    id: 'ss69-base',
+    claimAge: 69,
+    rothConvType: RothConversionType.Base
+  },
+  {
+    id: 'ss69-aggressive',
+    claimAge: 69,
     rothConvType: RothConversionType.Aggressive
   },
   {

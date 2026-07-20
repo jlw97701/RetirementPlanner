@@ -14,34 +14,20 @@ import { calculateFederalTax, calculateStateTax } from './TaxEngine';
 import { EconomicScenario, EconomicYear } from './EconomicScenarioEngine';
 
 import { RMD_FACTORS } from '../data/rmdFactors';
-import { isValid } from 'date-fns';
 
 import type { FederalTaxConfig, StateTaxConfig } from '../models/TaxTypes';
+import { getBirthYear, getProjectionPeriod } from '../utils/projectionDates';
 
 /*
-  jlw - TO DO: First-year timing can materially overstate or understate results
-
-  The model treats every age/year as a complete calendar year:
-  year = birthYear + age;
-
-  It applies:
-  A full year of spending.
-  A full year of investment growth.
-  Twelve months of Social Security in the claiming year.
-  A full annual conversion and distribution.
-
-  For someone starting a projection partway through the current year, that can be materially inaccurate.
-
-  Add an asOfDate to PlannerInputs and prorate the first calendar year:
-  const firstYearFraction = remainingDaysInYear / totalDaysInYear;
-
-  Use the fraction for first-year spending and deterministic returns:
-  firstYearSpending = inputs.annualSpend * firstYearFraction;
-
-  firstYearReturn = Math.pow(1 + annualReturn, firstYearFraction) - 1;
-
-  Social Security should use the number of payable months in the claiming year rather than automatically paying 12 months.
-*/
+ * Projection timing contract:
+ *
+ * - Every row is a complete calendar year.
+ * - Initial balances are January 1 balances.
+ * - Ending balances are December 31 balances.
+ * - Age is the age attained during the calendar year.
+ * - Spending, Social Security, conversions, RMDs, and
+ *   investment returns are modeled as full-year amounts.
+ */
 
 const WITHDRAWAL_TOLERANCE = 0.01;
 const MAX_SOLVER_ITERATIONS = 100;
@@ -237,47 +223,69 @@ function getAnnualRothConversion(inputs: PlannerInputs, scenario: RetirementScen
   }
 }
 
-function getBirthYear(birthDate: string): number {
-  const parsedDate = new Date(birthDate);
-
-  if (!isValid(parsedDate)) {
-    throw new Error(`Invalid birth date: ${birthDate}`);
+function requireNonnegativeFinite(value: number, label: string): void {
+  if (!Number.isFinite(value) || value < 0) {
+    throw new Error(`${label} must be a nonnegative finite number.`);
   }
-
-  return parsedDate.getFullYear();
 }
 
 function validateProjectionInputs(inputs: PlannerInputs): void {
+  if (!Number.isInteger(inputs.startAge) || !Number.isInteger(inputs.endAge)) {
+    throw new Error('Start and end ages must be integers.');
+  }
+
   if (inputs.startAge > inputs.endAge) {
-    throw new Error('startAge cannot be greater than endAge.');
+    throw new Error('Start age cannot exceed end age.');
   }
 
-  if (inputs.tradIra < 0 || inputs.rothIra < 0) {
-    throw new Error('Retirement account balances cannot be negative.');
+  if (
+    !Number.isInteger(inputs.horizonAge) ||
+    inputs.horizonAge < inputs.startAge ||
+    inputs.horizonAge > inputs.endAge
+  ) {
+    throw new Error('Horizon age must be an integer within the projection.');
   }
 
-  if (inputs.annualSpend < 0) {
-    throw new Error('Annual spending cannot be negative.');
+  if (!Number.isInteger(inputs.stopConvAge)) {
+    throw new Error('First age with no conversion must be an integer.');
   }
 
-  if (inputs.inflation <= -1) {
-    throw new Error('Inflation must be greater than -100%.');
+  requireNonnegativeFinite(inputs.tradIra, 'Traditional IRA balance');
+  requireNonnegativeFinite(inputs.rothIra, 'Roth IRA balance');
+  requireNonnegativeFinite(inputs.taxableAcct, 'Taxable account balance');
+  requireNonnegativeFinite(inputs.annualSpend, 'Annual spending');
+  requireNonnegativeFinite(inputs.rothBaseConv, 'Annual base Roth conversion');
+  requireNonnegativeFinite(inputs.rothAggressiveConv, 'Annual aggressive Roth conversion');
+
+  if (!Number.isFinite(inputs.inflation) || inputs.inflation <= -1) {
+    throw new Error('Inflation must be finite and greater than -100%.');
   }
 }
 
 function calculatePortfolioReturn(economicYear: EconomicYear, allocation: AssetAllocation): number {
-  const totalWeight = allocation.stocks + allocation.bonds + allocation.cash + allocation.other;
+  const weights = [allocation.stocks, allocation.bonds, allocation.cash, allocation.other];
+
+  if (weights.some((weight) => !Number.isFinite(weight) || weight < 0)) {
+    throw new Error('Asset-allocation weights must be nonnegative finite numbers.');
+  }
+
+  const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
 
   if (Math.abs(totalWeight - 1) > 0.000001) {
     throw new Error('Asset-allocation weights must total 100%.');
   }
 
-  return (
+  const portfolioReturn =
     allocation.stocks * economicYear.stockReturn +
     allocation.bonds * economicYear.bondReturn +
     allocation.cash * economicYear.cashReturn +
-    allocation.other * economicYear.otherReturn
-  );
+    allocation.other * economicYear.otherReturn;
+
+  if (!Number.isFinite(portfolioReturn) || portfolioReturn < -1) {
+    throw new Error(`Invalid portfolio return for ${economicYear.year}.`);
+  }
+
+  return portfolioReturn;
 }
 
 export function calculateRetirementProjection(
@@ -295,19 +303,16 @@ export function calculateRetirementProjection(
   validateProjectionInputs(inputs);
 
   const birthYear = getBirthYear(inputs.birthDate);
-  const startYear = birthYear + inputs.startAge;
+  const period = getProjectionPeriod(inputs.birthDate, inputs.startAge, inputs.endAge);
+  const startYear = period.startYear;
+  const projectionYears = period.yearCount;
   const rmdStartAge = getDefaultRmdStartAge(inputs.birthDate);
-  const projectionYears = inputs.endAge - inputs.startAge + 1;
   const configuredAnnualRothConv = getAnnualRothConversion(inputs, retirementScenario);
   const years: RetirementYear[] = [];
 
   let tradIra = inputs.tradIra;
   let rothIra = inputs.rothIra;
   let taxableAcct = inputs.taxableAcct;
-
-  if (inputs.tradIra < 0 || inputs.rothIra < 0 || inputs.taxableAcct < 0) {
-    throw new Error('Account balances cannot be negative.');
-  }
 
   if (projectionYears <= 0) {
     throw new Error(`Invalid projection range: startAge=${inputs.startAge}, endAge=${inputs.endAge}.`);
@@ -334,7 +339,7 @@ export function calculateRetirementProjection(
   }
 
   // Init Social Security
-  let spending = inputs.annualSpend;
+  // let annualSpending = inputs.annualSpend;
   // let socialSecurity = 0;
 
   // // Adjust SS benefits to current dollar estimates
@@ -417,18 +422,31 @@ export function calculateRetirementProjection(
     throw new Error('Estimated-benefit scenario requires a claim age.');
   }
 
+  let annualSpending = inputs.annualSpend;
+
   for (let age = inputs.startAge; age <= inputs.endAge; age++) {
+    // The age value is the age attained during this calendar year.
+    // It does not necessarily mean the person is already that age on January 1.
     const yearIndex = age - inputs.startAge;
     const year = startYear + yearIndex;
+
     const economicYear = context.economicScenario.years[yearIndex];
 
     if (!economicYear) {
       throw new Error(`Economic assumptions are missing for projection year ${year}.`);
     }
 
-    if (yearIndex > 0) {
-      spending *= 1 + economicYear.inflation;
+    if (economicYear.year !== year) {
+      throw new Error(
+        `Economic scenario year mismatch at index ${yearIndex}: ` + `expected ${year}, received ${economicYear.year}.`
+      );
     }
+    
+    if (yearIndex > 0) {
+      annualSpending *= 1 + economicYear.inflation;
+    }
+
+    const spending = annualSpending;
 
     if (alreadyReceivingBenefits) {
       if (yearIndex > 0) {
@@ -444,6 +462,7 @@ export function calculateRetirementProjection(
       }
     }
 
+    // January 1 balances.
     const startTradIra = tradIra;
     const startRothIra = rothIra;
     const startTaxableAcct = taxableAcct;
@@ -492,7 +511,7 @@ export function calculateRetirementProjection(
       throw new Error(`Missing RMD factor for age ${age}.`);
     }
 
-    const rmd = age >= rmdStartAge ? Math.min(startTradIra, startTradIra / rmdFactor) : 0;
+    const rmd = age >= rmdStartAge ? startTradIra / rmdFactor : 0;
 
     const requestedRothConversion =
       age < inputs.stopConvAge ? Math.min(configuredAnnualRothConv, Math.max(0, availableTradIra - rmd)) : 0;
@@ -563,6 +582,7 @@ export function calculateRetirementProjection(
     rothIra = existingRothFundsAvailable + rothConv - rothWithdraw;
     taxableAcct = Math.max(0, availableTaxableAcct + taxableAcctDeposit - taxableAcctWithdraw);
 
+    // December 31 balances
     const endPortfolio = tradIra + rothIra + taxableAcct;
     const unfundedNeed = Math.max(0, cashNeedAfterTaxable - rothWithdraw);
 
@@ -571,19 +591,15 @@ export function calculateRetirementProjection(
       year,
       spending,
       socialSecurity,
-
       startTradIra,
       startRothIra,
       startTaxableAcct,
-
       tradGrowth,
       rothGrowth,
-
       rmd,
       tradCashWithdraw,
       rothConv,
       traditionalDist,
-
       taxableSS,
       federalAgi,
       federalTaxableIncome,
@@ -591,16 +607,13 @@ export function calculateRetirementProjection(
       stateTaxableIncome,
       stateTax,
       totalTax,
-
       taxableAcctDeposit,
       taxableAcctWithdraw,
       rothWithdraw,
-
       endTradlIra: tradIra,
       endRothIra: rothIra,
       endTaxableAcct: taxableAcct,
       endPortfolio: endPortfolio,
-
       unfundedNeed
     });
   }
