@@ -530,6 +530,12 @@ export function PlannerInputsPanel({
               appropriate portion of the year’s growth.
             </p>
             <p>
+              The projection assumes the Traditional and Roth accounts are maintained at
+              the selected target allocation throughout the projection. Annual portfolio
+              returns are calculated by weighting each asset class return according to
+              that allocation.
+            </p>
+            <p>
               Taxable savings are modeled separately as a non-interest-bearing cash
               account. The portfolio allocation does not apply to that account.
             </p>

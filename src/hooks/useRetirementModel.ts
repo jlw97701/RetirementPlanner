@@ -63,7 +63,6 @@ export function useRetirementModel() {
     stateTaxConfig = taxConfig.state[0];
 
   // jlw - TO DO: Allow users to select the economic scenario method and parameters in the UI, and then pass those values to the EconomicScenarioEngine.
-  // jlw - TO DO: Allow users to enter investment return assumptions in the UI, and then pass those values to the EconomicScenarioEngine.
 
   const period = getProjectionPeriod(inputs.birthDate, inputs.startAge, inputs.endAge);
 
