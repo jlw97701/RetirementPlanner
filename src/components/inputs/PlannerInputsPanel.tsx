@@ -120,7 +120,46 @@ export function PlannerInputsPanel({
         <AccordionPanel
           title="Planner Inputs"
           icon={<Settings />}
-          info={`<h3>Planner Inputs</h3><p>Enter your personal information and financial assumptions. These inputs will be used to calculate your retirement projections.</p><p>This projection uses complete calendar years. The first period is January 1 through December 31, ${projectionStartYear}, the year you turn ${inputs.startAge}. Enter account balances as of January 1, ${projectionStartYear}. Annual spending is the amount expected for that complete calendar year.</p><p>This model factors in Required Minimum Distributions (RMDs). Information on RMDs can be found at <a href='https://www.irs.gov/retirement-plans/required-minimum-distributions-rmds' target='_blank' rel='noopener noreferrer'>https://www.irs.gov/retirement-plans/required-minimum-distributions-rmds</a>.</p><p>Inflation is calculated from the Consumer Price Index (CPI) by the Bureau of Labor Statistics. Information on historical inflation can be found at <a href='https://www.usinflationcalculator.com/inflation/historical-inflation-rates/' target='_blank' rel='noopener noreferrer'>https://www.usinflationcalculator.com/inflation/historical-inflation-rates/</a>.</p>`}
+          info={`
+            <h3>Planner Inputs</h3>
+            <p>
+              Enter the dates, ages, account balances, spending, and Roth conversion
+              assumptions used by the retirement projection.
+            </p>
+            <p>
+              The projection begins January 1, ${projectionStartYear}, the calendar year
+              in which you reach age ${inputs.startAge}. Enter your Traditional IRA,
+              Roth IRA, and taxable savings balances as of that date.
+            </p>
+            <p>
+              Each projection row represents a complete calendar year. Investment returns
+              are split around midyear cash flows. Spending, Social Security, taxes,
+              withdrawals, RMDs, and Roth conversions are modeled at midyear.
+            </p>
+            <p>
+              Annual spending is the amount expected during ${projectionStartYear}.
+              It increases in subsequent years using the entered inflation rate.
+            </p>
+            <p>
+              The withdrawal order is Traditional IRA, taxable savings, then Roth IRA.
+              Excess Social Security or mandatory RMD cash is deposited into taxable
+              savings, which is assumed to earn no interest.
+            </p>
+            <p>
+              “First Age With No Conversion” is the first age at which scheduled Roth
+              conversions stop. Conversions may occur only at earlier ages and are also
+              limited by the available Traditional IRA balance.
+            </p>
+            <p>
+              Required Minimum Distributions are calculated using the applicable starting
+              age and the January 1 Traditional IRA balance.
+              <a href="https://www.irs.gov/retirement-plans/required-minimum-distributions-rmds"
+                target="_blank"
+                rel="noopener noreferrer">
+                Learn more about RMDs from the IRS.
+              </a>
+            </p>
+          `}
           isOpen={expandedIndex === 0}
           onToggle={() => setSelectedPanel(0)}>
           <div className="input-row">
@@ -219,7 +258,47 @@ export function PlannerInputsPanel({
         <AccordionPanel
           title="SSI Inputs"
           icon={<Settings />}
-          info="<h3>Social Security Income</h3><p>Enter your expected Social Security income at each age. These values will be used to calculate your total income and taxes.</p><p>Claim-age scenarios assume twelve monthly payments during the calendar year in which the selected age is reached.</p><p>Current-dollar estimates are adjusted from the estimate year to each claiming year. Claim-year estimates are used exactly as entered.</p><p>If you are already receiving Social Security, enter the monthly benefit and the year that amount applies to. Claim-age estimates are ignored, and the scenarios compare Roth conversion strategies only.</p><p>Information on Social Security benefits can be found at <a href='https://www.ssa.gov/benefits/retirement/' target='_blank' rel='noopener noreferrer'>https://www.ssa.gov/benefits/retirement/</a>.</p><p>Note: The Social Security Administration (SSA) provides an online tool called the <a href='https://www.ssa.gov/myaccount/' target='_blank' rel='noopener noreferrer'>my Social Security</a> account, where you can view your estimated benefits based on your earnings history and expected retirement age.</p>"
+          info={`
+            <h3>Social Security Inputs</h3>
+            <p>
+              Select how the entered Social Security benefit amounts should be interpreted.
+              The selected method determines which scenarios are projected and how benefits
+              are adjusted over time.
+            </p>
+            <p>
+              <strong>Current Dollar Estimates</strong> treats the age-based amounts as
+              values from the selected estimate year. Each amount is adjusted to its
+              applicable claiming year before projected COLAs are applied.
+            </p>
+            <p>
+              <strong>Claim Year Estimates</strong> treats each age-based amount as the
+              monthly benefit payable in that specific claiming year. No estimate-year
+              adjustment is made.
+            </p>
+            <p>
+              Claim-age scenarios assume twelve monthly payments during the calendar year
+              in which the selected claiming age is reached.
+            </p>
+            <p>
+              <strong>Already Receiving Benefits</strong> uses the actual monthly payment
+              and benefit year entered below. Age-based estimates and claiming-age
+              comparisons are ignored, and the scenarios compare only Roth conversion
+              strategies.
+            </p>
+            <p>
+              For an existing benefit, enter the monthly amount that applied during the
+              selected benefit year. The projection applies subsequent COLAs through the
+              first projection year.
+            </p>
+            <p>
+              You can review your benefit estimates through
+              <a href="https://www.ssa.gov/myaccount/"
+                target="_blank"
+                rel="noopener noreferrer">
+                your my Social Security account.
+              </a>
+            </p>
+          `}
           isOpen={expandedIndex === 1}
           onToggle={() => setSelectedPanel(1)}>
           <Dropdown
@@ -310,7 +389,36 @@ export function PlannerInputsPanel({
         <AccordionPanel
           title="Projected COLA"
           icon={<Settings />}
-          info="<h3>Cost of Living Adjustment (COLA)</h3><p>Cost of Living Adjustment (COLA) is the annual increase in Social Security benefits to keep up with inflation. Current year calculations use the published COLA rate. For future years, you can choose a strategy for how to calculate the projected COLA.</p><p>Information on Social Security COLA can be found at <a href='https://www.ssa.gov/cola/' target='_blank' rel='noopener noreferrer'>https://www.ssa.gov/cola/</a>.</p>"
+          info={`
+            <h3>Projected Social Security COLA</h3>
+            <p>
+              Cost-of-Living Adjustments increase Social Security benefits over time.
+              Published COLA values are used when available. The selected strategy supplies
+              COLAs for future years that do not yet have a published rate.
+            </p>
+            <p>
+              <strong>Fixed Rate</strong> uses the entered rate for every future year.
+              <strong>Last Rate</strong> continues the most recent available rate.
+              <strong>Inflation Rate</strong> uses the planner’s general inflation
+              assumption.
+            </p>
+            <p>
+              <strong>Historical Average</strong> uses the average of the available
+              historical COLA values. <strong>Monte Carlo</strong> uses the generated COLA
+              assumption shown below.
+            </p>
+            <p>
+              COLAs affect Social Security benefits after payments begin. They do not
+              directly increase account balances or annual spending.
+            </p>
+            <p>
+              <a href="https://www.ssa.gov/cola/"
+                target="_blank"
+                rel="noopener noreferrer">
+                Learn more about COLAs from the Social Security Administration.
+              </a>
+            </p>
+          `}
           isOpen={expandedIndex === 2}
           onToggle={() => setSelectedPanel(2)}>
           <Dropdown
@@ -355,7 +463,29 @@ export function PlannerInputsPanel({
         <AccordionPanel
           title="Portfolio"
           icon={<Settings />}
-          info="<h3>Asset Allocation</h3><p>Portfolio asset allocation refers to the distribution of your investments across different asset classes, such as stocks, bonds, and cash. The allocation you choose can significantly impact your portfolio's risk and return profile.</p>"
+          info={`
+            <h3>Portfolio Asset Allocation</h3>
+            <p>
+              Enter the percentage of the invested portfolio allocated to stocks, bonds,
+              cash equivalents, and other investments. The four allocations must total
+              100%.
+            </p>
+            <p>
+              The same allocation and calculated return are applied to the Traditional
+              IRA and Roth IRA. Each annual return is divided into two compounded
+              half-year periods so that midyear withdrawals and conversions receive an
+              appropriate portion of the year’s growth.
+            </p>
+            <p>
+              Taxable savings are modeled separately as a non-interest-bearing cash
+              account. The portfolio allocation does not apply to that account.
+            </p>
+            <p>
+              The current projection uses deterministic return assumptions for each asset
+              class. These projections illustrate possible outcomes and do not guarantee
+              future investment performance.
+            </p>
+          `}
           isOpen={expandedIndex === 3}
           onToggle={() => setSelectedPanel(3)}>
           <NumberInput

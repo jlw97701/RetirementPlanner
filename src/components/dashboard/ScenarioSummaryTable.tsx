@@ -19,7 +19,24 @@ export function ScenarioSummaryTable({
     <CollapsiblePanel
       title="Scenario Summary"
       icon={<Summary />}
-      info="<h3>Scenario Summary</h3><p>Each projection row represents one complete calendar year. The first row begins January 1 of the calendar year in which the user reaches 'Start Age'. Account balances are January 1 balances. Spending, returns, Social Security, conversions, RMDs, and taxes are full-calendar-year amounts.</p>">
+      info={`
+        <h3>Scenario Summary</h3>
+        <p>
+          This table compares Social Security claiming and Roth conversion strategies. 
+          Portfolio values are shown at the selected horizon age and final projection age.
+        </p>
+        <p>
+          <strong>Nominal</strong> values are projected future account balances.
+        </p>
+        <p>
+          <strong>Start-Year $</strong> values show the same balances adjusted for inflation 
+          and expressed in the purchasing power of the first projection year.
+        </p>
+        <p>
+          The table also shows first-year Social Security, cumulative Social Security and taxes, 
+          and the age when the portfolio can no longer fully fund projected spending.
+        </p>
+      `}>
       <div className="table-container">
         <table className="sticky-table selectable">
           <thead>
@@ -30,8 +47,26 @@ export function ScenarioSummaryTable({
                   : 'Claim Age'}
               </th>
               <th>Roth</th>
-              <th>Age {inputs.horizonAge}</th>
-              <th>Age {inputs.endAge}</th>
+              <th>
+                Age {inputs.horizonAge}
+                <br />
+                Nominal
+              </th>
+              <th>
+                Age {inputs.horizonAge}
+                <br />
+                Start-Year $
+              </th>
+              <th>
+                Age {inputs.endAge}
+                <br />
+                Nominal
+              </th>
+              <th>
+                Age {inputs.endAge}
+                <br />
+                Start-Year $
+              </th>
               <th>First-Year SS</th>
               <th>SS to {inputs.horizonAge}</th>
               <th>Total taxes</th>
@@ -53,7 +88,9 @@ export function ScenarioSummaryTable({
                       : 'Aggressive'}
                 </td>
                 <td>{formatMoney(s.horizonPortfolioAge)}</td>
+                <td>{formatMoney(s.horizonPortfolioCurrentDollars)}</td>
                 <td>{formatMoney(s.endPortfolioAge)}</td>
+                <td>{formatMoney(s.endPortfolioCurrentDollars)}</td> 
                 <td>{formatMoney(s.firstAnnualSS)}</td>
                 <td>{formatMoney(s.totalSSToHorizon)}</td>
                 <td>{formatMoney(s.totalTaxes)}</td>

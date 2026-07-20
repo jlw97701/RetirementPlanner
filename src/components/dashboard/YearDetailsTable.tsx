@@ -8,14 +8,29 @@ export function YearDetailsTable({ rows }: { rows: RetirementYear[] }) {
     <CollapsiblePanel
       title="Year-By-Year Details"
       icon={<Table />}
-      info="<h3>Year-By-Year Details</h3><p>Each row represents January 1 through December 31. 'Age' is the age attained during that calendar year.</p>">
+      info={`
+        <h3>Year-By-Year Details</h3>
+        <p>
+          This table shows the annual cash flows and December 31 account balances for the selected scenario. 
+          Each row represents one complete calendar year, with the listed age being the age reached during that year.
+        </p>
+        <p>
+          It includes spending, Social Security, investment growth, RMDs, withdrawals, Roth conversions, taxes, and taxable savings activity. 
+          Account balances and annual amounts are shown in nominal dollars.
+        </p>
+        <p>
+          Investment returns are split around midyear cash flows, and taxable savings are assumed to earn no interest.
+        </p>
+        <p>
+          <strong>Unfunded Need</strong> is spending and tax expense that could not be covered by the available accounts.
+        </p>
+      `}>
       <div className="table-container">
         <table className="sticky-table">
           <thead>
             <tr>
               <th>Age</th>
               <th>Year</th>
-              {/* <th>Period</th> */}
               <th>Spending</th>
               <th>Social Sec</th>
               <th>Trad Dist</th>

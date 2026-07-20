@@ -14,10 +14,19 @@ export function summarizeRetirementScenario(
     claimAge: scenario.claimAge,
     rothConvType: scenario.rothConvType,
     firstAnnualSS: firstSSRow?.socialSecurity ?? 0,
+
     horizonPortfolioAge: horizon.endPortfolio,
+    horizonPortfolioCurrentDollars: horizon.endPortfolioCurrentDollars,
+
     endPortfolioAge: final.endPortfolio,
-    totalTaxes: rows.reduce((s, r) => s + r.totalTax, 0),
-    totalSSToHorizon: rows.filter((r) => r.age <= inputs.horizonAge).reduce((s, r) => s + r.socialSecurity, 0),
-    depletionAge: rows.find((r) => r.endPortfolio <= 1 && r.unfundedNeed > 0)?.age ?? null
+    endPortfolioCurrentDollars: final.endPortfolioCurrentDollars,
+
+    totalTaxes: rows.reduce((sum, row) => sum + row.totalTax, 0),
+
+    totalSSToHorizon: rows
+      .filter((row) => row.age <= inputs.horizonAge)
+      .reduce((sum, row) => sum + row.socialSecurity, 0),
+
+    depletionAge: rows.find((row) => row.endPortfolio <= 1 && row.unfundedNeed > 0)?.age ?? null
   };
 }

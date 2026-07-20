@@ -25,8 +25,11 @@ import { getBirthYear, getProjectionPeriod } from '../utils/projectionDates';
  * - Initial balances are January 1 balances.
  * - Ending balances are December 31 balances.
  * - Age is the age attained during the calendar year.
- * - Spending, Social Security, conversions, RMDs, and
- *   investment returns are modeled as full-year amounts.
+ * - Investment returns are split into two compounded
+ *   half-year periods.
+ * - Annual income, spending, taxes, withdrawals, RMDs,
+ *   and conversions are modeled at midyear.
+ * - Taxable cash is non-interest-bearing.
  */
 
 const WITHDRAWAL_TOLERANCE = 0.01;
@@ -288,6 +291,14 @@ function calculatePortfolioReturn(economicYear: EconomicYear, allocation: AssetA
   return portfolioReturn;
 }
 
+function annualToHalfYearReturn(annualReturn: number): number {
+  if (!Number.isFinite(annualReturn) || annualReturn < -1) {
+    throw new Error('Annual return must be finite and cannot be below -100%.');
+  }
+
+  return Math.sqrt(1 + annualReturn) - 1;
+}
+
 export function calculateRetirementProjection(
   inputs: PlannerInputs,
   ssIncome: SSMonthlyIncome[],
@@ -339,31 +350,6 @@ export function calculateRetirementProjection(
   }
 
   // Init Social Security
-  // let annualSpending = inputs.annualSpend;
-  // let socialSecurity = 0;
-
-  // // Adjust SS benefits to current dollar estimates
-  // // baseAnnualSS is the annual nominal Social Security benefit in the hypothetical claiming year
-  // const monthlyAtClaimAge = ssIncome.find((item) => item.age === retirementScenario.claimAge)?.amount ?? 0;
-
-  // const claimYear = birthYear + retirementScenario.claimAge;
-
-  // let baseAnnualSS = monthlyAtClaimAge * 12;
-
-  // if (inputs.ssBenefitValueType === SSBenefitValueType.CurrentDollars) {
-  //   baseAnnualSS = convertCurrentDollarsToYear(baseAnnualSS, inputs.ssEstimateYear, claimYear, colaSettings, inputs);
-  // }
-
-  // // Initialize the benefit through the projection start age
-  // if (inputs.startAge >= retirementScenario.claimAge) {
-  //   socialSecurity = baseAnnualSS;
-
-  //   for (let benefitAge = retirementScenario.claimAge + 1; benefitAge <= inputs.startAge; benefitAge++) {
-  //     const benefitYear = birthYear + benefitAge;
-  //     const cola = getAnnualSSCola(benefitYear, colaSettings, inputs);
-  //     socialSecurity *= 1 + cola;
-  //   }
-  // }
   let socialSecurity = 0;
   let baseAnnualSS = 0;
 
@@ -415,7 +401,6 @@ export function calculateRetirementProjection(
     }
   }
 
-  // Update benefits inside the annual loop
   const claimAge = alreadyReceivingBenefits ? null : retirementScenario.claimAge;
 
   if (!alreadyReceivingBenefits && claimAge === null) {
@@ -423,7 +408,9 @@ export function calculateRetirementProjection(
   }
 
   let annualSpending = inputs.annualSpend;
+  let inflationIndex = 1;
 
+  // Update benefits inside the annual loop
   for (let age = inputs.startAge; age <= inputs.endAge; age++) {
     // The age value is the age attained during this calendar year.
     // It does not necessarily mean the person is already that age on January 1.
@@ -441,9 +428,11 @@ export function calculateRetirementProjection(
         `Economic scenario year mismatch at index ${yearIndex}: ` + `expected ${year}, received ${economicYear.year}.`
       );
     }
-    
+
     if (yearIndex > 0) {
-      annualSpending *= 1 + economicYear.inflation;
+      const annualInflationFactor = 1 + economicYear.inflation;
+      annualSpending *= annualInflationFactor;
+      inflationIndex *= annualInflationFactor;
     }
 
     const spending = annualSpending;
@@ -462,49 +451,25 @@ export function calculateRetirementProjection(
       }
     }
 
-    // January 1 balances.
     const startTradIra = tradIra;
     const startRothIra = rothIra;
     const startTaxableAcct = taxableAcct;
 
     const portfolioReturn = calculatePortfolioReturn(economicYear, assetAllocation);
+    const halfYearReturn = annualToHalfYearReturn(portfolioReturn);
 
     /*
-     * This model applies the annual return before distributions.
-     * A production model could instead support monthly cash flows or
-     * configurable beginning/middle/end-of-year timing.
+     * First-half investment growth.
      */
+    const firstHalfTradGrowth = startTradIra * halfYearReturn;
+    const tradIraAtMidyear = Math.max(0, startTradIra + firstHalfTradGrowth);
+    const firstHalfRothGrowth = startRothIra * halfYearReturn;
+    const rothIraAtMidyear = Math.max(0, startRothIra + firstHalfRothGrowth);
+    const availableTaxableAcct = startTaxableAcct;
 
     /*
-      jlw - TO DO: Full-year growth before withdrawals remains optimistic
-      
-      The engine currently applies a full annual return to the entire starting balance before any spending withdrawals:
-      const tradGrowth = startTradIra * portfolioReturn;
-
-      That assumes all withdrawals occur at year-end. A midpoint approximation would be more neutral, but it requires calculating cash flows before finalizing growth.
-      
-      A simpler initial approach is to expose timing:
-      type CashFlowTiming = 'beginning' | 'midyear' | 'end';
-
-      ***Or use a monthly engine. For a long retirement projection, sequence and withdrawal timing can significantly affect depletion age.  
-      
-      A monthly projection is better, but midpoint timing is a meaningful improvement without greatly increasing complexity:
-      const growth = startTradIra * portfolioReturn - 0.5 * netAnnualOutflow * annualReturn;
-
-      Or, a simpler approximation:
-      const estimatedTradOutflow = estimatedCashWithdrawal + requestedRothConversion;
-      const averageTradBalance = Math.max(0, startTradIra - estimatedTradOutflow / 2);
-      const tradGrowth = averageTradBalance * portfolioReturn;
-    */
-
-    const tradGrowth = startTradIra * portfolioReturn;
-    const availableTradIra = Math.max(0, startTradIra + tradGrowth);
-
-    const rothGrowth = startRothIra * portfolioReturn;
-    const availableRothIra = Math.max(0, startRothIra + rothGrowth);
-
-    const availableTaxableAcct = startTaxableAcct; // Assumes a non-interest-bearing account
-
+     * RMD remains based on the January 1 balance.
+     */
     const rmdFactor = RMD_FACTORS[age];
 
     if (age >= rmdStartAge && rmdFactor === undefined) {
@@ -513,12 +478,15 @@ export function calculateRetirementProjection(
 
     const rmd = age >= rmdStartAge ? startTradIra / rmdFactor : 0;
 
+    /*
+     * Conversions and withdrawals occur at midyear.
+     */
     const requestedRothConversion =
-      age < inputs.stopConvAge ? Math.min(configuredAnnualRothConv, Math.max(0, availableTradIra - rmd)) : 0;
+      age < inputs.stopConvAge ? Math.min(configuredAnnualRothConv, Math.max(0, tradIraAtMidyear - rmd)) : 0;
 
     const withdrawalSolution = solveTraditionalWithdrawal(
       age,
-      availableTradIra,
+      tradIraAtMidyear,
       requestedRothConversion,
       rmd,
       spending,
@@ -540,55 +508,55 @@ export function calculateRetirementProjection(
       cashSurplus
     } = withdrawalSolution;
 
-    /*
-     * Preserve excess Social Security or mandatory traditional
-     * distributions in the non-interest-bearing taxable cash account.
-     */
     const taxableAcctDeposit = Math.max(0, cashSurplus);
-
-    /*
-     * Traditional withdrawals retain first priority. Taxable cash is used
-     * only when the traditional-withdrawal solver cannot cover the entire
-     * spending and tax requirement.
-     */
     const cashNeedAfterTraditional = Math.max(0, -cashSurplus);
+
     const taxableAcctWithdraw = Math.min(availableTaxableAcct, cashNeedAfterTraditional);
+
     const cashNeedAfterTaxable = cashNeedAfterTraditional - taxableAcctWithdraw;
 
     /*
-     * The conversion is added to the Roth balance before any Roth
-     * withdrawal is taken. This matches the behavior of the original
-     * implementation, but a more detailed model may need to enforce
-     * Roth conversion seasoning rules and distinguish contributions,
-     * conversions, and earnings.
+     * Same-year conversions cannot fund spending.
      */
-
-    /*
-      A Roth conversion made during the year can immediately fund that same year’s spending. 
-      This can make the conversion scenarios behave unexpectedly, especially when the traditional account is nearly depleted.
-
-      Whether converted principal is legally or strategically available depends on age and Roth holding-period details, 
-      but excluding same-year conversions from spendable funds is the safer planning assumption.
-    */
-    // Track converted funds separately
-    const existingRothFundsAvailable = availableRothIra;
+    const existingRothFundsAvailable = rothIraAtMidyear;
     const rothWithdraw = Math.min(existingRothFundsAvailable, cashNeedAfterTaxable);
 
-    //const rothFundsAvailable = availableRothIra + rothConv;
-    //const rothWithdraw = Math.min(rothFundsAvailable, cashNeedAfterTaxable);
+    /*
+     * Midyear balances after cash flows.
+     */
+    const tradIraAfterCashFlows = Math.max(0, tradIraAtMidyear - traditionalDist);
+    const rothIraAfterCashFlows = Math.max(0, rothIraAtMidyear - rothWithdraw + rothConv);
+    const taxableAcctAfterCashFlows = Math.max(0, availableTaxableAcct + taxableAcctDeposit - taxableAcctWithdraw);
 
-    tradIra = Math.max(0, availableTradIra - traditionalDist);
-    //rothIra = Math.max(0, rothFundsAvailable - rothWithdraw);
-    rothIra = existingRothFundsAvailable + rothConv - rothWithdraw;
-    taxableAcct = Math.max(0, availableTaxableAcct + taxableAcctDeposit - taxableAcctWithdraw);
+    /*
+     * Second-half investment growth.
+     */
+    const secondHalfTradGrowth = tradIraAfterCashFlows * halfYearReturn;
+    const secondHalfRothGrowth = rothIraAfterCashFlows * halfYearReturn;
 
-    // December 31 balances
-    const endPortfolio = tradIra + rothIra + taxableAcct;
+    const endTradlIra = Math.max(0, tradIraAfterCashFlows + secondHalfTradGrowth);
+    const endRothIra = Math.max(0, rothIraAfterCashFlows + secondHalfRothGrowth);
+    const endTaxableAcct = taxableAcctAfterCashFlows;
+
+    const tradGrowth = firstHalfTradGrowth + secondHalfTradGrowth;
+    const rothGrowth = firstHalfRothGrowth + secondHalfRothGrowth;
+    const endPortfolio = endTradlIra + endRothIra + endTaxableAcct;
+    const endPortfolioCurrentDollars = endPortfolio / inflationIndex;
+
     const unfundedNeed = Math.max(0, cashNeedAfterTaxable - rothWithdraw);
+
+    /*
+     * Carry December 31 balances into the following
+     * year's January 1 balances.
+     */
+    tradIra = endTradlIra;
+    rothIra = endRothIra;
+    taxableAcct = endTaxableAcct;
 
     years.push({
       age,
       year,
+      inflationIndex,
       spending,
       socialSecurity,
       startTradIra,
@@ -610,10 +578,11 @@ export function calculateRetirementProjection(
       taxableAcctDeposit,
       taxableAcctWithdraw,
       rothWithdraw,
-      endTradlIra: tradIra,
-      endRothIra: rothIra,
-      endTaxableAcct: taxableAcct,
-      endPortfolio: endPortfolio,
+      endTradlIra,
+      endRothIra,
+      endTaxableAcct,
+      endPortfolio,
+      endPortfolioCurrentDollars,
       unfundedNeed
     });
   }

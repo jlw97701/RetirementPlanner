@@ -74,6 +74,7 @@ export interface RetirementScenario {
 export interface RetirementYear {
   age: number;
   year: number;
+  inflationIndex: number; // Cumulative inflation relative to the first projection year. The first year is 1
 
   spending: number;
   socialSecurity: number;
@@ -106,6 +107,7 @@ export interface RetirementYear {
   endRothIra: number;
   endTaxableAcct: number;
   endPortfolio: number;
+  endPortfolioCurrentDollars: number; // Ending portfolio expressed in first-projection-year purchasing power (inflation adjusted)
 
   unfundedNeed: number;
 }
@@ -115,8 +117,15 @@ export interface ScenarioSummary {
   claimAge: SSClaimAge | null;
   rothConvType: RothConversionType;
   firstAnnualSS: number;
+
+  //Existing fields are nominal future dollars
   horizonPortfolioAge: number;
   endPortfolioAge: number;
+
+  //Values expressed in first-projection-year dollars (inflation adjusted)
+  horizonPortfolioCurrentDollars: number;
+  endPortfolioCurrentDollars: number;
+
   totalTaxes: number;
   totalSSToHorizon: number;
   depletionAge: number | null;

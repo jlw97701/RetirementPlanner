@@ -10,8 +10,8 @@ import {
   type SSColaSettings,
   type SSMonthlyIncome
 } from '../models/RetirementTypes';
-import { EconomicScenarioMethod, type EconomicScenario } from './EconomicScenarioEngine';
-import { calculateRetirementProjection } from './RetirementEngine';
+import { EconomicScenarioMethod, type EconomicScenario } from '../services/EconomicScenarioEngine';
+import { calculateRetirementProjection } from '../services/RetirementEngine';
 
 describe('calculateRetirementProjection', () => {
   function createTestProjection(inputOverrides: Partial<PlannerInputs> = {}) {
@@ -103,53 +103,7 @@ describe('calculateRetirementProjection', () => {
       }
     );
   }
-  /*
-    This tests fails as expected with the shared fixture: it sets annualSpend: 3_000. The $2,032.52 RMD is not enough to cover spending, 
-    so the solver correctly increases the traditional cash withdrawal to about $3,012.72.
-    The scenario has no excess RMD cash to deposit. Give the RMD-surplus test its own annualSpend: 0 override.  
-  */
-  test('deposits excess RMD cash into taxable cash', () => {
-    /*
-     * Age 75 has an RMD factor of 24.6. A $50,000 traditional
-     * balance produces an RMD of approximately $2,032.52.
-     *
-     * With no spending, Social Security, growth, or tax, that
-     * entire distribution should move into taxable cash.
-     */
-    const rows = createTestProjection({
-      startAge: 75,
-      endAge: 75,
-      horizonAge: 75,
-      annualSpend: 0
-    });
 
-    const row = rows[0];
-    const expectedRmd = 50_000 / 24.6;
-
-    expect(row.rmd).toBeCloseTo(expectedRmd, 2);
-    expect(row.tradCashWithdraw).toBeCloseTo(expectedRmd, 2);
-
-    /*
-     * This RMD is below both configured standard deductions,
-     * so the test expects no income tax.
-     */
-    expect(row.totalTax).toBeCloseTo(0, 2);
-
-    expect(row.startTaxableAcct).toBe(10_000);
-    expect(row.taxableAcctDeposit).toBeCloseTo(expectedRmd, 2);
-    expect(row.taxableAcctWithdraw).toBe(0);
-    expect(row.endTaxableAcct).toBeCloseTo(10_000 + expectedRmd, 2);
-
-    expect(row.endTradlIra).toBeCloseTo(50_000 - expectedRmd, 2);
-
-    /*
-     * Moving money from traditional IRA to taxable cash should
-     * not change total portfolio value when there are no taxes,
-     * spending, or investment returns.
-     */
-    expect(row.endPortfolio).toBeCloseTo(60_000, 2);
-    expect(row.unfundedNeed).toBe(0);
-  });
   /* 
     This test creates no spending, so the RMD is genuinely surplus and must move into taxable cash.
   */
@@ -182,6 +136,7 @@ describe('calculateRetirementProjection', () => {
     expect(row.endPortfolio).toBeCloseTo(65_000, 2);
     expect(row.unfundedNeed).toBe(0);
   });
+
   /* 
     This test includes spending and verifies that all annual sources, uses, and account balances reconcile.
   */
@@ -201,5 +156,57 @@ describe('calculateRetirementProjection', () => {
 
       expect(row.endPortfolio).toBeCloseTo(row.endTradlIra + row.endRothIra + row.endTaxableAcct, 2);
     }
+  });
+
+  test('carries ending balances into the following year', () => {
+    const rows = createTestProjection();
+
+    expect(rows.length).toBeGreaterThan(1);
+
+    for (let index = 1; index < rows.length; index++) {
+      const previous = rows[index - 1];
+      const current = rows[index];
+
+      expect(current.startTradIra).toBeCloseTo(previous.endTradlIra, 2);
+
+      expect(current.startRothIra).toBeCloseTo(previous.endRothIra, 2);
+
+      expect(current.startTaxableAcct).toBeCloseTo(previous.endTaxableAcct, 2);
+    }
+  });
+
+  test('reconciles annual account balances', () => {
+    const rows = createTestProjection();
+
+    for (const row of rows) {
+      expect(row.endTradlIra).toBeCloseTo(row.startTradIra + row.tradGrowth - row.traditionalDist, 2);
+
+      expect(row.endRothIra).toBeCloseTo(row.startRothIra + row.rothGrowth + row.rothConv - row.rothWithdraw, 2);
+
+      expect(row.endTaxableAcct).toBeCloseTo(
+        row.startTaxableAcct + row.taxableAcctDeposit - row.taxableAcctWithdraw,
+        2
+      );
+
+      expect(row.endPortfolio).toBeCloseTo(row.endTradlIra + row.endRothIra + row.endTaxableAcct, 2);
+    }
+  });
+
+  test('reports ending portfolio in start-year dollars', () => {
+    const rows = createTestProjection();
+
+    /*
+     * Override the fixture's second economic
+     * year inflation to 10%, or extend the helper
+     * to accept economic scenario overrides.
+     */
+
+    expect(rows[0].inflationIndex).toBeCloseTo(1, 8);
+
+    expect(rows[0].endPortfolioCurrentDollars).toBeCloseTo(rows[0].endPortfolio, 2);
+
+    expect(rows[1].inflationIndex).toBeCloseTo(1.1, 8);
+
+    expect(rows[1].endPortfolioCurrentDollars).toBeCloseTo(rows[1].endPortfolio / 1.1, 2);
   });
 });
