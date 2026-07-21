@@ -53,15 +53,15 @@ export function ScenarioChart({ rows, scenario }: { rows: RetirementYear[]; scen
             formatter={(v) => formatMoney(Number(v))}
             itemSorter={(item) => customOrder.indexOf(item.dataKey as string)}
           />
-          <Legend itemSorter={(item) => customOrder.indexOf(item.dataKey as string)} />
-          <Line type="monotone" dataKey="Traditional" stroke="#108533" strokeWidth={2} dot={false} />
-          <Line type="monotone" dataKey="Roth" stroke="#bd6931" strokeWidth={2} dot={false} />
-          <Line type="monotone" dataKey="Savings" stroke="#803d71" strokeWidth={2} dot={false} />
+          <Legend iconType="plainline" itemSorter={(item) => customOrder.indexOf(item.dataKey as string)} />
+          <Line type="monotone" dataKey="Traditional" stroke="#28b352" strokeWidth={2} dot={false} />
+          <Line type="monotone" dataKey="Roth" stroke="#bd9831" strokeWidth={2} dot={false} />
+          <Line type="monotone" dataKey="Savings" stroke="#a771d4" strokeWidth={2} dot={false} />
           <Line type="monotone" dataKey="Total Nominal" stroke="#3182bd" strokeWidth={3} dot={false} />
           <Line
             type="monotone"
             dataKey="Total Start-Year $"
-            stroke="#2ba2a7"
+            stroke="#43bfc4"
             strokeWidth={3}
             strokeDasharray="6 4"
             dot={false}

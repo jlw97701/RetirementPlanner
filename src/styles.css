@@ -565,7 +565,7 @@ tr:hover td {
 }
 
 .table-container {
-  max-height: 400px;
+  max-height: 395px;
   overflow-y: auto;
   .sticky-table {
     th {
