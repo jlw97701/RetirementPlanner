@@ -1,6 +1,7 @@
 import { COLA_HISTORY } from '../data/colaHistory';
 import type { EconomicScenarioSettings } from '../models/EconomicScenarioSettings';
-import type { PlannerInputs, SSColaSettings } from '../models/RetirementTypes';
+import type { AssetAllocation, PlannerInputs, SSColaSettings } from '../models/RetirementTypes';
+import { calculateDeterministicMarketReturns } from '../data/deterministicMarketProfiles';
 import {
   EconomicScenarioEngine,
   EconomicScenarioMethod,
@@ -15,22 +16,39 @@ export function createEconomicScenario(
   colaSettings: SSColaSettings,
   startYear: number,
   years: number,
-  historicalData: readonly HistoricalEconomicYear[]
+  historicalData: readonly HistoricalEconomicYear[],
+  assetAllocation: AssetAllocation
 ): EconomicScenario {
   const engine = new EconomicScenarioEngine();
 
   switch (settings.method) {
     case EconomicScenarioMethod.DETERMINISTIC:
+      const deterministicReturns =
+        settings.deterministic.profile === 'custom-market'
+          ? settings.deterministic
+          : (() => {
+              const portfolioReturn = calculateDeterministicMarketReturns(
+                historicalData,
+                assetAllocation,
+                settings.deterministic.rollingPeriod
+              )[settings.deterministic.profile];
+              return {
+                stockReturn: portfolioReturn,
+                bondReturn: portfolioReturn,
+                cashReturn: portfolioReturn,
+                otherReturn: portfolioReturn
+              };
+            })();
       return engine.generate({
         method: EconomicScenarioMethod.DETERMINISTIC,
         startYear,
         years,
         inflation: inputs.inflation,
         socialSecurityCola: projectFutureCOLA(colaSettings, inputs),
-        stockReturn: settings.deterministic.stockReturn,
-        bondReturn: settings.deterministic.bondReturn,
-        cashReturn: settings.deterministic.cashReturn,
-        otherReturn: settings.deterministic.otherReturn,
+        stockReturn: deterministicReturns.stockReturn,
+        bondReturn: deterministicReturns.bondReturn,
+        cashReturn: deterministicReturns.cashReturn,
+        otherReturn: deterministicReturns.otherReturn,
         knownSocialSecurityColas: COLA_HISTORY
       });
 

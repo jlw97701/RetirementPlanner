@@ -105,9 +105,10 @@ export function useRetirementModel() {
       colaSettings,
       period.startYear,
       period.yearCount,
-      HISTORICAL_ECONOMIC_DATA
+      HISTORICAL_ECONOMIC_DATA,
+      assetAllocation
     );
-  }, [economicScenarioSettings, inputs, colaSettings, period.startYear, period.yearCount]);
+  }, [economicScenarioSettings, inputs, colaSettings, period.startYear, period.yearCount, assetAllocation]);
 
   const projections = useMemo(
     () =>

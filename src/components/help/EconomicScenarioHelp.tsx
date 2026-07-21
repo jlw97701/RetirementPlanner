@@ -27,8 +27,16 @@ export function EconomicScenarioHelp() {
         <section>
           <h3>Deterministic</h3>
           <p>
-            A deterministic scenario applies the entered stock, bond, cash, and other returns every year. The planner's
-            inflation input controls annual spending inflation.
+            The three predefined profiles are calculated from rolling 10- or 20-year annualized portfolio returns in
+            the 1975–2025 historical dataset. Each historical year is weighted using the selected asset allocation,
+            the window's returns are compounded and annualized, and the resulting windows form a distribution.
+            Significantly Below Average uses its 10th percentile as a severe stress test; Below Average, Average, and
+            Above Average use its 25th, 50th, and 75th percentiles, respectively.
+          </p>
+          <p>
+            The selected portfolio-level rate is then applied every projection year. Custom Market instead lets you
+            enter separate stock, bond, cash, and Other assumptions. The planner's inflation input controls annual
+            spending inflation for either approach.
           </p>
           <p>Use deterministic scenarios to establish a baseline and run controlled stress tests:</p>
           <div className="help-table-container">
@@ -41,22 +49,29 @@ export function EconomicScenarioHelp() {
               </thead>
               <tbody>
                 <tr>
-                  <td>Baseline</td>
-                  <td>Enter reasonable long-term assumptions to create an understandable reference result.</td>
+                  <td>Significantly Below Avg Market</td>
+                  <td>Uses the 10th-percentile return to test prolonged, unusually weak portfolio performance.</td>
                 </tr>
                 <tr>
-                  <td>Conservative</td>
-                  <td>Use lower returns and higher inflation to test whether essential spending remains funded.</td>
+                  <td>Average Market</td>
+                  <td>Uses the baseline long-term return assumptions to create an understandable reference result.</td>
                 </tr>
                 <tr>
-                  <td>Favorable</td>
-                  <td>Use stronger returns or lower inflation to understand the plan's upside range.</td>
+                  <td>Below Average Market</td>
+                  <td>Uses lower returns to test whether essential spending remains funded.</td>
+                </tr>
+                <tr>
+                  <td>Above Average Market</td>
+                  <td>Uses stronger returns to illustrate the plan's upside range.</td>
                 </tr>
               </tbody>
             </table>
           </div>
           <p className="help-callout">
-            Limitation: steady annual returns do not capture market volatility or the timing of gains and losses.
+            Limitation: overlapping rolling periods are not independent observations, and steady annual returns do
+            not capture market volatility or the timing of gains and losses. These historical percentiles are planning
+            assumptions, not forecasts or confidence intervals. Significantly Below Average is not a prediction of a
+            particular recession.
           </p>
         </section>
 
@@ -144,8 +159,8 @@ export function EconomicScenarioHelp() {
           <h3>Recommended workflow</h3>
           <ol>
             <li>Verify balances, spending, Social Security, allocation, conversion amounts, and projection ages.</li>
-            <li>Run a baseline deterministic scenario.</li>
-            <li>Run a conservative deterministic scenario with weaker returns and higher inflation.</li>
+            <li>Run the Average Market deterministic profile as a baseline.</li>
+            <li>Run the Below Average Market profile and test a higher inflation input.</li>
             <li>Run several single simulated paths using predetermined seeds.</li>
             <li>Keep the same scenario and seed when comparing claiming or Roth-conversion strategies.</li>
             <li>Look for results that remain workable across unfavorable conditions, not only the best result.</li>

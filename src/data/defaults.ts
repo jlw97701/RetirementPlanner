@@ -68,6 +68,8 @@ export const DEFAULT_ASSET_ALLOCATION: AssetAllocation = {
 export const DEFAULT_ECONOMIC_SCENARIO_SETTINGS: EconomicScenarioSettings = {
   method: EconomicScenarioMethod.DETERMINISTIC,
   deterministic: {
+    profile: 'average',
+    rollingPeriod: 20,
     stockReturn: 0.07,
     bondReturn: 0.035,
     cashReturn: 0.025,

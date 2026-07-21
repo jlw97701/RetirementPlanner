@@ -32,6 +32,12 @@ import { loadAssetAllocationPreferences, saveAssetAllocationPreferences } from '
 import type { EconomicScenarioSettings } from '../../models/EconomicScenarioSettings';
 import { EconomicScenarioMethod } from '../../services/EconomicScenarioEngine';
 import { HISTORICAL_ECONOMIC_DATA } from '../../data/historicalEconomicData';
+import {
+  calculateDeterministicMarketReturns,
+  DETERMINISTIC_MARKET_PROFILES,
+  type DeterministicMarketProfileId,
+  type RollingReturnPeriod
+} from '../../data/deterministicMarketProfiles';
 
 interface InputsInterface {
   inputs: PlannerInputs;
@@ -192,10 +198,34 @@ export function PlannerInputsPanel({
       index + projectionYearCount <= HISTORICAL_ECONOMIC_DATA.length
   ).map((item) => ({ value: item.year, label: String(item.year) }));
 
-  const updateDeterministicReturn = (key: keyof EconomicScenarioSettings['deterministic'], value: number) => {
+  const selectDeterministicMarketProfile = (value: string | number) => {
     setEconomicScenarioSettings({
       ...economicScenarioSettings,
-      deterministic: { ...economicScenarioSettings.deterministic, [key]: value }
+      deterministic: {
+        ...economicScenarioSettings.deterministic,
+        profile: String(value) as DeterministicMarketProfileId
+      }
+    });
+  };
+
+  const deterministicPortfolioReturns = calculateDeterministicMarketReturns(
+    HISTORICAL_ECONOMIC_DATA,
+    assetAllocation,
+    economicScenarioSettings.deterministic.rollingPeriod
+  );
+  const selectedCalculatedReturn =
+    economicScenarioSettings.deterministic.profile === 'custom-market'
+      ? null
+      : deterministicPortfolioReturns[economicScenarioSettings.deterministic.profile];
+
+  const updateCustomMarketReturn = (
+    key: 'stockReturn' | 'bondReturn' | 'cashReturn' | 'otherReturn',
+    percent: number
+  ) => {
+    const normalizedPercent = key === 'otherReturn' ? Math.round(percent * 10) / 10 : percent;
+    setEconomicScenarioSettings({
+      ...economicScenarioSettings,
+      deterministic: { ...economicScenarioSettings.deterministic, [key]: normalizedPercent / 100 }
     });
   };
 
@@ -680,8 +710,10 @@ export function PlannerInputsPanel({
               No scenario predicts the future or guarantees a particular result.
             </p>
             <p>
-              <strong>Deterministic</strong> applies the same assumptions every year, making it useful for
-              baseline projections and direct strategy comparisons.
+              <strong>Deterministic</strong> applies the selected market return every year. Significantly Below
+              Average is a 10th-percentile stress test; Below Average, Average, and Above Average use the 25th, 50th,
+              and 75th percentiles of rolling annualized historical portfolio returns for the selected asset
+              allocation. Custom Market accepts your own asset-class assumptions.
             </p>
             <p>
               <strong>Single Simulated Path</strong> generates one repeatable sequence of variable annual results.
@@ -715,38 +747,68 @@ export function PlannerInputsPanel({
 
           {economicScenarioSettings.method === EconomicScenarioMethod.DETERMINISTIC && (
             <>
-              <NumberInput
-                label="Stock Return"
-                value={economicScenarioSettings.deterministic.stockReturn}
-                min={-1}
-                max={1}
-                step={0.001}
-                onChange={(value) => updateDeterministicReturn('stockReturn', value)}
+              <Dropdown
+                label="Market Assumption"
+                options={DETERMINISTIC_MARKET_PROFILES.map((profile) => ({
+                  value: profile.id,
+                  label: profile.label
+                }))}
+                selectedValue={economicScenarioSettings.deterministic.profile}
+                onChange={selectDeterministicMarketProfile}
               />
-              <NumberInput
-                label="Bond Return"
-                value={economicScenarioSettings.deterministic.bondReturn}
-                min={-1}
-                max={1}
-                step={0.001}
-                onChange={(value) => updateDeterministicReturn('bondReturn', value)}
-              />
-              <NumberInput
-                label="Cash Return"
-                value={economicScenarioSettings.deterministic.cashReturn}
-                min={-1}
-                max={1}
-                step={0.001}
-                onChange={(value) => updateDeterministicReturn('cashReturn', value)}
-              />
-              <NumberInput
-                label="Other Return"
-                value={economicScenarioSettings.deterministic.otherReturn}
-                min={-1}
-                max={1}
-                step={0.001}
-                onChange={(value) => updateDeterministicReturn('otherReturn', value)}
-              />
+              {economicScenarioSettings.deterministic.profile !== 'custom-market' && (
+                <>
+                  <Dropdown
+                    label="Rolling Return Period"
+                    options={[
+                      { value: 10, label: '10 Years' },
+                      { value: 20, label: '20 Years' }
+                    ]}
+                    selectedValue={economicScenarioSettings.deterministic.rollingPeriod}
+                    onChange={(rollingPeriod) =>
+                      setEconomicScenarioSettings({
+                        ...economicScenarioSettings,
+                        deterministic: {
+                          ...economicScenarioSettings.deterministic,
+                          rollingPeriod: Number(rollingPeriod) as RollingReturnPeriod
+                        }
+                      })
+                    }
+                  />
+                  <div className="allocation-summary">
+                    <span>Annualized portfolio return: {((selectedCalculatedReturn ?? 0) * 100).toFixed(2)}%</span>
+                    <span>
+                      Based on {economicScenarioSettings.deterministic.rollingPeriod}-year rolling periods from 1975–2025
+                    </span>
+                  </div>
+                </>
+              )}
+              {economicScenarioSettings.deterministic.profile === 'custom-market' && (
+                <>
+                  {(
+                    [
+                      ['stockReturn', 'Stock Return (%)'],
+                      ['bondReturn', 'Bond Return (%)'],
+                      ['cashReturn', 'Cash Return (%)'],
+                      ['otherReturn', 'Other Return (%)']
+                    ] as const
+                  ).map(([key, label]) => (
+                    <NumberInput
+                      key={key}
+                      label={label}
+                      value={
+                        key === 'otherReturn'
+                          ? Number((economicScenarioSettings.deterministic[key] * 100).toFixed(1))
+                          : economicScenarioSettings.deterministic[key] * 100
+                      }
+                      min={-100}
+                      max={100}
+                      step={0.1}
+                      onChange={(value) => updateCustomMarketReturn(key, value)}
+                    />
+                  ))}
+                </>
+              )}
             </>
           )}
 
