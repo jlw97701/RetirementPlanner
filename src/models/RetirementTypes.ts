@@ -17,6 +17,11 @@ export enum SSBenefitValueType {
   ClaimYearDollars,
   ActualCurrentBenefit
 }
+
+export enum MedicareModelType {
+  SimpleDeterministic,
+  Custom
+}
 export type SSClaimAge = 62 | 63 | 64 | 65 | 66 | 67 | 68 | 69 | 70;
 
 export interface PlannerInputs {
@@ -31,6 +36,11 @@ export interface PlannerInputs {
   rothIra: number;
   taxableAcct: number;
   annualSpend: number;
+  medicareModel: MedicareModelType;
+  annualSpendingIncludesHealthcare: boolean;
+  medicareStartAge: number;
+  monthlyPartDOtherPremium: number;
+  annualOutOfPocketHealthcare: number;
   rothBaseConv: number;
   rothAggressiveConv: number;
   inflation: number;
@@ -66,10 +76,7 @@ export interface AssetAllocation {
 
 export interface RetirementScenario {
   id: string;
-  /*
-   * Null means the user is already receiving an actual benefit.
-   */
-  claimAge: SSClaimAge | null;
+  claimAge: SSClaimAge | null; // Null means the user is already receiving an actual benefit
   rothConvType: RothConversionType;
 }
 
@@ -79,6 +86,12 @@ export interface RetirementYear {
   inflationIndex: number; // Cumulative inflation relative to the first projection year. The first year is 1
 
   spending: number;
+  medicareEligible: boolean;
+  standardPartBPremium: number;
+  partDOtherPremium: number;
+  outOfPocketHealthcare: number;
+  totalMedicareHealthcareCost: number;
+  medicareHealthcareAddedToSpending: number;
   socialSecurity: number;
 
   startTradIra: number;
@@ -140,6 +153,8 @@ export interface ScenarioSummary {
 
   totalTaxes: number;
   totalIrmaaSurcharge: number;
+  totalMedicareHealthcareCost: number;
+  totalMedicareHealthcareAddedToSpending: number;
   totalSSToHorizon: number;
   depletionAge: number | null;
 }

@@ -1,3 +1,17 @@
+import { EconomicScenarioMethod } from './EconomicScenarioEngine';
+
+import { MedicareModelType } from '../models/RetirementTypes';
+import type { TaxConfigurationSet } from '../models/TaxTypes';
+import type { EconomicScenarioSettings } from '../models/EconomicScenarioSettings';
+
+import type { IrmaaConfiguration } from '../data/irmaaTables';
+
+import {
+  ASSET_ALLOCATION_PROFILES,
+  CUSTOM_ALLOCATION_ID,
+  type AssetAllocationPreferences
+} from '../data/assetAllocationProfiles';
+
 import type {
   AssetAllocation,
   PlannerInputs,
@@ -5,15 +19,6 @@ import type {
   SSMonthlyIncome,
   RetirementScenario
 } from '../models/RetirementTypes';
-import type { TaxConfigurationSet } from '../models/TaxTypes';
-import type { EconomicScenarioSettings } from '../models/EconomicScenarioSettings';
-import type { IrmaaConfiguration } from '../data/irmaaTables';
-import { EconomicScenarioMethod } from './EconomicScenarioEngine';
-import {
-  ASSET_ALLOCATION_PROFILES,
-  CUSTOM_ALLOCATION_ID,
-  type AssetAllocationPreferences
-} from '../data/assetAllocationProfiles';
 
 const INPUTS_KEY = 'retirement-planner-inputs',
   INCOME_KEY = 'retirement-planner-income',
@@ -43,6 +48,13 @@ export function loadPlannerInputs(defaults: PlannerInputs): PlannerInputs {
 
     if (!Number.isInteger(inputs.ssEstimateYear) || inputs.ssEstimateYear < 1900 || inputs.ssEstimateYear > 2200) {
       inputs.ssEstimateYear = defaults.ssEstimateYear;
+    }
+
+    if (
+      inputs.medicareModel !== MedicareModelType.SimpleDeterministic &&
+      inputs.medicareModel !== MedicareModelType.Custom
+    ) {
+      inputs.medicareModel = defaults.medicareModel;
     }
 
     return inputs;

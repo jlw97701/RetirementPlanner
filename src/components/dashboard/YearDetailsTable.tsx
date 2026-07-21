@@ -4,6 +4,8 @@ import { CollapsiblePanel } from '../shared/CollapsiblePanel';
 import type { RetirementYear } from '../../models/RetirementTypes';
 
 export function YearDetailsTable({ rows }: { rows: RetirementYear[] }) {
+  const showIrmaa = rows.some((row) => row.annualIrmaaSurcharge > 0);
+
   return (
     <CollapsiblePanel
       title="Year-By-Year Details"
@@ -19,9 +21,15 @@ export function YearDetailsTable({ rows }: { rows: RetirementYear[] }) {
           Account balances and annual amounts are shown in nominal dollars.
         </p>
         <p>
+          Medicare/healthcare details show standard Part B, user-entered Part D or other coverage, out-of-pocket
+          healthcare, and IRMAA. <strong>Added to Spending</strong> is zero when Annual Spending already includes
+          these costs; otherwise it is included in Spending and funded by the withdrawal calculation.
+        </p>
+        <p>
           <strong>IRMAA MAGI</strong> is the income used for the current tax year. <strong>IRMAA Lookback</strong>
           is the MAGI from two years earlier used to estimate the listed year's Medicare surcharge. The estimate
-          assumes single filing status and includes Part B and Part D adjustments, but is not deducted from savings.
+          assumes single filing status and includes Part B and Part D adjustments. It is added to Spending only when
+          the user indicates that Annual Spending excludes Medicare and healthcare costs.
           <strong> Conversion Impact</strong> identifies a Roth conversion from two years earlier that raised the
           estimated IRMAA tier.
         </p>
@@ -43,17 +51,26 @@ export function YearDetailsTable({ rows }: { rows: RetirementYear[] }) {
               <th>Age</th>
               <th>Year</th>
               <th>Spending</th>
+              <th>Part B</th>
+              <th>Part D/Other</th>
+              <th>Health OOP</th>
+              <th>Total Medicare/Health</th>
+              <th>Added to Spending</th>
               <th>Social Sec</th>
               <th>Trad Dist</th>
               <th>Roth Conv</th>
               <th>Fed Tax</th>
               <th>State Tax</th>
-              <th>IRMAA MAGI</th>
-              <th>IRMAA Lookback</th>
-              <th>IRMAA Tier</th>
-              <th>IRMAA Surcharge</th>
-              <th>IRMAA Basis</th>
-              <th>Conversion Impact</th>
+              {showIrmaa && (
+                <>
+                  <th>IRMAA MAGI</th>
+                  <th>IRMAA Lookback</th>
+                  <th>IRMAA Tier</th>
+                  <th>IRMAA Surcharge</th>
+                  <th>IRMAA Basis</th>
+                  <th>Conversion Impact</th>
+                </>
+              )}
               <th>Cash Flow</th>
               <th>End Savings</th>
               <th>End Trad</th>
@@ -67,23 +84,32 @@ export function YearDetailsTable({ rows }: { rows: RetirementYear[] }) {
                 <td>{r.age}</td>
                 <td>{r.year}</td>
                 <td>{formatMoney(r.spending)}</td>
+                <td>{formatMoney(r.standardPartBPremium)}</td>
+                <td>{formatMoney(r.partDOtherPremium)}</td>
+                <td>{formatMoney(r.outOfPocketHealthcare)}</td>
+                <td>{formatMoney(r.totalMedicareHealthcareCost)}</td>
+                <td>{formatMoney(r.medicareHealthcareAddedToSpending)}</td>
                 <td>{formatMoney(r.socialSecurity)}</td>
                 <td>{formatMoney(r.traditionalDist)}</td>
                 <td>{formatMoney(r.rothConv)}</td>
                 <td>{formatMoney(r.federalTax)}</td>
                 <td>{formatMoney(r.stateTax)}</td>
-                <td>{formatMoney(r.irmaaMagi)}</td>
-                <td>{formatMoney(r.irmaaLookbackMagi)}</td>
-                <td>{r.age >= 65 ? r.irmaaTier : '—'}</td>
-                <td>{formatMoney(r.annualIrmaaSurcharge)}</td>
-                <td>
-                  {r.irmaaIsEstimated
-                    ? `Estimated from ${r.irmaaConfigurationYear}`
-                    : r.irmaaIsPublished
-                      ? `Published ${r.irmaaConfigurationYear}`
-                      : `Custom ${r.irmaaConfigurationYear}`}
-                </td>
-                <td>{r.rothConversionRaisesIrmaaTier ? 'Raised tier' : '—'}</td>
+                {showIrmaa && (
+                  <>
+                    <td>{formatMoney(r.irmaaMagi)}</td>
+                    <td>{formatMoney(r.irmaaLookbackMagi)}</td>
+                    <td>{r.medicareEligible ? r.irmaaTier : '—'}</td>
+                    <td>{formatMoney(r.annualIrmaaSurcharge)}</td>
+                    <td>
+                      {r.irmaaIsEstimated
+                        ? `Estimated from ${r.irmaaConfigurationYear}`
+                        : r.irmaaIsPublished
+                          ? `Published ${r.irmaaConfigurationYear}`
+                          : `Custom ${r.irmaaConfigurationYear}`}
+                    </td>
+                    <td>{r.rothConversionRaisesIrmaaTier ? 'Raised tier' : '—'}</td>
+                  </>
+                )}
                 <td>{formatMoney(r.taxableAcctDeposit - r.taxableAcctWithdraw)}</td>
                 <td>{formatMoney(r.endTaxableAcct)}</td>
                 <td>{formatMoney(r.endTradlIra)}</td>

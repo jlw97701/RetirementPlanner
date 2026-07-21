@@ -121,8 +121,8 @@ export function IrmaaTableEditor({
               </p>
               <p>
                 Each tier contains a MAGI upper limit and monthly Part B and Part D adjustment. The final tier
-                must have no upper limit. Standard Part B premium is stored for reference; the projected IRMAA
-                value currently reports only the additional income-related amounts.
+                must have no upper limit. The standard Part B premium contributes to the displayed Medicare/Health
+                cost, while IRMAA reports the additional income-related Part B and Part D amounts.
               </p>
               <p>
                 <strong>Published</strong> tables should match an official source and require its URL.
@@ -139,7 +139,8 @@ export function IrmaaTableEditor({
               </p>
               <p>
                 IRMAA uses income from two years before the Medicare premium year. The resulting surcharge remains
-                informational and is not deducted from spending or portfolio balances.
+                visible separately and is added to Spending only when the user indicates that Annual Spending excludes
+                Medicare and healthcare costs.
               </p>
             `}
           />

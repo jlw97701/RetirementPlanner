@@ -9,7 +9,8 @@ import {
   ColaStrategyType,
   SSColaSettings,
   AssetAllocation,
-  SSBenefitValueType
+  SSBenefitValueType,
+  MedicareModelType
 } from '../models/RetirementTypes';
 
 import type { TaxConfigurationSet } from '../models/TaxTypes';
@@ -29,6 +30,11 @@ export const DEFAULT_INPUTS: PlannerInputs = {
   tradIra: 600000,
   rothIra: 0,
   annualSpend: 60000,
+  medicareModel: MedicareModelType.SimpleDeterministic,
+  annualSpendingIncludesHealthcare: true,
+  medicareStartAge: 65,
+  monthlyPartDOtherPremium: 0,
+  annualOutOfPocketHealthcare: 0,
   rothBaseConv: 30000,
   rothAggressiveConv: 60000,
   inflation: 0.03,
@@ -36,8 +42,8 @@ export const DEFAULT_INPUTS: PlannerInputs = {
   ssEstimateYear: 2026,
   actualMonthlySS: 0,
   actualBenefitYear: 2026,
-  irmaaMagiTwoYearsPrior: 112307,
-  irmaaMagiOneYearPrior: 103753
+  irmaaMagiTwoYearsPrior: 0,
+  irmaaMagiOneYearPrior: 0
 };
 
 export const DEFAULT_MONTHLY_SS: SSMonthlyIncome[] = [
@@ -61,8 +67,8 @@ export const DEFAULT_COLA_SETTINGS: SSColaSettings = {
 };
 
 export const DEFAULT_ASSET_ALLOCATION: AssetAllocation = {
-  stocks: 0.6,
-  bonds: 0.3,
+  stocks: 0.5,
+  bonds: 0.4,
   cash: 0.1,
   other: 0
 };
@@ -70,7 +76,7 @@ export const DEFAULT_ASSET_ALLOCATION: AssetAllocation = {
 export const DEFAULT_ECONOMIC_SCENARIO_SETTINGS: EconomicScenarioSettings = {
   method: EconomicScenarioMethod.DETERMINISTIC,
   deterministic: {
-    profile: 'average',
+    profile: 'below-average',
     rollingPeriod: 20,
     stockReturn: 0.07,
     bondReturn: 0.035,

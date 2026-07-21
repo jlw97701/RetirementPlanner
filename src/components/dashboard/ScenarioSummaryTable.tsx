@@ -15,6 +15,8 @@ export function ScenarioSummaryTable({
   selectedId: string;
   onSelect: (id: string) => void;
 }) {
+  const showIrmaa = summaries.some((summary) => summary.totalIrmaaSurcharge > 0);
+
   return (
     <CollapsiblePanel
       title="Scenario Summary"
@@ -35,7 +37,8 @@ export function ScenarioSummaryTable({
         <p>
           The table also shows first-year Social Security, cumulative Social Security and taxes, 
           estimated IRMAA surcharges, and the age when the portfolio can no longer fully fund projected spending.
-          IRMAA is informational and is not included in spending or portfolio withdrawals.
+          Medicare/Health is the total modeled standard Part B, Part D or other coverage, out-of-pocket healthcare,
+          and IRMAA. It is added to withdrawals only when Annual Spending excludes those costs.
         </p>
       `}>
       <div className="table-container">
@@ -83,10 +86,17 @@ export function ScenarioSummaryTable({
                 <br />
                 Taxes
               </th>
+              {showIrmaa && (
+                <th>
+                  Estimated
+                  <br />
+                  IRMAA
+                </th>
+              )}
               <th>
-                Estimated
+                Medicare/
                 <br />
-                IRMAA
+                Health
               </th>
               <th>
                 Depletion
@@ -116,7 +126,8 @@ export function ScenarioSummaryTable({
                 <td>{formatMoney(s.firstAnnualSS)}</td>
                 <td>{formatMoney(s.totalSSToHorizon)}</td>
                 <td>{formatMoney(s.totalTaxes)}</td>
-                <td>{formatMoney(s.totalIrmaaSurcharge)}</td>
+                {showIrmaa && <td>{formatMoney(s.totalIrmaaSurcharge)}</td>}
+                <td>{formatMoney(s.totalMedicareHealthcareCost)}</td>
                 <td>{s.depletionAge ?? '—'}</td>
               </tr>
             ))}

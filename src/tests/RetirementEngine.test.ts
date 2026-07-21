@@ -3,6 +3,7 @@ import { describe, expect, test } from 'vitest';
 import { DEFAULT_INPUTS, DEFAULT_TAX_CONFIG } from '../data/defaults';
 import {
   ColaStrategyType,
+  MedicareModelType,
   PlannerInputs,
   RothConversionType,
   type AssetAllocation,
@@ -206,6 +207,7 @@ describe('calculateRetirementProjection', () => {
 
   test('estimates IRMAA using the two-year MAGI lookback without deducting it from cash flow', () => {
     const rows = createTestProjection({
+      medicareModel: MedicareModelType.Custom,
       irmaaMagiTwoYearsPrior: 110_000,
       irmaaMagiOneYearPrior: 0
     });
@@ -218,5 +220,70 @@ describe('calculateRetirementProjection', () => {
 
     // IRMAA is currently informational, so it is not part of total tax or account cash flows.
     expect(rows[0].totalTax).toBeCloseTo(rows[0].federalTax + rows[0].stateTax, 2);
+  });
+
+  test('adds modeled Medicare and healthcare costs when annual spending excludes them', () => {
+    const rows = createTestProjection({
+      endAge: 75,
+      horizonAge: 75,
+      annualSpend: 0,
+      medicareModel: MedicareModelType.Custom,
+      annualSpendingIncludesHealthcare: false,
+      medicareStartAge: 65,
+      monthlyPartDOtherPremium: 100,
+      annualOutOfPocketHealthcare: 1_200,
+      irmaaMagiTwoYearsPrior: 0,
+      irmaaMagiOneYearPrior: 0
+    });
+    const row = rows[0];
+
+    expect(row.standardPartBPremium).toBeCloseTo(202.9 * 12, 2);
+    expect(row.partDOtherPremium).toBeCloseTo(1_200, 2);
+    expect(row.outOfPocketHealthcare).toBeCloseTo(1_200, 2);
+    expect(row.totalMedicareHealthcareCost).toBeCloseTo(202.9 * 12 + 2_400, 2);
+    expect(row.medicareHealthcareAddedToSpending).toBeCloseTo(row.totalMedicareHealthcareCost, 2);
+    expect(row.spending).toBeCloseTo(row.totalMedicareHealthcareCost, 2);
+  });
+
+  test('shows Medicare costs without adding them when annual spending already includes healthcare', () => {
+    const rows = createTestProjection({
+      endAge: 75,
+      horizonAge: 75,
+      annualSpend: 10_000,
+      medicareModel: MedicareModelType.Custom,
+      annualSpendingIncludesHealthcare: true,
+      monthlyPartDOtherPremium: 100,
+      annualOutOfPocketHealthcare: 1_200,
+      irmaaMagiTwoYearsPrior: 0,
+      irmaaMagiOneYearPrior: 0
+    });
+    const row = rows[0];
+
+    expect(row.totalMedicareHealthcareCost).toBeGreaterThan(0);
+    expect(row.medicareHealthcareAddedToSpending).toBe(0);
+    expect(row.spending).toBe(10_000);
+  });
+
+  test('uses zero-input deterministic Medicare defaults until assumptions are customized', () => {
+    const rows = createTestProjection({
+      endAge: 75,
+      horizonAge: 75,
+      annualSpend: 10_000,
+      medicareModel: MedicareModelType.SimpleDeterministic,
+      annualSpendingIncludesHealthcare: false,
+      medicareStartAge: 75,
+      monthlyPartDOtherPremium: 500,
+      annualOutOfPocketHealthcare: 10_000,
+      irmaaMagiTwoYearsPrior: 500_000,
+      irmaaMagiOneYearPrior: 500_000
+    });
+    const row = rows[0];
+
+    expect(row.standardPartBPremium).toBeGreaterThan(0);
+    expect(row.partDOtherPremium).toBe(0);
+    expect(row.outOfPocketHealthcare).toBe(0);
+    expect(row.annualIrmaaSurcharge).toBe(0);
+    expect(row.medicareHealthcareAddedToSpending).toBe(0);
+    expect(row.spending).toBe(10_000);
   });
 });

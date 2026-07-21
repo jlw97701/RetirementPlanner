@@ -23,6 +23,11 @@ export function summarizeRetirementScenario(
 
     totalTaxes: rows.reduce((sum, row) => sum + row.totalTax, 0),
     totalIrmaaSurcharge: rows.reduce((sum, row) => sum + row.annualIrmaaSurcharge, 0),
+    totalMedicareHealthcareCost: rows.reduce((sum, row) => sum + row.totalMedicareHealthcareCost, 0),
+    totalMedicareHealthcareAddedToSpending: rows.reduce(
+      (sum, row) => sum + row.medicareHealthcareAddedToSpending,
+      0
+    ),
 
     totalSSToHorizon: rows
       .filter((row) => row.age <= inputs.horizonAge)

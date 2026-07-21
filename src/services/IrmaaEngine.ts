@@ -10,6 +10,7 @@ export interface IrmaaEstimate {
   threshold: number;
   monthlyPartBAdjustment: number;
   monthlyPartDAdjustment: number;
+  standardPartBMonthlyPremium: number;
   annualSurcharge: number;
   configurationYear: number;
   isEstimated: boolean;
@@ -77,6 +78,7 @@ function toEstimate(
     threshold: tier.upperMagi === null ? Number.POSITIVE_INFINITY : tier.upperMagi * factor,
     monthlyPartBAdjustment: tier.monthlyPartBAdjustment * factor,
     monthlyPartDAdjustment: tier.monthlyPartDAdjustment * factor,
+    standardPartBMonthlyPremium: resolved.configuration.standardPartBPremium * factor,
     annualSurcharge: (tier.monthlyPartBAdjustment + tier.monthlyPartDAdjustment) * 12 * factor,
     configurationYear: resolved.configuration.premiumYear,
     isEstimated: resolved.isEstimated,

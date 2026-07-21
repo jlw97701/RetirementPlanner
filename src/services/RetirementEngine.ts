@@ -6,7 +6,8 @@ import {
   SSColaSettings,
   RetirementScenario,
   AssetAllocation,
-  SSBenefitValueType
+  SSBenefitValueType,
+  MedicareModelType
 } from '../models/RetirementTypes';
 
 import { convertCurrentDollarsToYear, getAnnualSSCola, getDefaultRmdStartAge } from './SocialSecurityEngine';
@@ -262,8 +263,16 @@ function validateProjectionInputs(inputs: PlannerInputs): void {
   requireNonnegativeFinite(inputs.annualSpend, 'Annual spending');
   requireNonnegativeFinite(inputs.rothBaseConv, 'Annual base Roth conversion');
   requireNonnegativeFinite(inputs.rothAggressiveConv, 'Annual aggressive Roth conversion');
-  requireNonnegativeFinite(inputs.irmaaMagiTwoYearsPrior, 'IRMAA MAGI from two years before the projection');
-  requireNonnegativeFinite(inputs.irmaaMagiOneYearPrior, 'IRMAA MAGI from one year before the projection');
+  if (inputs.medicareModel === MedicareModelType.Custom) {
+    requireNonnegativeFinite(inputs.monthlyPartDOtherPremium, 'Monthly Part D or other coverage premium');
+    requireNonnegativeFinite(inputs.annualOutOfPocketHealthcare, 'Annual out-of-pocket healthcare');
+    requireNonnegativeFinite(inputs.irmaaMagiTwoYearsPrior, 'IRMAA MAGI from two years before the projection');
+    requireNonnegativeFinite(inputs.irmaaMagiOneYearPrior, 'IRMAA MAGI from one year before the projection');
+
+    if (!Number.isInteger(inputs.medicareStartAge) || inputs.medicareStartAge < 65 || inputs.medicareStartAge > 95) {
+      throw new Error('Medicare start age must be an integer from 65 through 95.');
+    }
+  }
 
   if (!Number.isFinite(inputs.inflation) || inputs.inflation <= -1) {
     throw new Error('Inflation must be finite and greater than -100%.');
@@ -441,6 +450,13 @@ export function calculateRetirementProjection(
 
   let annualSpending = inputs.annualSpend;
   let inflationIndex = 1;
+  const usesSimpleMedicareModel = inputs.medicareModel === MedicareModelType.SimpleDeterministic;
+  const medicareStartAge = usesSimpleMedicareModel ? 65 : inputs.medicareStartAge;
+  const annualSpendingIncludesHealthcare = usesSimpleMedicareModel ? true : inputs.annualSpendingIncludesHealthcare;
+  const monthlyPartDOtherPremium = usesSimpleMedicareModel ? 0 : inputs.monthlyPartDOtherPremium;
+  const annualOutOfPocketHealthcare = usesSimpleMedicareModel ? 0 : inputs.annualOutOfPocketHealthcare;
+  const irmaaMagiTwoYearsPrior = usesSimpleMedicareModel ? 0 : inputs.irmaaMagiTwoYearsPrior;
+  const irmaaMagiOneYearPrior = usesSimpleMedicareModel ? 0 : inputs.irmaaMagiOneYearPrior;
 
   // Update benefits inside the annual loop
   for (let age = inputs.startAge; age <= inputs.endAge; age++) {
@@ -467,7 +483,37 @@ export function calculateRetirementProjection(
       inflationIndex *= annualInflationFactor;
     }
 
-    const spending = annualSpending;
+    const irmaaLookbackMagi =
+      yearIndex >= 2
+        ? years[yearIndex - 2].irmaaMagi
+        : yearIndex === 1
+          ? irmaaMagiOneYearPrior
+          : irmaaMagiTwoYearsPrior;
+    const resolvedIrmaa = resolveIrmaaConfiguration(year, 'single', context.irmaaConfigurations);
+    const irmaaInflationFactor = calculateIrmaaInflationFactor(
+      resolvedIrmaa.configuration.premiumYear,
+      year,
+      startYear,
+      context.economicScenario,
+      inputs.inflation
+    );
+    const irmaaEstimate = calculateIrmaaEstimate(
+      irmaaLookbackMagi,
+      year,
+      irmaaInflationFactor,
+      'single',
+      context.irmaaConfigurations
+    );
+    const isMedicareEligible = age >= medicareStartAge;
+    const irmaaTier = isMedicareEligible ? irmaaEstimate.tier : 0;
+    const annualIrmaaSurcharge = isMedicareEligible ? irmaaEstimate.annualSurcharge : 0;
+    const standardPartBPremium = isMedicareEligible ? irmaaEstimate.standardPartBMonthlyPremium * 12 : 0;
+    const partDOtherPremium = isMedicareEligible ? monthlyPartDOtherPremium * 12 * inflationIndex : 0;
+    const outOfPocketHealthcare = isMedicareEligible ? annualOutOfPocketHealthcare * inflationIndex : 0;
+    const totalMedicareHealthcareCost =
+      standardPartBPremium + partDOtherPremium + outOfPocketHealthcare + annualIrmaaSurcharge;
+    const medicareHealthcareAddedToSpending = annualSpendingIncludesHealthcare ? 0 : totalMedicareHealthcareCost;
+    const spending = annualSpending + medicareHealthcareAddedToSpending;
 
     if (alreadyReceivingBenefits) {
       if (yearIndex > 0) {
@@ -586,30 +632,6 @@ export function calculateRetirementProjection(
       socialSecurity,
       context.federalTaxConfig
     ).agi;
-    const irmaaLookbackMagi =
-      yearIndex >= 2
-        ? years[yearIndex - 2].irmaaMagi
-        : yearIndex === 1
-          ? inputs.irmaaMagiOneYearPrior
-          : inputs.irmaaMagiTwoYearsPrior;
-    const resolvedIrmaa = resolveIrmaaConfiguration(year, 'single', context.irmaaConfigurations);
-    const irmaaInflationFactor = calculateIrmaaInflationFactor(
-      resolvedIrmaa.configuration.premiumYear,
-      year,
-      startYear,
-      context.economicScenario,
-      inputs.inflation
-    );
-    const irmaaEstimate = calculateIrmaaEstimate(
-      irmaaLookbackMagi,
-      year,
-      irmaaInflationFactor,
-      'single',
-      context.irmaaConfigurations
-    );
-    const isMedicareEligible = age >= 65;
-    const irmaaTier = isMedicareEligible ? irmaaEstimate.tier : 0;
-    const annualIrmaaSurcharge = isMedicareEligible ? irmaaEstimate.annualSurcharge : 0;
     const lookbackMagiWithoutRothConversion =
       yearIndex >= 2 ? years[yearIndex - 2].irmaaMagiWithoutRothConversion : irmaaLookbackMagi;
     const tierWithoutRothConversion = calculateIrmaaEstimate(
@@ -619,8 +641,7 @@ export function calculateRetirementProjection(
       'single',
       context.irmaaConfigurations
     ).tier;
-    const rothConversionRaisesIrmaaTier =
-      isMedicareEligible && yearIndex >= 2 && irmaaTier > tierWithoutRothConversion;
+    const rothConversionRaisesIrmaaTier = isMedicareEligible && yearIndex >= 2 && irmaaTier > tierWithoutRothConversion;
 
     /*
      * Carry December 31 balances into the following
@@ -635,6 +656,12 @@ export function calculateRetirementProjection(
       year,
       inflationIndex,
       spending,
+      medicareEligible: isMedicareEligible,
+      standardPartBPremium,
+      partDOtherPremium,
+      outOfPocketHealthcare,
+      totalMedicareHealthcareCost,
+      medicareHealthcareAddedToSpending,
       socialSecurity,
       startTradIra,
       startRothIra,

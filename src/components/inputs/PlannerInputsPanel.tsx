@@ -7,19 +7,15 @@ import { AccordionPanel } from '../shared/AccordionPanel';
 import { NumberInput } from '../shared/NumberInput';
 import { Dropdown } from '../shared/Dropdown';
 
-import {
-  AssetAllocation,
-  ColaStrategyType,
-  SSBenefitValueType,
-  type PlannerInputs,
-  type SSColaSettings,
-  type SSMonthlyIncome
-} from '../../models/RetirementTypes';
+import type { EconomicScenarioSettings } from '../../models/EconomicScenarioSettings';
+
+import { loadAssetAllocationPreferences, saveAssetAllocationPreferences } from '../../services/PlannerStorage';
+import { EconomicScenarioMethod } from '../../services/EconomicScenarioEngine';
+
+import { parseIsoDate } from '../../utils/projectionDates';
 
 import { COLA_HISTORY } from '../../data/colaHistory';
 
-import 'react-datepicker/dist/react-datepicker.css';
-import { parseIsoDate } from '../../utils/projectionDates';
 import {
   ASSET_ALLOCATION_PROFILES,
   CUSTOM_ALLOCATION_ID,
@@ -28,16 +24,27 @@ import {
   type AssetAllocationPreferences,
   type AssetAllocationSelection
 } from '../../data/assetAllocationProfiles';
-import { loadAssetAllocationPreferences, saveAssetAllocationPreferences } from '../../services/PlannerStorage';
-import type { EconomicScenarioSettings } from '../../models/EconomicScenarioSettings';
-import { EconomicScenarioMethod } from '../../services/EconomicScenarioEngine';
+
 import { HISTORICAL_ECONOMIC_DATA } from '../../data/historicalEconomicData';
+
 import {
   calculateDeterministicMarketReturns,
   DETERMINISTIC_MARKET_PROFILES,
   type DeterministicMarketProfileId,
   type RollingReturnPeriod
 } from '../../data/deterministicMarketProfiles';
+
+import {
+  AssetAllocation,
+  ColaStrategyType,
+  MedicareModelType,
+  SSBenefitValueType,
+  type PlannerInputs,
+  type SSColaSettings,
+  type SSMonthlyIncome
+} from '../../models/RetirementTypes';
+
+import 'react-datepicker/dist/react-datepicker.css';
 
 interface InputsInterface {
   inputs: PlannerInputs;
@@ -68,13 +75,16 @@ export function PlannerInputsPanel({
   //console.log('PlannerInputsPanel: income = ', income);
 
   const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
+
   const initialAllocationPreferences: AssetAllocationPreferences = {
     selection: identifyAssetAllocationProfile(assetAllocation) ?? CUSTOM_ALLOCATION_ID,
     customAllocation: { ...assetAllocation }
   };
+
   const [allocationPreferences, setAllocationPreferences] = useState<AssetAllocationPreferences>(() =>
     loadAssetAllocationPreferences(initialAllocationPreferences)
   );
+
   const selectedAllocation = allocationPreferences.selection;
   const customAllocation = allocationPreferences.customAllocation;
 
@@ -99,6 +109,7 @@ export function PlannerInputsPanel({
   const parsedBirthDate = parseIsoDate(inputs.birthDate);
   const birthYear = parsedBirthDate.getFullYear();
   const projectionStartYear = birthYear + inputs.startAge;
+  const usesSimpleMedicareDefaults = inputs.medicareModel === MedicareModelType.SimpleDeterministic;
 
   const updateIncome = (v: SSMonthlyIncome) => {
     const updatedIncome = ssIncome.map((ss) => (ss.age === v.age ? { ...ss, amount: v.amount } : ss));
@@ -194,8 +205,7 @@ export function PlannerInputsPanel({
   const projectionYearCount = inputs.endAge - inputs.startAge + 1;
   const historicalStartYearOptions = HISTORICAL_ECONOMIC_DATA.filter(
     (_, index) =>
-      economicScenarioSettings.historicalSequence.wrap ||
-      index + projectionYearCount <= HISTORICAL_ECONOMIC_DATA.length
+      economicScenarioSettings.historicalSequence.wrap || index + projectionYearCount <= HISTORICAL_ECONOMIC_DATA.length
   ).map((item) => ({ value: item.year, label: String(item.year) }));
 
   const selectDeterministicMarketProfile = (value: string | number) => {
@@ -296,27 +306,6 @@ export function PlannerInputsPanel({
                 Learn more about RMDs from the IRS.
               </a>
             </p>
-            <p>
-              Enter MAGI from the two tax years immediately before the projection so the planner can estimate
-              Medicare IRMAA during its first two years. IRMAA uses a two-year income lookback and is displayed
-              separately; it is not deducted from the portfolio or included in spending. Published year-specific
-              tables are used when available. Later years are estimated from the most recent table using projected
-              inflation and are identified as estimates in Year-By-Year Details.
-            </p>
-            <p>
-              <a href="https://www.ssa.gov/benefits/medicare/medicare-premiums.html"
-                target="_blank"
-                rel="noopener noreferrer">
-                Review current Medicare premiums and IRMAA brackets from SSA.
-              </a>
-            </p>
-            <p>
-              <a href="https://secure.ssa.gov/poms.nsf/links/0601101010"
-                target="_blank"
-                rel="noopener noreferrer">
-                See SSA's official IRMAA MAGI definition and Form 1040 line references.
-              </a>
-            </p>
           `}
           isOpen={expandedIndex === 0}
           onToggle={() => setSelectedPanel(0)}>
@@ -365,28 +354,28 @@ export function PlannerInputsPanel({
             onChange={(v) => setInputs({ ...inputs, stopConvAge: v })}
           />
           <NumberInput
-            label={`Taxable Savings on Jan 1, ${projectionStartYear}`}
+            label={`Taxable Savings on<br/>Jan 1, ${projectionStartYear}`}
             value={inputs.taxableAcct}
             min={0}
             step={1000}
             onChange={(v) => setInputs({ ...inputs, taxableAcct: v })}
           />
           <NumberInput
-            label={`Traditional IRA on Jan 1, ${projectionStartYear}`}
+            label={`Traditional IRA on<br/>Jan 1, ${projectionStartYear}`}
             value={inputs.tradIra}
             min={0}
             step={1000}
             onChange={(v) => setInputs({ ...inputs, tradIra: v })}
           />
           <NumberInput
-            label={`Roth IRA on Jan 1, ${projectionStartYear}`}
+            label={`Roth IRA on<br/>Jan 1, ${projectionStartYear}`}
             value={inputs.rothIra}
             min={0}
             step={1000}
             onChange={(v) => setInputs({ ...inputs, rothIra: v })}
           />
           <NumberInput
-            label={`Annual Spending for ${projectionStartYear}`}
+            label={`Annual Spending<br/>for ${projectionStartYear}`}
             value={inputs.annualSpend}
             min={0}
             step={1000}
@@ -412,23 +401,9 @@ export function PlannerInputsPanel({
             step={0.001}
             onChange={(v) => setInputs({ ...inputs, inflation: v })}
           />
-          <NumberInput
-            label={`IRMAA MAGI for ${projectionStartYear - 2}`}
-            value={inputs.irmaaMagiTwoYearsPrior}
-            min={0}
-            step={1000}
-            onChange={(v) => setInputs({ ...inputs, irmaaMagiTwoYearsPrior: v })}
-          />
-          <NumberInput
-            label={`IRMAA MAGI for ${projectionStartYear - 1}`}
-            value={inputs.irmaaMagiOneYearPrior}
-            min={0}
-            step={1000}
-            onChange={(v) => setInputs({ ...inputs, irmaaMagiOneYearPrior: v })}
-          />
         </AccordionPanel>
         <AccordionPanel
-          title="SSI Inputs"
+          title="Social Security"
           icon={<Settings />}
           info={`
             <h3>Social Security Inputs</h3>
@@ -463,6 +438,10 @@ export function PlannerInputsPanel({
               first projection year.
             </p>
             <p>
+              Enter Social Security benefits before Medicare premiums or other deductions. Using a net bank-deposit
+              amount while also adding Medicare costs would count those costs twice.
+            </p>
+            <p>
               You can review your benefit estimates through
               <a href="https://www.ssa.gov/myaccount/"
                 target="_blank"
@@ -471,8 +450,8 @@ export function PlannerInputsPanel({
               </a>
             </p>
           `}
-          isOpen={expandedIndex === 1}
-          onToggle={() => setSelectedPanel(1)}>
+          isOpen={expandedIndex === 2}
+          onToggle={() => setSelectedPanel(2)}>
           <Dropdown
             label="Benefit Values"
             options={ssBenefitValueOptions}
@@ -482,7 +461,7 @@ export function PlannerInputsPanel({
           {inputs.ssBenefitValueType === SSBenefitValueType.ActualCurrentBenefit && (
             <>
               <NumberInput
-                label="Current SS / month"
+                label="Gross SS / month (before Medicare)"
                 value={inputs.actualMonthlySS}
                 min={0}
                 step={50}
@@ -591,8 +570,8 @@ export function PlannerInputsPanel({
               </a>
             </p>
           `}
-          isOpen={expandedIndex === 2}
-          onToggle={() => setSelectedPanel(2)}>
+          isOpen={expandedIndex === 3}
+          onToggle={() => setSelectedPanel(3)}>
           <Dropdown
             label="Strategy"
             options={colaStrategyOptions}
@@ -633,6 +612,120 @@ export function PlannerInputsPanel({
           />
         </AccordionPanel>
         <AccordionPanel
+          title="Medicare/IRMAA"
+          icon={<Settings />}
+          info={`
+            <h3>Medicare/IRMAA Inputs</h3>
+            <p>
+              The default Simple Deterministic model requires no additional input. It starts Medicare at age 65,
+              reads the standard Part B premium from the applicable maintained table, assumes Annual Spending already
+              includes healthcare, and initializes optional coverage, out-of-pocket costs, and unavailable prior MAGI
+              to zero.
+            </p>
+            <p>
+              Change these inputs when you want Medicare and healthcare costs displayed in more detail or added to
+              spending. If Annual Spending excludes healthcare, the planner adds standard Part B, calculated IRMAA,
+              Part D or other coverage, and out-of-pocket healthcare beginning at the selected Medicare start age.
+            </p>
+            <p>
+              IRMAA normally uses MAGI from two years earlier. Enter the two pre-projection values only when the
+              projection starts close enough to Medicare enrollment for those years to affect the results. Later MAGI
+              is calculated automatically from the projection.
+            </p>
+            <p>
+              Under the full-calendar-year contract, Medicare costs apply for the complete year in which the selected
+              Medicare start age is reached.
+            </p>
+            <p>
+              <a href="https://www.ssa.gov/benefits/medicare/medicare-premiums.html"
+                target="_blank" rel="noopener noreferrer">Review Medicare premiums and IRMAA brackets from SSA.</a>
+            </p>
+            <p>
+              <a href="https://secure.ssa.gov/poms.nsf/links/0601101010"
+                target="_blank" rel="noopener noreferrer">See SSA's IRMAA MAGI definition and Form 1040 lines.</a>
+            </p>
+          `}
+          isOpen={expandedIndex === 1}
+          onToggle={() => setSelectedPanel(1)}>
+          <label className="checkbox-row">
+            <span>Annual Spending Includes Medicare/Healthcare</span>
+            <input
+              type="checkbox"
+              checked={inputs.annualSpendingIncludesHealthcare}
+              onChange={(event) =>
+                setInputs({
+                  ...inputs,
+                  medicareModel: MedicareModelType.Custom,
+                  annualSpendingIncludesHealthcare: event.target.checked
+                })
+              }
+            />
+          </label>
+          <NumberInput
+            label="Medicare Start Age"
+            value={inputs.medicareStartAge}
+            min={65}
+            max={95}
+            step={1}
+            onChange={(v) => setInputs({ ...inputs, medicareModel: MedicareModelType.Custom, medicareStartAge: v })}
+          />
+          <NumberInput
+            label={`Part D/Other Coverage per Month (${projectionStartYear} $)`}
+            value={inputs.monthlyPartDOtherPremium}
+            min={0}
+            step={10}
+            onChange={(v) =>
+              setInputs({ ...inputs, medicareModel: MedicareModelType.Custom, monthlyPartDOtherPremium: v })
+            }
+          />
+          <NumberInput
+            label={`Annual Out-of-Pocket Healthcare (${projectionStartYear} $)`}
+            value={inputs.annualOutOfPocketHealthcare}
+            min={0}
+            step={100}
+            onChange={(v) =>
+              setInputs({ ...inputs, medicareModel: MedicareModelType.Custom, annualOutOfPocketHealthcare: v })
+            }
+          />
+          <NumberInput
+            label={`IRMAA MAGI for ${projectionStartYear - 2}`}
+            value={inputs.irmaaMagiTwoYearsPrior}
+            min={0}
+            step={1000}
+            onChange={(v) =>
+              setInputs({ ...inputs, medicareModel: MedicareModelType.Custom, irmaaMagiTwoYearsPrior: v })
+            }
+          />
+          <NumberInput
+            label={`IRMAA MAGI for ${projectionStartYear - 1}`}
+            value={inputs.irmaaMagiOneYearPrior}
+            min={0}
+            step={1000}
+            onChange={(v) =>
+              setInputs({ ...inputs, medicareModel: MedicareModelType.Custom, irmaaMagiOneYearPrior: v })
+            }
+          />
+          {!usesSimpleMedicareDefaults && (
+            <button
+              type="button"
+              className="apply-allocation-button"
+              onClick={() =>
+                setInputs({
+                  ...inputs,
+                  medicareModel: MedicareModelType.SimpleDeterministic,
+                  annualSpendingIncludesHealthcare: true,
+                  medicareStartAge: 65,
+                  monthlyPartDOtherPremium: 0,
+                  annualOutOfPocketHealthcare: 0,
+                  irmaaMagiTwoYearsPrior: 0,
+                  irmaaMagiOneYearPrior: 0
+                })
+              }>
+              Restore Defaults
+            </button>
+          )}
+        </AccordionPanel>
+        <AccordionPanel
           title="Portfolio"
           icon={<Settings />}
           info={`
@@ -670,8 +763,8 @@ export function PlannerInputsPanel({
               future investment performance.
             </p>
           `}
-          isOpen={expandedIndex === 3}
-          onToggle={() => setSelectedPanel(3)}>
+          isOpen={expandedIndex === 4}
+          onToggle={() => setSelectedPanel(4)}>
           <Dropdown
             label="Allocation Method"
             options={assetAllocationOptions}
@@ -768,8 +861,8 @@ export function PlannerInputsPanel({
               across steady assumptions, unfavorable historical periods, and volatile simulated paths.
             </p>
           `}
-          isOpen={expandedIndex === 4}
-          onToggle={() => setSelectedPanel(4)}>
+          isOpen={expandedIndex === 5}
+          onToggle={() => setSelectedPanel(5)}>
           <Dropdown
             label="Scenario Method"
             options={economicScenarioOptions}
@@ -815,7 +908,8 @@ export function PlannerInputsPanel({
                   <div className="allocation-summary">
                     <span>Annualized portfolio return: {((selectedCalculatedReturn ?? 0) * 100).toFixed(2)}%</span>
                     <span>
-                      Based on {economicScenarioSettings.deterministic.rollingPeriod}-year rolling periods from 1975–2025
+                      Based on {economicScenarioSettings.deterministic.rollingPeriod}-year rolling periods from
+                      1975–2025
                     </span>
                   </div>
                 </>
