@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Calculator, ArrowLeft, CircleHelp, TableConfig } from 'lucide-react';
+import { Calculator, ArrowLeft, ChevronLeft, ChevronRight, CircleHelp, TableConfig, Menu } from 'lucide-react';
 import { PlannerInputsPanel } from './components/inputs/PlannerInputsPanel';
 import { ScenarioCards } from './components/scenarios/ScenarioCards';
 import { ScenarioChart } from './components/dashboard/ScenarioChart';
@@ -33,6 +33,7 @@ export default function App() {
 
   const [selectedId, setSelectedId] = useState(projections[0]?.scenario.id ?? '');
   const [activePage, setActivePage] = useState<AppPage>('planner');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const selected = projections.find((p) => p.scenario.id === selectedId) ?? projections[0];
   const summaries = projections.map((p) => p.summary);
 
@@ -99,19 +100,31 @@ export default function App() {
       ) : activePage === 'help' ? (
         <EconomicScenarioHelp />
       ) : (
-        <main className="planner-layout">
-          <PlannerInputsPanel
-            inputs={inputs}
-            setInputs={setInputs}
-            ssIncome={ssIncome}
-            setSSIncome={setSSIncome}
-            colaSettings={colaSettings}
-            setColaSettings={setColaSettings}
-            assetAllocation={assetAllocation}
-            setAssetAllocation={setAssetAllocation}
-            economicScenarioSettings={economicScenarioSettings}
-            setEconomicScenarioSettings={setEconomicScenarioSettings}
-          />
+        <main className={`planner-layout ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+          <div id="planner-sidebar" className="sidebar-shell" aria-hidden={isSidebarCollapsed}>
+            <PlannerInputsPanel
+              inputs={inputs}
+              setInputs={setInputs}
+              ssIncome={ssIncome}
+              setSSIncome={setSSIncome}
+              colaSettings={colaSettings}
+              setColaSettings={setColaSettings}
+              assetAllocation={assetAllocation}
+              setAssetAllocation={setAssetAllocation}
+              economicScenarioSettings={economicScenarioSettings}
+              setEconomicScenarioSettings={setEconomicScenarioSettings}
+            />
+          </div>
+          <button
+            className="sidebar-slide-toggle"
+            type="button"
+            aria-controls="planner-sidebar"
+            aria-expanded={!isSidebarCollapsed}
+            aria-label={isSidebarCollapsed ? 'Show planner inputs' : 'Hide planner inputs'}
+            title={isSidebarCollapsed ? 'Show planner inputs' : 'Hide planner inputs'}
+            onClick={() => setIsSidebarCollapsed((collapsed) => !collapsed)}>
+            <Menu />
+          </button>
           <section className="content">
             {/* <ScenarioCards
               summaries={summaries}
