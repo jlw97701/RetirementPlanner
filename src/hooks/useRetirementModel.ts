@@ -14,6 +14,7 @@ import {
 import { SSBenefitValueType } from '../models/RetirementTypes';
 
 import { calculateRetirementProjection } from '../services/RetirementEngine';
+import { selectTaxConfiguration } from '../services/TaxEngine';
 import { summarizeRetirementScenario } from '../services/ScenarioService';
 import { createEconomicScenario } from '../services/EconomicScenarioService';
 import { HISTORICAL_ECONOMIC_DATA } from '../data/historicalEconomicData';
@@ -90,8 +91,8 @@ export function useRetirementModel() {
   useEffect(() => saveEconomicScenarioSettings(economicScenarioSettings), [economicScenarioSettings]);
   useEffect(() => saveIrmaaConfigurations(irmaaConfigurations), [irmaaConfigurations]);
 
-  const federalTaxConfig = taxConfig.federal[0],
-    stateTaxConfig = taxConfig.state[0];
+  const federalTaxConfig = selectTaxConfiguration(taxConfig.federal, inputs.filingStatus);
+  const stateTaxConfig = selectTaxConfiguration(taxConfig.state, inputs.filingStatus);
 
   const period = getProjectionPeriod(inputs.birthDate, inputs.startAge, inputs.endAge);
 

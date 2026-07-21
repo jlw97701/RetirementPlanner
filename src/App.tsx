@@ -82,23 +82,15 @@ export default function App() {
         <main className="tax-layout">
           <TaxTableEditor
             title="Federal tax brackets"
-            brackets={taxConfig.federal[0].brackets}
-            onChange={(brackets) =>
-              setTaxConfig({
-                ...taxConfig,
-                federal: [{ ...taxConfig.federal[0], brackets }]
-              })
-            }
+            configurations={taxConfig.federal}
+            initialFilingStatus={inputs.filingStatus}
+            onChange={(federal) => setTaxConfig({ ...taxConfig, federal })}
           />
           <TaxTableEditor
             title="State tax brackets"
-            brackets={taxConfig.state[0].brackets}
-            onChange={(brackets) =>
-              setTaxConfig({
-                ...taxConfig,
-                state: [{ ...taxConfig.state[0], brackets }]
-              })
-            }
+            configurations={taxConfig.state}
+            initialFilingStatus={inputs.filingStatus}
+            onChange={(state) => setTaxConfig({ ...taxConfig, state })}
           />
         </main>
       ) : activePage === 'irmaa' ? (

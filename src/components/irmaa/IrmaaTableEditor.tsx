@@ -75,7 +75,7 @@ export function IrmaaTableEditor({
 
   const removeSelected = () => {
     const sameStatusCount = configurations.filter((item) => item.filingStatus === selected.filingStatus).length;
-    if (selected.filingStatus === 'single' && sameStatusCount <= 1) return;
+    if (sameStatusCount <= 1) return;
     const remaining = configurations.filter((item) => configurationKey(item) !== selectedKey);
     onChange(remaining);
     setSelectedKey(configurationKey(remaining[0]));
@@ -117,7 +117,8 @@ export function IrmaaTableEditor({
               <h3>IRMAA Tables</h3>
               <p>
                 This page maintains the premium-year tables used to estimate Medicare Part B and Part D
-                income-related adjustments. The current retirement projection uses the Single filing status.
+                income-related adjustments. The retirement projection uses the table corresponding to the
+                filing status selected in Planner Inputs; Head of Household uses the individual table.
               </p>
               <p>
                 Each tier contains a MAGI upper limit and monthly Part B and Part D adjustment. The final tier
@@ -146,8 +147,8 @@ export function IrmaaTableEditor({
           />
         </div>
         <p className="input-help">
-          Maintain premium-year IRMAA configurations. The retirement projection currently uses the Single filing
-          status. Exact configurations override inflation-based estimates for that year.
+          Maintain premium-year IRMAA configurations for each filing status. Exact configurations override
+          inflation-based estimates for that year.
         </p>
 
         <div className="irmaa-toolbar">
@@ -168,7 +169,6 @@ export function IrmaaTableEditor({
             type="button"
             onClick={removeSelected}
             disabled={
-              selected.filingStatus === 'single' &&
               configurations.filter((item) => item.filingStatus === selected.filingStatus).length <= 1
             }>
             <Trash2 size={16} /> Delete
@@ -336,9 +336,9 @@ function validateConfiguration(
     errors.push('A configuration already exists for this premium year and filing status.');
   }
   const original = configurations.find((item) => configurationKey(item) === originalKey);
-  const singleCount = configurations.filter((item) => item.filingStatus === 'single').length;
-  if (original?.filingStatus === 'single' && draft.filingStatus !== 'single' && singleCount <= 1) {
-    errors.push('At least one Single filing-status configuration is required by the current projection.');
+  const originalStatusCount = configurations.filter((item) => item.filingStatus === original?.filingStatus).length;
+  if (original && draft.filingStatus !== original.filingStatus && originalStatusCount <= 1) {
+    errors.push(`At least one ${filingStatusLabels[original.filingStatus]} configuration is required.`);
   }
   if (!Number.isFinite(draft.standardPartBPremium) || draft.standardPartBPremium < 0) {
     errors.push('The standard Part B premium must be nonnegative.');

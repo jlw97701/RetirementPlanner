@@ -19,7 +19,7 @@ import { RMD_FACTORS } from '../data/rmdFactors';
 import type { FederalTaxConfig, StateTaxConfig } from '../models/TaxTypes';
 import { getBirthYear, getProjectionPeriod } from '../utils/projectionDates';
 import { calculateIrmaaEstimate, resolveIrmaaConfiguration } from './IrmaaEngine';
-import type { IrmaaConfiguration } from '../data/irmaaTables';
+import type { IrmaaConfiguration, IrmaaFilingStatus } from '../data/irmaaTables';
 
 /*
  * Projection timing contract:
@@ -43,6 +43,12 @@ interface RetirementCalculationContext {
   stateTaxConfig: StateTaxConfig;
   economicScenario: EconomicScenario;
   irmaaConfigurations?: readonly IrmaaConfiguration[];
+}
+
+function toIrmaaFilingStatus(filingStatus: FederalTaxConfig['filingStatus']): IrmaaFilingStatus {
+  if (filingStatus === 'marriedFilingJointly') return 'marriedJoint';
+  if (filingStatus === 'marriedFilingSeparately') return 'marriedSeparate';
+  return 'single';
 }
 
 interface WithdrawalEvaluation {
@@ -457,6 +463,7 @@ export function calculateRetirementProjection(
   const annualOutOfPocketHealthcare = usesSimpleMedicareModel ? 0 : inputs.annualOutOfPocketHealthcare;
   const irmaaMagiTwoYearsPrior = usesSimpleMedicareModel ? 0 : inputs.irmaaMagiTwoYearsPrior;
   const irmaaMagiOneYearPrior = usesSimpleMedicareModel ? 0 : inputs.irmaaMagiOneYearPrior;
+  const irmaaFilingStatus = toIrmaaFilingStatus(context.federalTaxConfig.filingStatus);
 
   // Update benefits inside the annual loop
   for (let age = inputs.startAge; age <= inputs.endAge; age++) {
@@ -489,7 +496,7 @@ export function calculateRetirementProjection(
         : yearIndex === 1
           ? irmaaMagiOneYearPrior
           : irmaaMagiTwoYearsPrior;
-    const resolvedIrmaa = resolveIrmaaConfiguration(year, 'single', context.irmaaConfigurations);
+    const resolvedIrmaa = resolveIrmaaConfiguration(year, irmaaFilingStatus, context.irmaaConfigurations);
     const irmaaInflationFactor = calculateIrmaaInflationFactor(
       resolvedIrmaa.configuration.premiumYear,
       year,
@@ -501,7 +508,7 @@ export function calculateRetirementProjection(
       irmaaLookbackMagi,
       year,
       irmaaInflationFactor,
-      'single',
+      irmaaFilingStatus,
       context.irmaaConfigurations
     );
     const isMedicareEligible = age >= medicareStartAge;
@@ -638,7 +645,7 @@ export function calculateRetirementProjection(
       lookbackMagiWithoutRothConversion,
       year,
       irmaaInflationFactor,
-      'single',
+      irmaaFilingStatus,
       context.irmaaConfigurations
     ).tier;
     const rothConversionRaisesIrmaaTier = isMedicareEligible && yearIndex >= 2 && irmaaTier > tierWithoutRothConversion;

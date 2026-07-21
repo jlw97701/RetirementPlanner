@@ -28,7 +28,8 @@ export function YearDetailsTable({ rows }: { rows: RetirementYear[] }) {
         <p>
           <strong>IRMAA MAGI</strong> is the income used for the current tax year. <strong>IRMAA Lookback</strong>
           is the MAGI from two years earlier used to estimate the listed year's Medicare surcharge. The estimate
-          assumes single filing status and includes Part B and Part D adjustments. It is added to Spending only when
+          uses the filing status selected in Planner Inputs and includes Part B and Part D adjustments. Head of
+          Household uses the individual IRMAA table. It is added to Spending only when
           the user indicates that Annual Spending excludes Medicare and healthcare costs.
           <strong> Conversion Impact</strong> identifies a Roth conversion from two years earlier that raised the
           estimated IRMAA tier.

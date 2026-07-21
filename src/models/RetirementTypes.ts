@@ -1,3 +1,5 @@
+import type { FilingStatus } from './TaxTypes';
+
 export enum RothConversionType {
   None,
   Base,
@@ -26,6 +28,7 @@ export type SSClaimAge = 62 | 63 | 64 | 65 | 66 | 67 | 68 | 69 | 70;
 
 export interface PlannerInputs {
   birthDate: string;
+  filingStatus: FilingStatus;
   startAge: number;
   endAge: number;
   horizonAge: number;

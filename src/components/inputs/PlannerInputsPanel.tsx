@@ -8,6 +8,7 @@ import { NumberInput } from '../shared/NumberInput';
 import { Dropdown } from '../shared/Dropdown';
 
 import type { EconomicScenarioSettings } from '../../models/EconomicScenarioSettings';
+import type { FilingStatus } from '../../models/TaxTypes';
 
 import { loadAssetAllocationPreferences, saveAssetAllocationPreferences } from '../../services/PlannerStorage';
 import { EconomicScenarioMethod } from '../../services/EconomicScenarioEngine';
@@ -158,6 +159,13 @@ export function PlannerInputsPanel({
 
   const selectedBenefitValue = ssBenefitValueOptions.find((o) => o.value === inputs.ssBenefitValueType)?.value ?? 0;
 
+  const filingStatusOptions: { value: FilingStatus; label: string }[] = [
+    { value: 'single', label: 'Single' },
+    { value: 'marriedFilingJointly', label: 'Married Filing Jointly' },
+    { value: 'marriedFilingSeparately', label: 'Married Filing Separately' },
+    { value: 'headOfHousehold', label: 'Head of Household' }
+  ];
+
   const assetAllocationOptions = [
     ...ASSET_ALLOCATION_PROFILES.map((profile) => ({ value: profile.id, label: profile.label })),
     { value: CUSTOM_ALLOCATION_ID, label: 'Custom' }
@@ -272,6 +280,10 @@ export function PlannerInputsPanel({
               assumptions used by the retirement projection.
             </p>
             <p>
+              Tax Filing Status selects the matching federal and Oregon brackets, deductions,
+              Social Security taxation thresholds, and Medicare IRMAA table.
+            </p>
+            <p>
               The projection begins January 1, ${projectionStartYear}, the calendar year
               in which you reach age ${inputs.startAge}. Enter your Traditional IRA,
               Roth IRA, and taxable savings balances as of that date.
@@ -323,6 +335,12 @@ export function PlannerInputsPanel({
               onChange={(v: Date | null) => setBirthDate(v)}
             />
           </div>
+          <Dropdown
+            label="Tax Filing Status"
+            options={filingStatusOptions}
+            selectedValue={inputs.filingStatus}
+            onChange={(value) => setInputs({ ...inputs, filingStatus: value as FilingStatus })}
+          />
           <NumberInput
             label="Start Age"
             value={inputs.startAge}

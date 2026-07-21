@@ -32,6 +32,33 @@ const IRMAA_2026_SINGLE_TIERS: readonly IrmaaTier[] = [
   { tier: 5, upperMagi: null, monthlyPartBAdjustment: 487, monthlyPartDAdjustment: 91 }
 ];
 
+const IRMAA_2026_MARRIED_JOINT_TIERS: readonly IrmaaTier[] = [
+  { tier: 0, upperMagi: 218000, monthlyPartBAdjustment: 0, monthlyPartDAdjustment: 0 },
+  { tier: 1, upperMagi: 274000, monthlyPartBAdjustment: 81.2, monthlyPartDAdjustment: 14.5 },
+  { tier: 2, upperMagi: 342000, monthlyPartBAdjustment: 202.9, monthlyPartDAdjustment: 37.5 },
+  { tier: 3, upperMagi: 410000, monthlyPartBAdjustment: 324.6, monthlyPartDAdjustment: 60.4 },
+  {
+    tier: 4,
+    upperMagi: 750000,
+    upperMagiInclusive: false,
+    monthlyPartBAdjustment: 446.3,
+    monthlyPartDAdjustment: 83.3
+  },
+  { tier: 5, upperMagi: null, monthlyPartBAdjustment: 487, monthlyPartDAdjustment: 91 }
+];
+
+const IRMAA_2026_MARRIED_SEPARATE_TIERS: readonly IrmaaTier[] = [
+  { tier: 0, upperMagi: 109000, monthlyPartBAdjustment: 0, monthlyPartDAdjustment: 0 },
+  {
+    tier: 1,
+    upperMagi: 391000,
+    upperMagiInclusive: false,
+    monthlyPartBAdjustment: 446.3,
+    monthlyPartDAdjustment: 83.3
+  },
+  { tier: 2, upperMagi: null, monthlyPartBAdjustment: 487, monthlyPartDAdjustment: 91 }
+];
+
 /**
  * Published IRMAA tables. Add a configuration when SSA publishes a new premium year.
  * Future years are estimated from the latest configuration for the requested filing status.
@@ -44,5 +71,21 @@ export const IRMAA_CONFIGURATIONS: readonly IrmaaConfiguration[] = [
     published: true,
     sourceUrl: 'https://www.ssa.gov/benefits/medicare/medicare-premiums.html',
     tiers: IRMAA_2026_SINGLE_TIERS
+  },
+  {
+    premiumYear: 2026,
+    filingStatus: 'marriedJoint',
+    standardPartBPremium: 202.9,
+    published: true,
+    sourceUrl: 'https://www.ssa.gov/benefits/medicare/medicare-premiums.html',
+    tiers: IRMAA_2026_MARRIED_JOINT_TIERS
+  },
+  {
+    premiumYear: 2026,
+    filingStatus: 'marriedSeparate',
+    standardPartBPremium: 202.9,
+    published: true,
+    sourceUrl: 'https://www.ssa.gov/benefits/medicare/medicare-premiums.html',
+    tiers: IRMAA_2026_MARRIED_SEPARATE_TIERS
   }
 ];

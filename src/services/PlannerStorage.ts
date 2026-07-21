@@ -57,6 +57,14 @@ export function loadPlannerInputs(defaults: PlannerInputs): PlannerInputs {
       inputs.medicareModel = defaults.medicareModel;
     }
 
+    if (
+      !['single', 'marriedFilingJointly', 'marriedFilingSeparately', 'headOfHousehold'].includes(
+        inputs.filingStatus
+      )
+    ) {
+      inputs.filingStatus = defaults.filingStatus;
+    }
+
     return inputs;
   } catch {
     return defaults;

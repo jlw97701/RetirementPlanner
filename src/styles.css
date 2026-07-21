@@ -72,6 +72,50 @@ header p {
   padding: 15px;
 }
 
+.tax-configuration-select,
+.tax-deduction-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: #526174;
+  font-size: 13px;
+}
+
+.tax-editor-heading,
+.irmaa-editor-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  .popover-trigger {
+    margin-bottom: 8px;
+  }
+  h2 {
+    margin: 0 0 10px;
+  }
+}
+
+.tax-configuration-select {
+  max-width: 300px;
+  margin-bottom: 14px;
+}
+
+.tax-deduction-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.tax-configuration-select select,
+.tax-deduction-fields input,
+.tax-table-editor td input {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px;
+  background: white;
+}
+
 .irmaa-layout {
   padding: 15px;
 }
@@ -79,19 +123,6 @@ header p {
 .irmaa-editor {
   max-width: 1200px;
   margin: 0 auto;
-}
-
-.irmaa-editor-heading {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  .popover-trigger svg {
-    position: relative;
-    top: -3px;
-  }
-  h2 {
-    margin: 0;
-  }
 }
 
 .irmaa-toolbar,
@@ -687,6 +718,9 @@ tr:hover td {
     grid-template-columns: 1fr;
   }
   .irmaa-fields {
+    grid-template-columns: 1fr;
+  }
+  .tax-deduction-fields {
     grid-template-columns: 1fr;
   }
   .irmaa-source-field {

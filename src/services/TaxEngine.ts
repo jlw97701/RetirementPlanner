@@ -1,10 +1,21 @@
 import type {
   DeductionConfig,
   FederalTaxConfig,
+  FilingStatus,
+  JurisdictionTaxConfig,
   StateTaxConfig,
   SocialSecurityTaxConfig,
   TaxBracket
 } from '../models/TaxTypes';
+
+export function selectTaxConfiguration<T extends JurisdictionTaxConfig>(
+  configurations: readonly T[],
+  filingStatus: FilingStatus
+): T {
+  const configuration = configurations.find((item) => item.filingStatus === filingStatus);
+  if (!configuration) throw new Error(`Missing ${filingStatus} tax configuration.`);
+  return configuration;
+}
 
 export function calculateProgressiveTax(taxableIncome: number, brackets: TaxBracket[]): number {
   if (!Number.isFinite(taxableIncome) || taxableIncome <= 0) return 0;
