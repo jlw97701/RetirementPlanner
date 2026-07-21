@@ -51,9 +51,12 @@ export default function App() {
         <div>
           <h1>
             <Calculator size={28} />
-            Retirement Planner
+            Retirement Income Planner
           </h1>
-          <p>Social Security timing, Roth conversions, federal and state taxes, and RMD planning.</p>
+          <p>
+            Explore how income, spending, investments, Social Security, Roth conversions, taxes, Medicare, and market
+            conditions shape retirement outcomes.
+          </p>
         </div>
         <div className="header-actions">
           {activePage === 'planner' ? (

@@ -15,7 +15,7 @@ import {
 
 import type { TaxConfigurationSet } from '../models/TaxTypes';
 import { COLA_HISTORY } from './colaHistory';
-import { calculateHistoricalAverageCOLA, calculateMonteCarloCOLA } from '../services/SocialSecurityEngine';
+import { calculateHistoricalAverageCOLA } from '../services/SocialSecurityEngine';
 import { formatDecimal } from '../utils/format';
 import { EconomicScenarioMethod } from '../services/EconomicScenarioEngine';
 import type { EconomicScenarioSettings } from '../models/EconomicScenarioSettings';
@@ -64,8 +64,7 @@ export const DEFAULT_COLA_SETTINGS: SSColaSettings = {
   strategy: ColaStrategyType.InflationRate,
   fixedRate: 0.03,
   averageRate: calculateHistoricalAverageCOLA(),
-  lastRate: formatDecimal(Object.values(COLA_HISTORY)[Object.values(COLA_HISTORY).length - 1]),
-  monteCarloRate: calculateMonteCarloCOLA()
+  lastRate: formatDecimal(Object.values(COLA_HISTORY)[Object.values(COLA_HISTORY).length - 1])
 };
 
 export const DEFAULT_ASSET_ALLOCATION: AssetAllocation = {

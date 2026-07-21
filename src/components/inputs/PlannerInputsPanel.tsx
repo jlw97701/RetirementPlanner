@@ -134,10 +134,6 @@ export function PlannerInputsPanel({
     {
       value: ColaStrategyType.HistoricalAverage,
       label: 'Historical Average'
-    },
-    {
-      value: ColaStrategyType.MonteCarlo,
-      label: 'Monte Carlo'
     }
   ];
 
@@ -576,18 +572,18 @@ export function PlannerInputsPanel({
             </p>
             <p>
               <strong>Fixed Rate</strong> uses the entered rate for every future year.
+            </p>
+            <p>
               <strong>Last Rate</strong> continues the most recent available rate.
-              <strong>Inflation Rate</strong> uses the planner’s general inflation
-              assumption.
             </p>
             <p>
-              <strong>Historical Average</strong> uses the average of the available
-              historical COLA values. <strong>Monte Carlo</strong> uses the generated COLA
-              assumption shown below.
+              <strong>Inflation Rate</strong> uses the planner’s general inflation assumption.
             </p>
             <p>
-              COLAs affect Social Security benefits after payments begin. They do not
-              directly increase account balances or annual spending.
+              <strong>Historical Average</strong> uses the average of the available historical COLA values. 
+            </p>
+            <p>
+              COLAs affect Social Security benefits after payments begin. They do not directly increase account balances or annual spending.
             </p>
             <p>
               <a href="https://www.ssa.gov/cola/"
@@ -630,12 +626,6 @@ export function PlannerInputsPanel({
             value={colaSettings.averageRate}
             readonly={true}
             selected={selectedColaStrategy === ColaStrategyType.HistoricalAverage}
-          />
-          <NumberInput
-            label="Monte Carlo Rate"
-            value={colaSettings.monteCarloRate}
-            readonly={true}
-            selected={selectedColaStrategy === ColaStrategyType.MonteCarlo}
           />
         </AccordionPanel>
         <AccordionPanel

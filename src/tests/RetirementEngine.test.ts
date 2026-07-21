@@ -49,8 +49,7 @@ describe('calculateRetirementProjection', () => {
       strategy: ColaStrategyType.FixedRate,
       fixedRate: 0,
       averageRate: 0,
-      lastRate: 0,
-      monteCarloRate: 0
+      lastRate: 0
     };
 
     const assetAllocation: AssetAllocation = {

@@ -10,8 +10,7 @@ export enum ColaStrategyType {
   FixedRate,
   LastRate,
   InflationRate,
-  HistoricalAverage,
-  MonteCarlo
+  HistoricalAverage
 }
 
 export enum SSBenefitValueType {
@@ -68,7 +67,6 @@ export interface SSColaSettings {
   fixedRate: number;
   averageRate: number;
   lastRate: number;
-  monteCarloRate: number;
 }
 
 export interface AssetAllocation {

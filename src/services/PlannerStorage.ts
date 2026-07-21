@@ -1,6 +1,6 @@
 import { EconomicScenarioMethod } from './EconomicScenarioEngine';
 
-import { MedicareModelType } from '../models/RetirementTypes';
+import { ColaStrategyType, MedicareModelType } from '../models/RetirementTypes';
 import type { TaxConfigurationSet } from '../models/TaxTypes';
 import { STATE_OPTIONS } from '../data/stateTax2026';
 import type { EconomicScenarioSettings } from '../models/EconomicScenarioSettings';
@@ -118,6 +118,17 @@ export function loadSSCOLASettings(defaults: SSColaSettings): SSColaSettings {
       ...defaults,
       ...parsed
     };
+
+    if (
+      ![
+        ColaStrategyType.FixedRate,
+        ColaStrategyType.LastRate,
+        ColaStrategyType.InflationRate,
+        ColaStrategyType.HistoricalAverage
+      ].includes(cola.strategy)
+    ) {
+      cola.strategy = defaults.strategy;
+    }
 
     return cola;
   } catch {

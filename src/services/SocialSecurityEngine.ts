@@ -46,9 +46,6 @@ export function projectFutureCOLA(colaSettings: SSColaSettings, inputs: PlannerI
     case ColaStrategyType.HistoricalAverage:
       cola = colaSettings.averageRate;
       break;
-    case ColaStrategyType.MonteCarlo:
-      cola = colaSettings.monteCarloRate;
-      break;
     default:
       console.warn(`Unknown COLA strategy: ${colaSettings.strategy}. Using default.`);
   }
@@ -106,12 +103,4 @@ export function calculateHistoricalAverageCOLA(): number {
   }
 
   return formatDecimal(rates.reduce((sum, rate) => sum + rate, 0) / rates.length);
-}
-
-export function calculateMonteCarloCOLA(): number {
-  // jlw - TO DO: implement monte carlo modeling
-  // For demonstration purposes, we will return a random value between 1% and 5%.
-  // In a real application, you would implement a proper Monte Carlo simulation here.
-  const randomRate = Math.random() * (0.05 - 0.01) + 0.01;
-  return formatDecimal(randomRate);
 }
