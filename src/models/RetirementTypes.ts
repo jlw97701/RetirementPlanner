@@ -34,6 +34,8 @@ export interface PlannerInputs {
   rothBaseConv: number;
   rothAggressiveConv: number;
   inflation: number;
+  irmaaMagiTwoYearsPrior: number;
+  irmaaMagiOneYearPrior: number;
 
   // SS benefit estimates
   ssBenefitValueType: SSBenefitValueType; // determines how SS estimates are adjusted annually
@@ -99,6 +101,16 @@ export interface RetirementYear {
   stateTax: number;
   totalTax: number;
 
+  irmaaMagi: number;
+  irmaaMagiWithoutRothConversion: number;
+  irmaaLookbackMagi: number;
+  irmaaTier: number;
+  annualIrmaaSurcharge: number;
+  irmaaConfigurationYear: number;
+  irmaaIsEstimated: boolean;
+  irmaaIsPublished: boolean;
+  rothConversionRaisesIrmaaTier: boolean;
+
   taxableAcctDeposit: number;
   taxableAcctWithdraw: number;
   rothWithdraw: number;
@@ -127,6 +139,7 @@ export interface ScenarioSummary {
   endPortfolioCurrentDollars: number;
 
   totalTaxes: number;
+  totalIrmaaSurcharge: number;
   totalSSToHorizon: number;
   depletionAge: number | null;
 }

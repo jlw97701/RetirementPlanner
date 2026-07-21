@@ -35,7 +35,9 @@ export const DEFAULT_INPUTS: PlannerInputs = {
   ssBenefitValueType: SSBenefitValueType.CurrentDollars,
   ssEstimateYear: 2026,
   actualMonthlySS: 0,
-  actualBenefitYear: 2026
+  actualBenefitYear: 2026,
+  irmaaMagiTwoYearsPrior: 112307,
+  irmaaMagiOneYearPrior: 103753
 };
 
 export const DEFAULT_MONTHLY_SS: SSMonthlyIncome[] = [

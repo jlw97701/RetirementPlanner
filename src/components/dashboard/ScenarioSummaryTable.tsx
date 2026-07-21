@@ -34,7 +34,8 @@ export function ScenarioSummaryTable({
         </p>
         <p>
           The table also shows first-year Social Security, cumulative Social Security and taxes, 
-          and the age when the portfolio can no longer fully fund projected spending.
+          estimated IRMAA surcharges, and the age when the portfolio can no longer fully fund projected spending.
+          IRMAA is informational and is not included in spending or portfolio withdrawals.
         </p>
       `}>
       <div className="table-container">
@@ -67,10 +68,31 @@ export function ScenarioSummaryTable({
                 <br />
                 Start-Year $
               </th>
-              <th>First-Year SS</th>
-              <th>SS to {inputs.horizonAge}</th>
-              <th>Total taxes</th>
-              <th>Depletion</th>
+              <th>
+                First-Year
+                <br />
+                Social Sec
+              </th>
+              <th>
+                Social Sec
+                <br />
+                to {inputs.horizonAge}
+              </th>
+              <th>
+                Total
+                <br />
+                Taxes
+              </th>
+              <th>
+                Estimated
+                <br />
+                IRMAA
+              </th>
+              <th>
+                Depletion
+                <br />
+                Age
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -90,10 +112,11 @@ export function ScenarioSummaryTable({
                 <td>{formatMoney(s.horizonPortfolioAge)}</td>
                 <td>{formatMoney(s.horizonPortfolioCurrentDollars)}</td>
                 <td>{formatMoney(s.endPortfolioAge)}</td>
-                <td>{formatMoney(s.endPortfolioCurrentDollars)}</td> 
+                <td>{formatMoney(s.endPortfolioCurrentDollars)}</td>
                 <td>{formatMoney(s.firstAnnualSS)}</td>
                 <td>{formatMoney(s.totalSSToHorizon)}</td>
                 <td>{formatMoney(s.totalTaxes)}</td>
+                <td>{formatMoney(s.totalIrmaaSurcharge)}</td>
                 <td>{s.depletionAge ?? '—'}</td>
               </tr>
             ))}

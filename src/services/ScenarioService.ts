@@ -22,6 +22,7 @@ export function summarizeRetirementScenario(
     endPortfolioCurrentDollars: final.endPortfolioCurrentDollars,
 
     totalTaxes: rows.reduce((sum, row) => sum + row.totalTax, 0),
+    totalIrmaaSurcharge: rows.reduce((sum, row) => sum + row.annualIrmaaSurcharge, 0),
 
     totalSSToHorizon: rows
       .filter((row) => row.age <= inputs.horizonAge)

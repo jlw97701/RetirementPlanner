@@ -33,9 +33,12 @@ import {
   loadTaxConfigurations,
   saveTaxConfigurations,
   loadEconomicScenarioSettings,
-  saveEconomicScenarioSettings
+  saveEconomicScenarioSettings,
+  loadIrmaaConfigurations,
+  saveIrmaaConfigurations
 } from '../services/PlannerStorage';
 import { getProjectionPeriod } from '../utils/projectionDates';
+import { IRMAA_CONFIGURATIONS } from '../data/irmaaTables';
 
 /**
  * Main application hook
@@ -50,6 +53,9 @@ export function useRetirementModel() {
   const [assetAllocation, setAssetAllocation] = useState(() => loadAssetAllocation(DEFAULT_ASSET_ALLOCATION));
   const [scenarios, setScenarios] = useState(() => loadRetirementScenarios(DEFAULT_RETIREMENT_SCENARIOS));
   const [taxConfig, setTaxConfig] = useState(() => loadTaxConfigurations(DEFAULT_TAX_CONFIG));
+  const [irmaaConfigurations, setIrmaaConfigurations] = useState(() =>
+    loadIrmaaConfigurations(IRMAA_CONFIGURATIONS)
+  );
   const [economicScenarioSettings, setEconomicScenarioSettings] = useState(() => {
     const loaded = loadEconomicScenarioSettings(DEFAULT_ECONOMIC_SCENARIO_SETTINGS);
     const hasStoredHistoricalStart = HISTORICAL_ECONOMIC_DATA.some(
@@ -82,6 +88,7 @@ export function useRetirementModel() {
   useEffect(() => savePlannerInputs(inputs), [inputs]);
   useEffect(() => saveAssetAllocation(assetAllocation), [assetAllocation]);
   useEffect(() => saveEconomicScenarioSettings(economicScenarioSettings), [economicScenarioSettings]);
+  useEffect(() => saveIrmaaConfigurations(irmaaConfigurations), [irmaaConfigurations]);
 
   const federalTaxConfig = taxConfig.federal[0],
     stateTaxConfig = taxConfig.state[0];
@@ -118,7 +125,8 @@ export function useRetirementModel() {
           const rows = calculateRetirementProjection(inputs, ssIncome, colaSettings, assetAllocation, scenario, {
             federalTaxConfig,
             stateTaxConfig,
-            economicScenario
+            economicScenario,
+            irmaaConfigurations
           });
 
           return {
@@ -135,7 +143,8 @@ export function useRetirementModel() {
       activeScenarios,
       federalTaxConfig,
       stateTaxConfig,
-      economicScenario
+      economicScenario,
+      irmaaConfigurations
     ]
   );
   //console.log('useRetirementModel: projections = ', projections);
@@ -154,6 +163,8 @@ export function useRetirementModel() {
     activeScenarios,
     taxConfig,
     setTaxConfig,
+    irmaaConfigurations,
+    setIrmaaConfigurations,
     economicScenarioSettings,
     setEconomicScenarioSettings,
     projections

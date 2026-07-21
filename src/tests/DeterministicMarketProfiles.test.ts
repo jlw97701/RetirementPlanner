@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { ASSET_ALLOCATION_PROFILES } from './assetAllocationProfiles';
-import { HISTORICAL_ECONOMIC_DATA } from './historicalEconomicData';
+import { ASSET_ALLOCATION_PROFILES } from '../data/assetAllocationProfiles';
+import { HISTORICAL_ECONOMIC_DATA } from '../data/historicalEconomicData';
 import {
   calculateDeterministicMarketReturns,
   calculateRollingAnnualizedPortfolioReturns
-} from './deterministicMarketProfiles';
+} from '../data/deterministicMarketProfiles';
 
 describe('deterministic market profiles', () => {
   it.each(ASSET_ALLOCATION_PROFILES)('derives ordered 10- and 20-year returns for $label', ({ allocation }) => {

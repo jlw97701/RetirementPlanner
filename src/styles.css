@@ -72,6 +72,122 @@ header p {
   padding: 15px;
 }
 
+.irmaa-layout {
+  padding: 15px;
+}
+
+.irmaa-editor {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.irmaa-editor-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  .popover-trigger svg {
+    position: relative;
+    top: -3px;
+  }
+  h2 {
+    margin: 0;
+  }
+}
+
+.irmaa-toolbar,
+.irmaa-editor-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+  margin: 14px 0;
+}
+
+.irmaa-toolbar label,
+.irmaa-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: #526174;
+  font-size: 13px;
+}
+
+.irmaa-toolbar button,
+.irmaa-editor-footer button,
+.irmaa-table-container button {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #eaf2fb;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.irmaa-toolbar button:disabled,
+.irmaa-editor-footer button:disabled,
+.irmaa-table-container button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.irmaa-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.irmaa-fields input,
+.irmaa-fields select,
+.irmaa-toolbar select,
+.irmaa-table-container input {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px;
+  background: white;
+}
+
+.irmaa-fields .irmaa-checkbox {
+  flex-direction: row;
+  align-items: center;
+  align-self: end;
+  padding-bottom: 8px;
+}
+
+.irmaa-fields .irmaa-checkbox input {
+  width: auto;
+}
+
+.irmaa-source-field {
+  grid-column: span 2;
+}
+
+.irmaa-table-container {
+  max-height: none;
+}
+
+.irmaa-editor-footer {
+  justify-content: space-between;
+}
+
+.irmaa-editor-footer .primary-button {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: white;
+}
+
+.validation-errors {
+  margin: 10px 0 0;
+  padding: 12px 12px 12px 30px;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
 .content {
   min-width: 0;
   display: flex;
@@ -485,6 +601,13 @@ tr:hover td {
 }
 
 .popover-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  padding: 0;
+  line-height: 0;
   cursor: pointer;
 }
 
@@ -497,7 +620,7 @@ tr:hover td {
     0 10px 15px -3px rgb(0 0 0 / 0.1),
     0 4px 6px -4px rgb(0 0 0 / 0.1);
   width: max-content;
-  max-width: min(24rem, calc(100vw - 1rem));
+  max-width: min(36rem, calc(100vw - 1rem));
   padding: 1rem;
 }
 
@@ -530,10 +653,6 @@ tr:hover td {
   }
 }
 
-/* .popover-content::backdrop {
-  background: transparent;
-} */
-
 @media (max-width: 1050px) {
   .planner-layout,
   .tax-layout {
@@ -544,5 +663,11 @@ tr:hover td {
   }
   .scenario-grid {
     grid-template-columns: 1fr;
+  }
+  .irmaa-fields {
+    grid-template-columns: 1fr;
+  }
+  .irmaa-source-field {
+    grid-column: auto;
   }
 }

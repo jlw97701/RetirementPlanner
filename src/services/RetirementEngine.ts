@@ -17,6 +17,8 @@ import { RMD_FACTORS } from '../data/rmdFactors';
 
 import type { FederalTaxConfig, StateTaxConfig } from '../models/TaxTypes';
 import { getBirthYear, getProjectionPeriod } from '../utils/projectionDates';
+import { calculateIrmaaEstimate, resolveIrmaaConfiguration } from './IrmaaEngine';
+import type { IrmaaConfiguration } from '../data/irmaaTables';
 
 /*
  * Projection timing contract:
@@ -39,6 +41,7 @@ interface RetirementCalculationContext {
   federalTaxConfig: FederalTaxConfig;
   stateTaxConfig: StateTaxConfig;
   economicScenario: EconomicScenario;
+  irmaaConfigurations?: readonly IrmaaConfiguration[];
 }
 
 interface WithdrawalEvaluation {
@@ -259,6 +262,8 @@ function validateProjectionInputs(inputs: PlannerInputs): void {
   requireNonnegativeFinite(inputs.annualSpend, 'Annual spending');
   requireNonnegativeFinite(inputs.rothBaseConv, 'Annual base Roth conversion');
   requireNonnegativeFinite(inputs.rothAggressiveConv, 'Annual aggressive Roth conversion');
+  requireNonnegativeFinite(inputs.irmaaMagiTwoYearsPrior, 'IRMAA MAGI from two years before the projection');
+  requireNonnegativeFinite(inputs.irmaaMagiOneYearPrior, 'IRMAA MAGI from one year before the projection');
 
   if (!Number.isFinite(inputs.inflation) || inputs.inflation <= -1) {
     throw new Error('Inflation must be finite and greater than -100%.');
@@ -297,6 +302,33 @@ function annualToHalfYearReturn(annualReturn: number): number {
   }
 
   return Math.sqrt(1 + annualReturn) - 1;
+}
+
+function calculateIrmaaInflationFactor(
+  configurationYear: number,
+  premiumYear: number,
+  projectionStartYear: number,
+  economicScenario: EconomicScenario,
+  defaultInflation: number
+): number {
+  if (configurationYear === premiumYear) return 1;
+
+  const inflationForYear = (year: number) => {
+    if (year <= projectionStartYear) return defaultInflation;
+    return economicScenario.years[year - projectionStartYear]?.inflation ?? defaultInflation;
+  };
+
+  let factor = 1;
+  if (premiumYear > configurationYear) {
+    for (let year = configurationYear + 1; year <= premiumYear; year += 1) {
+      factor *= 1 + inflationForYear(year);
+    }
+  } else {
+    for (let year = premiumYear + 1; year <= configurationYear; year += 1) {
+      factor /= 1 + inflationForYear(year);
+    }
+  }
+  return factor;
 }
 
 export function calculateRetirementProjection(
@@ -545,6 +577,51 @@ export function calculateRetirementProjection(
 
     const unfundedNeed = Math.max(0, cashNeedAfterTaxable - rothWithdraw);
 
+    // Under the planner's current assumptions, IRMAA MAGI equals federal AGI because
+    // taxable savings earn no interest and no tax-exempt interest is modeled.
+    const irmaaMagi = federalAgi;
+    const irmaaMagiWithoutRothConversion = calculateFederalTax(
+      age,
+      tradCashWithdraw,
+      socialSecurity,
+      context.federalTaxConfig
+    ).agi;
+    const irmaaLookbackMagi =
+      yearIndex >= 2
+        ? years[yearIndex - 2].irmaaMagi
+        : yearIndex === 1
+          ? inputs.irmaaMagiOneYearPrior
+          : inputs.irmaaMagiTwoYearsPrior;
+    const resolvedIrmaa = resolveIrmaaConfiguration(year, 'single', context.irmaaConfigurations);
+    const irmaaInflationFactor = calculateIrmaaInflationFactor(
+      resolvedIrmaa.configuration.premiumYear,
+      year,
+      startYear,
+      context.economicScenario,
+      inputs.inflation
+    );
+    const irmaaEstimate = calculateIrmaaEstimate(
+      irmaaLookbackMagi,
+      year,
+      irmaaInflationFactor,
+      'single',
+      context.irmaaConfigurations
+    );
+    const isMedicareEligible = age >= 65;
+    const irmaaTier = isMedicareEligible ? irmaaEstimate.tier : 0;
+    const annualIrmaaSurcharge = isMedicareEligible ? irmaaEstimate.annualSurcharge : 0;
+    const lookbackMagiWithoutRothConversion =
+      yearIndex >= 2 ? years[yearIndex - 2].irmaaMagiWithoutRothConversion : irmaaLookbackMagi;
+    const tierWithoutRothConversion = calculateIrmaaEstimate(
+      lookbackMagiWithoutRothConversion,
+      year,
+      irmaaInflationFactor,
+      'single',
+      context.irmaaConfigurations
+    ).tier;
+    const rothConversionRaisesIrmaaTier =
+      isMedicareEligible && yearIndex >= 2 && irmaaTier > tierWithoutRothConversion;
+
     /*
      * Carry December 31 balances into the following
      * year's January 1 balances.
@@ -575,6 +652,15 @@ export function calculateRetirementProjection(
       stateTaxableIncome,
       stateTax,
       totalTax,
+      irmaaMagi,
+      irmaaMagiWithoutRothConversion,
+      irmaaLookbackMagi,
+      irmaaTier,
+      annualIrmaaSurcharge,
+      irmaaConfigurationYear: irmaaEstimate.configurationYear,
+      irmaaIsEstimated: irmaaEstimate.isEstimated,
+      irmaaIsPublished: irmaaEstimate.isPublished,
+      rothConversionRaisesIrmaaTier,
       taxableAcctDeposit,
       taxableAcctWithdraw,
       rothWithdraw,

@@ -19,6 +19,17 @@ export function YearDetailsTable({ rows }: { rows: RetirementYear[] }) {
           Account balances and annual amounts are shown in nominal dollars.
         </p>
         <p>
+          <strong>IRMAA MAGI</strong> is the income used for the current tax year. <strong>IRMAA Lookback</strong>
+          is the MAGI from two years earlier used to estimate the listed year's Medicare surcharge. The estimate
+          assumes single filing status and includes Part B and Part D adjustments, but is not deducted from savings.
+          <strong> Conversion Impact</strong> identifies a Roth conversion from two years earlier that raised the
+          estimated IRMAA tier.
+        </p>
+        <p>
+          <strong>IRMAA Basis</strong> identifies an exact published premium-year table or an inflation-based estimate
+          derived from the most recent published table.
+        </p>
+        <p>
           Investment returns are split around midyear cash flows, and taxable savings are assumed to earn no interest.
         </p>
         <p>
@@ -37,6 +48,12 @@ export function YearDetailsTable({ rows }: { rows: RetirementYear[] }) {
               <th>Roth Conv</th>
               <th>Fed Tax</th>
               <th>State Tax</th>
+              <th>IRMAA MAGI</th>
+              <th>IRMAA Lookback</th>
+              <th>IRMAA Tier</th>
+              <th>IRMAA Surcharge</th>
+              <th>IRMAA Basis</th>
+              <th>Conversion Impact</th>
               <th>Cash Flow</th>
               <th>End Savings</th>
               <th>End Trad</th>
@@ -55,6 +72,18 @@ export function YearDetailsTable({ rows }: { rows: RetirementYear[] }) {
                 <td>{formatMoney(r.rothConv)}</td>
                 <td>{formatMoney(r.federalTax)}</td>
                 <td>{formatMoney(r.stateTax)}</td>
+                <td>{formatMoney(r.irmaaMagi)}</td>
+                <td>{formatMoney(r.irmaaLookbackMagi)}</td>
+                <td>{r.age >= 65 ? r.irmaaTier : '—'}</td>
+                <td>{formatMoney(r.annualIrmaaSurcharge)}</td>
+                <td>
+                  {r.irmaaIsEstimated
+                    ? `Estimated from ${r.irmaaConfigurationYear}`
+                    : r.irmaaIsPublished
+                      ? `Published ${r.irmaaConfigurationYear}`
+                      : `Custom ${r.irmaaConfigurationYear}`}
+                </td>
+                <td>{r.rothConversionRaisesIrmaaTier ? 'Raised tier' : '—'}</td>
                 <td>{formatMoney(r.taxableAcctDeposit - r.taxableAcctWithdraw)}</td>
                 <td>{formatMoney(r.endTaxableAcct)}</td>
                 <td>{formatMoney(r.endTradlIra)}</td>

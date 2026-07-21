@@ -288,10 +288,33 @@ export function PlannerInputsPanel({
             <p>
               Required Minimum Distributions are calculated using the applicable starting
               age and the January 1 Traditional IRA balance.
+            </p>
+            <p>
               <a href="https://www.irs.gov/retirement-plans/required-minimum-distributions-rmds"
                 target="_blank"
                 rel="noopener noreferrer">
                 Learn more about RMDs from the IRS.
+              </a>
+            </p>
+            <p>
+              Enter MAGI from the two tax years immediately before the projection so the planner can estimate
+              Medicare IRMAA during its first two years. IRMAA uses a two-year income lookback and is displayed
+              separately; it is not deducted from the portfolio or included in spending. Published year-specific
+              tables are used when available. Later years are estimated from the most recent table using projected
+              inflation and are identified as estimates in Year-By-Year Details.
+            </p>
+            <p>
+              <a href="https://www.ssa.gov/benefits/medicare/medicare-premiums.html"
+                target="_blank"
+                rel="noopener noreferrer">
+                Review current Medicare premiums and IRMAA brackets from SSA.
+              </a>
+            </p>
+            <p>
+              <a href="https://secure.ssa.gov/poms.nsf/links/0601101010"
+                target="_blank"
+                rel="noopener noreferrer">
+                See SSA's official IRMAA MAGI definition and Form 1040 line references.
               </a>
             </p>
           `}
@@ -388,6 +411,20 @@ export function PlannerInputsPanel({
             value={inputs.inflation}
             step={0.001}
             onChange={(v) => setInputs({ ...inputs, inflation: v })}
+          />
+          <NumberInput
+            label={`IRMAA MAGI for ${projectionStartYear - 2}`}
+            value={inputs.irmaaMagiTwoYearsPrior}
+            min={0}
+            step={1000}
+            onChange={(v) => setInputs({ ...inputs, irmaaMagiTwoYearsPrior: v })}
+          />
+          <NumberInput
+            label={`IRMAA MAGI for ${projectionStartYear - 1}`}
+            value={inputs.irmaaMagiOneYearPrior}
+            min={0}
+            step={1000}
+            onChange={(v) => setInputs({ ...inputs, irmaaMagiOneYearPrior: v })}
           />
         </AccordionPanel>
         <AccordionPanel

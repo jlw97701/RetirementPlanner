@@ -7,6 +7,7 @@ import type {
 } from '../models/RetirementTypes';
 import type { TaxConfigurationSet } from '../models/TaxTypes';
 import type { EconomicScenarioSettings } from '../models/EconomicScenarioSettings';
+import type { IrmaaConfiguration } from '../data/irmaaTables';
 import { EconomicScenarioMethod } from './EconomicScenarioEngine';
 import {
   ASSET_ALLOCATION_PROFILES,
@@ -21,7 +22,8 @@ const INPUTS_KEY = 'retirement-planner-inputs',
   ASSET_ALLOCATION_PREFERENCES_KEY = 'retirement-planner-asset-allocation-preferences',
   ECONOMIC_SCENARIO_SETTINGS_KEY = 'retirement-planner-economic-scenario-settings',
   SCENARIO_KEY = 'retirement-planner-scenarios',
-  TAX_CONFIG_KEY = 'retirement-planner-tax-config';
+  TAX_CONFIG_KEY = 'retirement-planner-tax-config',
+  IRMAA_CONFIGURATIONS_KEY = 'retirement-planner-irmaa-configurations';
 
 export function loadPlannerInputs(defaults: PlannerInputs): PlannerInputs {
   //console.log('loadPlannerInputs: defaults = ', defaults);
@@ -277,4 +279,26 @@ export function loadTaxConfigurations(defaults: TaxConfigurationSet): TaxConfigu
 export function saveTaxConfigurations(value: TaxConfigurationSet): void {
   //console.log('saveTaxConfigurations: value = ', value);
   localStorage.setItem(TAX_CONFIG_KEY, JSON.stringify(value));
+}
+
+export function loadIrmaaConfigurations(defaults: readonly IrmaaConfiguration[]): IrmaaConfiguration[] {
+  try {
+    const parsed: unknown = JSON.parse(localStorage.getItem(IRMAA_CONFIGURATIONS_KEY) ?? 'null');
+    if (!Array.isArray(parsed) || parsed.length === 0) return structuredClone(defaults) as IrmaaConfiguration[];
+
+    const configurations = parsed.filter(
+      (item): item is IrmaaConfiguration =>
+        typeof item === 'object' &&
+        item !== null &&
+        Number.isInteger((item as IrmaaConfiguration).premiumYear) &&
+        Array.isArray((item as IrmaaConfiguration).tiers)
+    );
+    return configurations.length > 0 ? configurations : (structuredClone(defaults) as IrmaaConfiguration[]);
+  } catch {
+    return structuredClone(defaults) as IrmaaConfiguration[];
+  }
+}
+
+export function saveIrmaaConfigurations(value: readonly IrmaaConfiguration[]): void {
+  localStorage.setItem(IRMAA_CONFIGURATIONS_KEY, JSON.stringify(value));
 }

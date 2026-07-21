@@ -8,8 +8,9 @@ import { YearDetailsTable } from './components/dashboard/YearDetailsTable';
 import { TaxTableEditor } from './components/tax/TaxTableEditor';
 import { useRetirementModel } from './hooks/useRetirementModel';
 import { EconomicScenarioHelp } from './components/help/EconomicScenarioHelp';
+import { IrmaaTableEditor } from './components/irmaa/IrmaaTableEditor';
 
-type AppPage = 'planner' | 'taxes' | 'help';
+type AppPage = 'planner' | 'taxes' | 'irmaa' | 'help';
 
 export default function App() {
   const {
@@ -23,6 +24,8 @@ export default function App() {
     setAssetAllocation,
     taxConfig,
     setTaxConfig,
+    irmaaConfigurations,
+    setIrmaaConfigurations,
     economicScenarioSettings,
     setEconomicScenarioSettings,
     projections
@@ -57,6 +60,10 @@ export default function App() {
               <button className="header-button" onClick={() => setActivePage('taxes')}>
                 <TableConfig />
                 Tax Tables
+              </button>
+              <button className="header-button" onClick={() => setActivePage('irmaa')}>
+                <TableConfig />
+                IRMAA Tables
               </button>
               <button className="header-button" onClick={() => setActivePage('help')}>
                 <CircleHelp />
@@ -94,6 +101,8 @@ export default function App() {
             }
           />
         </main>
+      ) : activePage === 'irmaa' ? (
+        <IrmaaTableEditor configurations={irmaaConfigurations} onChange={setIrmaaConfigurations} />
       ) : activePage === 'help' ? (
         <EconomicScenarioHelp />
       ) : (

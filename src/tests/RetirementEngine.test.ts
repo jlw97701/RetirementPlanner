@@ -203,4 +203,20 @@ describe('calculateRetirementProjection', () => {
 
     expect(rows[1].endPortfolioCurrentDollars).toBeCloseTo(rows[1].endPortfolio / 1.1, 2);
   });
+
+  test('estimates IRMAA using the two-year MAGI lookback without deducting it from cash flow', () => {
+    const rows = createTestProjection({
+      irmaaMagiTwoYearsPrior: 110_000,
+      irmaaMagiOneYearPrior: 0
+    });
+
+    expect(rows[0].irmaaLookbackMagi).toBe(110_000);
+    expect(rows[0].irmaaTier).toBe(1);
+    expect(rows[0].annualIrmaaSurcharge).toBeCloseTo((81.2 + 14.5) * 12, 2);
+    expect(rows[1].irmaaLookbackMagi).toBe(0);
+    expect(rows[1].annualIrmaaSurcharge).toBe(0);
+
+    // IRMAA is currently informational, so it is not part of total tax or account cash flows.
+    expect(rows[0].totalTax).toBeCloseTo(rows[0].federalTax + rows[0].stateTax, 2);
+  });
 });
