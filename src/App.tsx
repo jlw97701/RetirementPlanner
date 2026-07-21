@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Calculator, ArrowLeft, TableConfig } from 'lucide-react';
+import { Calculator, ArrowLeft, CircleHelp, TableConfig } from 'lucide-react';
 import { PlannerInputsPanel } from './components/inputs/PlannerInputsPanel';
 import { ScenarioCards } from './components/scenarios/ScenarioCards';
 import { ScenarioChart } from './components/dashboard/ScenarioChart';
@@ -7,6 +7,9 @@ import { ScenarioSummaryTable } from './components/dashboard/ScenarioSummaryTabl
 import { YearDetailsTable } from './components/dashboard/YearDetailsTable';
 import { TaxTableEditor } from './components/tax/TaxTableEditor';
 import { useRetirementModel } from './hooks/useRetirementModel';
+import { EconomicScenarioHelp } from './components/help/EconomicScenarioHelp';
+
+type AppPage = 'planner' | 'taxes' | 'help';
 
 export default function App() {
   const {
@@ -20,11 +23,13 @@ export default function App() {
     setAssetAllocation,
     taxConfig,
     setTaxConfig,
+    economicScenarioSettings,
+    setEconomicScenarioSettings,
     projections
   } = useRetirementModel();
 
   const [selectedId, setSelectedId] = useState(projections[0]?.scenario.id ?? '');
-  const [showTaxTables, setShowTaxTables] = useState(false);
+  const [activePage, setActivePage] = useState<AppPage>('planner');
   const selected = projections.find((p) => p.scenario.id === selectedId) ?? projections[0];
   const summaries = projections.map((p) => p.summary);
 
@@ -46,12 +51,27 @@ export default function App() {
           </h1>
           <p>Social Security timing, Roth conversions, federal and state taxes, and RMD planning.</p>
         </div>
-        <button className="header-button" onClick={() => setShowTaxTables((v) => !v)}>
-          {showTaxTables ? <ArrowLeft /> : <TableConfig />}
-          {showTaxTables ? 'Back' : 'Tax Tables'}
-        </button>
+        <div className="header-actions">
+          {activePage === 'planner' ? (
+            <>
+              <button className="header-button" onClick={() => setActivePage('taxes')}>
+                <TableConfig />
+                Tax Tables
+              </button>
+              <button className="header-button" onClick={() => setActivePage('help')}>
+                <CircleHelp />
+                Help
+              </button>
+            </>
+          ) : (
+            <button className="header-button" onClick={() => setActivePage('planner')}>
+              <ArrowLeft />
+              Back to Planner
+            </button>
+          )}
+        </div>
       </header>
-      {showTaxTables ? (
+      {activePage === 'taxes' ? (
         <main className="tax-layout">
           <TaxTableEditor
             title="Federal tax brackets"
@@ -74,6 +94,8 @@ export default function App() {
             }
           />
         </main>
+      ) : activePage === 'help' ? (
+        <EconomicScenarioHelp />
       ) : (
         <main className="planner-layout">
           <PlannerInputsPanel
@@ -85,6 +107,8 @@ export default function App() {
             setColaSettings={setColaSettings}
             assetAllocation={assetAllocation}
             setAssetAllocation={setAssetAllocation}
+            economicScenarioSettings={economicScenarioSettings}
+            setEconomicScenarioSettings={setEconomicScenarioSettings}
           />
           <section className="content">
             {/* <ScenarioCards

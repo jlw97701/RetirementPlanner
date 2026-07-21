@@ -16,6 +16,8 @@ import type { TaxConfigurationSet } from '../models/TaxTypes';
 import { COLA_HISTORY } from './colaHistory';
 import { calculateHistoricalAverageCOLA, calculateMonteCarloCOLA } from '../services/SocialSecurityEngine';
 import { formatDecimal } from '../utils/format';
+import { EconomicScenarioMethod } from '../services/EconomicScenarioEngine';
+import type { EconomicScenarioSettings } from '../models/EconomicScenarioSettings';
 
 export const DEFAULT_INPUTS: PlannerInputs = {
   birthDate: '1964-03-30', // Using ISO date strings avoids ambiguous parsing
@@ -61,6 +63,42 @@ export const DEFAULT_ASSET_ALLOCATION: AssetAllocation = {
   bonds: 0.3,
   cash: 0.1,
   other: 0
+};
+
+export const DEFAULT_ECONOMIC_SCENARIO_SETTINGS: EconomicScenarioSettings = {
+  method: EconomicScenarioMethod.DETERMINISTIC,
+  deterministic: {
+    stockReturn: 0.07,
+    bondReturn: 0.035,
+    cashReturn: 0.025,
+    otherReturn: 0.05
+  },
+  historicalSequence: {
+    historicalStartYear: 1975,
+    wrap: true
+  },
+  historicalBootstrap: {
+    blockSize: 3,
+    seed: 12345
+  },
+  monteCarlo: {
+    seed: 12345,
+    simulations: 1000,
+    assumptions: {
+      inflation: { mean: 0.03, standardDeviation: 0.015, minimum: -0.02, maximum: 0.1 },
+      stockReturn: { mean: 0.07, standardDeviation: 0.18, minimum: -0.6, maximum: 0.6 },
+      bondReturn: { mean: 0.035, standardDeviation: 0.07, minimum: -0.3, maximum: 0.3 },
+      cashReturn: { mean: 0.025, standardDeviation: 0.015, minimum: 0, maximum: 0.1 },
+      otherReturn: { mean: 0.05, standardDeviation: 0.15, minimum: -0.5, maximum: 0.5 },
+      correlationMatrix: [
+        [1, 0, 0, 0, 0],
+        [0, 1, 0, 0, 0],
+        [0, 0, 1, 0, 0],
+        [0, 0, 0, 1, 0],
+        [0, 0, 0, 0, 1]
+      ]
+    }
+  }
 };
 
 export const DEFAULT_RETIREMENT_SCENARIOS: RetirementScenario[] = [

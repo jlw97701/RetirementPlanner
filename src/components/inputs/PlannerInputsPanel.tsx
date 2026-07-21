@@ -29,6 +29,9 @@ import {
   type AssetAllocationSelection
 } from '../../data/assetAllocationProfiles';
 import { loadAssetAllocationPreferences, saveAssetAllocationPreferences } from '../../services/PlannerStorage';
+import type { EconomicScenarioSettings } from '../../models/EconomicScenarioSettings';
+import { EconomicScenarioMethod } from '../../services/EconomicScenarioEngine';
+import { HISTORICAL_ECONOMIC_DATA } from '../../data/historicalEconomicData';
 
 interface InputsInterface {
   inputs: PlannerInputs;
@@ -39,6 +42,8 @@ interface InputsInterface {
   setColaSettings: (v: SSColaSettings) => void;
   assetAllocation: AssetAllocation;
   setAssetAllocation: (v: AssetAllocation) => void;
+  economicScenarioSettings: EconomicScenarioSettings;
+  setEconomicScenarioSettings: (v: EconomicScenarioSettings) => void;
 }
 
 export function PlannerInputsPanel({
@@ -49,7 +54,9 @@ export function PlannerInputsPanel({
   colaSettings,
   setColaSettings,
   assetAllocation,
-  setAssetAllocation
+  setAssetAllocation,
+  economicScenarioSettings,
+  setEconomicScenarioSettings
 }: InputsInterface) {
   //console.log('PlannerInputsPanel: inputs = ', inputs);
   //console.log('PlannerInputsPanel: income = ', income);
@@ -166,6 +173,50 @@ export function PlannerInputsPanel({
       ...current,
       customAllocation: { ...current.customAllocation, [key]: percent / 100 }
     }));
+  };
+
+  const economicScenarioOptions = [
+    { value: EconomicScenarioMethod.DETERMINISTIC, label: 'Deterministic' },
+    { value: EconomicScenarioMethod.MONTE_CARLO, label: 'Single Simulated Path' },
+    ...(HISTORICAL_ECONOMIC_DATA.length > 0
+      ? [
+          { value: EconomicScenarioMethod.HISTORICAL_SEQUENCE, label: 'Historical Sequence' },
+          { value: EconomicScenarioMethod.HISTORICAL_BOOTSTRAP, label: 'Historical Bootstrap' }
+        ]
+      : [])
+  ];
+  const projectionYearCount = inputs.endAge - inputs.startAge + 1;
+  const historicalStartYearOptions = HISTORICAL_ECONOMIC_DATA.filter(
+    (_, index) =>
+      economicScenarioSettings.historicalSequence.wrap ||
+      index + projectionYearCount <= HISTORICAL_ECONOMIC_DATA.length
+  ).map((item) => ({ value: item.year, label: String(item.year) }));
+
+  const updateDeterministicReturn = (key: keyof EconomicScenarioSettings['deterministic'], value: number) => {
+    setEconomicScenarioSettings({
+      ...economicScenarioSettings,
+      deterministic: { ...economicScenarioSettings.deterministic, [key]: value }
+    });
+  };
+
+  const updateMonteCarloVariable = (
+    key: 'inflation' | 'stockReturn' | 'bondReturn' | 'cashReturn' | 'otherReturn',
+    field: 'mean' | 'standardDeviation',
+    value: number
+  ) => {
+    setEconomicScenarioSettings({
+      ...economicScenarioSettings,
+      monteCarlo: {
+        ...economicScenarioSettings.monteCarlo,
+        assumptions: {
+          ...economicScenarioSettings.monteCarlo.assumptions,
+          [key]: {
+            ...economicScenarioSettings.monteCarlo.assumptions[key],
+            [field]: value
+          }
+        }
+      }
+    });
   };
 
   return (
@@ -617,6 +668,212 @@ export function PlannerInputsPanel({
               <span>Cash: {(assetAllocation.cash * 100).toFixed(0)}%</span>
               <span>Other: {(assetAllocation.other * 100).toFixed(0)}%</span>
             </div>
+          )}
+        </AccordionPanel>
+        <AccordionPanel
+          title="Economic Scenario"
+          icon={<Settings />}
+          info={`
+            <h3>Economic Scenario</h3>
+            <p>
+              Choose how annual investment returns and inflation are generated for the projection.
+              No scenario predicts the future or guarantees a particular result.
+            </p>
+            <p>
+              <strong>Deterministic</strong> applies the same assumptions every year, making it useful for
+              baseline projections and direct strategy comparisons.
+            </p>
+            <p>
+              <strong>Single Simulated Path</strong> generates one repeatable sequence of variable annual results.
+              It illustrates volatility and sequence-of-returns risk, but is not a probability-of-success analysis.
+            </p>
+            <p>
+              <strong>Historical Sequence</strong> replays consecutive years from the 1975–2025 dataset.
+            </p>
+            <p>
+              <strong> Historical Bootstrap</strong> randomly samples years from that dataset, preserving the
+              relationships among returns and inflation within each sampled year.
+            </p>
+            <p>
+              Compare several methods and starting years. A more resilient plan can fund essential spending
+              across steady assumptions, unfavorable historical periods, and volatile simulated paths.
+            </p>
+          `}
+          isOpen={expandedIndex === 4}
+          onToggle={() => setSelectedPanel(4)}>
+          <Dropdown
+            label="Scenario Method"
+            options={economicScenarioOptions}
+            selectedValue={economicScenarioSettings.method}
+            onChange={(value) =>
+              setEconomicScenarioSettings({
+                ...economicScenarioSettings,
+                method: String(value) as EconomicScenarioMethod
+              })
+            }
+          />
+
+          {economicScenarioSettings.method === EconomicScenarioMethod.DETERMINISTIC && (
+            <>
+              <NumberInput
+                label="Stock Return"
+                value={economicScenarioSettings.deterministic.stockReturn}
+                min={-1}
+                max={1}
+                step={0.001}
+                onChange={(value) => updateDeterministicReturn('stockReturn', value)}
+              />
+              <NumberInput
+                label="Bond Return"
+                value={economicScenarioSettings.deterministic.bondReturn}
+                min={-1}
+                max={1}
+                step={0.001}
+                onChange={(value) => updateDeterministicReturn('bondReturn', value)}
+              />
+              <NumberInput
+                label="Cash Return"
+                value={economicScenarioSettings.deterministic.cashReturn}
+                min={-1}
+                max={1}
+                step={0.001}
+                onChange={(value) => updateDeterministicReturn('cashReturn', value)}
+              />
+              <NumberInput
+                label="Other Return"
+                value={economicScenarioSettings.deterministic.otherReturn}
+                min={-1}
+                max={1}
+                step={0.001}
+                onChange={(value) => updateDeterministicReturn('otherReturn', value)}
+              />
+            </>
+          )}
+
+          {economicScenarioSettings.method === EconomicScenarioMethod.HISTORICAL_SEQUENCE && (
+            <>
+              <Dropdown
+                label="Historical Start Year"
+                options={historicalStartYearOptions}
+                selectedValue={economicScenarioSettings.historicalSequence.historicalStartYear}
+                onChange={(historicalStartYear) =>
+                  setEconomicScenarioSettings({
+                    ...economicScenarioSettings,
+                    historicalSequence: {
+                      ...economicScenarioSettings.historicalSequence,
+                      historicalStartYear: Number(historicalStartYear)
+                    }
+                  })
+                }
+              />
+              <Dropdown
+                label="Wrap Historical Data"
+                options={[
+                  { value: 1, label: 'Yes' },
+                  { value: 0, label: 'No' }
+                ]}
+                selectedValue={economicScenarioSettings.historicalSequence.wrap ? 1 : 0}
+                onChange={(value) => {
+                  const wrap = Number(value) === 1;
+                  const latestStartIndex = Math.max(0, HISTORICAL_ECONOMIC_DATA.length - projectionYearCount);
+                  const currentStartIndex = HISTORICAL_ECONOMIC_DATA.findIndex(
+                    (item) => item.year === economicScenarioSettings.historicalSequence.historicalStartYear
+                  );
+                  const historicalStartYear =
+                    !wrap && currentStartIndex > latestStartIndex
+                      ? HISTORICAL_ECONOMIC_DATA[latestStartIndex].year
+                      : economicScenarioSettings.historicalSequence.historicalStartYear;
+
+                  setEconomicScenarioSettings({
+                    ...economicScenarioSettings,
+                    historicalSequence: {
+                      ...economicScenarioSettings.historicalSequence,
+                      wrap,
+                      historicalStartYear
+                    }
+                  });
+                }}
+              />
+            </>
+          )}
+
+          {economicScenarioSettings.method === EconomicScenarioMethod.HISTORICAL_BOOTSTRAP && (
+            <>
+              <NumberInput
+                label="Block Size"
+                value={economicScenarioSettings.historicalBootstrap.blockSize}
+                min={1}
+                step={1}
+                onChange={(blockSize) =>
+                  setEconomicScenarioSettings({
+                    ...economicScenarioSettings,
+                    historicalBootstrap: {
+                      ...economicScenarioSettings.historicalBootstrap,
+                      blockSize
+                    }
+                  })
+                }
+              />
+              <NumberInput
+                label="Random Seed"
+                value={economicScenarioSettings.historicalBootstrap.seed}
+                step={1}
+                onChange={(seed) =>
+                  setEconomicScenarioSettings({
+                    ...economicScenarioSettings,
+                    historicalBootstrap: {
+                      ...economicScenarioSettings.historicalBootstrap,
+                      seed
+                    }
+                  })
+                }
+              />
+            </>
+          )}
+
+          {economicScenarioSettings.method === EconomicScenarioMethod.MONTE_CARLO && (
+            <>
+              <NumberInput
+                label="Random Seed"
+                value={economicScenarioSettings.monteCarlo.seed}
+                step={1}
+                onChange={(seed) =>
+                  setEconomicScenarioSettings({
+                    ...economicScenarioSettings,
+                    monteCarlo: { ...economicScenarioSettings.monteCarlo, seed }
+                  })
+                }
+              />
+              {(
+                [
+                  ['inflation', 'Inflation'],
+                  ['stockReturn', 'Stock Return'],
+                  ['bondReturn', 'Bond Return'],
+                  ['cashReturn', 'Cash Return'],
+                  ['otherReturn', 'Other Return']
+                ] as const
+              ).map(([key, label]) => (
+                <div className="scenario-assumption" key={key}>
+                  <strong>{label}</strong>
+                  <NumberInput
+                    label="Average"
+                    value={economicScenarioSettings.monteCarlo.assumptions[key].mean}
+                    min={-1}
+                    max={1}
+                    step={0.001}
+                    onChange={(value) => updateMonteCarloVariable(key, 'mean', value)}
+                  />
+                  <NumberInput
+                    label="Volatility"
+                    value={economicScenarioSettings.monteCarlo.assumptions[key].standardDeviation}
+                    min={0}
+                    max={1}
+                    step={0.001}
+                    onChange={(value) => updateMonteCarloVariable(key, 'standardDeviation', value)}
+                  />
+                </div>
+              ))}
+            </>
           )}
         </AccordionPanel>
       </div>

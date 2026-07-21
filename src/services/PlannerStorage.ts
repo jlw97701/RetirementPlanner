@@ -6,6 +6,8 @@ import type {
   RetirementScenario
 } from '../models/RetirementTypes';
 import type { TaxConfigurationSet } from '../models/TaxTypes';
+import type { EconomicScenarioSettings } from '../models/EconomicScenarioSettings';
+import { EconomicScenarioMethod } from './EconomicScenarioEngine';
 import {
   ASSET_ALLOCATION_PROFILES,
   CUSTOM_ALLOCATION_ID,
@@ -17,6 +19,7 @@ const INPUTS_KEY = 'retirement-planner-inputs',
   COLA_KEY = 'retirement-planner-cola',
   ASSET_ALLOCATION_KEY = 'retirement-planner-asset-allocation',
   ASSET_ALLOCATION_PREFERENCES_KEY = 'retirement-planner-asset-allocation-preferences',
+  ECONOMIC_SCENARIO_SETTINGS_KEY = 'retirement-planner-economic-scenario-settings',
   SCENARIO_KEY = 'retirement-planner-scenarios',
   TAX_CONFIG_KEY = 'retirement-planner-tax-config';
 
@@ -165,6 +168,63 @@ export function loadAssetAllocationPreferences(defaults: AssetAllocationPreferen
 
 export function saveAssetAllocationPreferences(value: AssetAllocationPreferences): void {
   localStorage.setItem(ASSET_ALLOCATION_PREFERENCES_KEY, JSON.stringify(value));
+}
+
+export function loadEconomicScenarioSettings(defaults: EconomicScenarioSettings): EconomicScenarioSettings {
+  try {
+    const stored = localStorage.getItem(ECONOMIC_SCENARIO_SETTINGS_KEY);
+
+    if (!stored) {
+      return defaults;
+    }
+
+    const parsed = JSON.parse(stored) as Partial<EconomicScenarioSettings>;
+    const validMethods = new Set(Object.values(EconomicScenarioMethod));
+    const method = validMethods.has(parsed.method as EconomicScenarioMethod) ? parsed.method! : defaults.method;
+
+    return {
+      ...defaults,
+      ...parsed,
+      method,
+      deterministic: { ...defaults.deterministic, ...parsed.deterministic },
+      historicalSequence: { ...defaults.historicalSequence, ...parsed.historicalSequence },
+      historicalBootstrap: { ...defaults.historicalBootstrap, ...parsed.historicalBootstrap },
+      monteCarlo: {
+        ...defaults.monteCarlo,
+        ...parsed.monteCarlo,
+        assumptions: {
+          ...defaults.monteCarlo.assumptions,
+          ...parsed.monteCarlo?.assumptions,
+          inflation: {
+            ...defaults.monteCarlo.assumptions.inflation,
+            ...parsed.monteCarlo?.assumptions?.inflation
+          },
+          stockReturn: {
+            ...defaults.monteCarlo.assumptions.stockReturn,
+            ...parsed.monteCarlo?.assumptions?.stockReturn
+          },
+          bondReturn: {
+            ...defaults.monteCarlo.assumptions.bondReturn,
+            ...parsed.monteCarlo?.assumptions?.bondReturn
+          },
+          cashReturn: {
+            ...defaults.monteCarlo.assumptions.cashReturn,
+            ...parsed.monteCarlo?.assumptions?.cashReturn
+          },
+          otherReturn: {
+            ...defaults.monteCarlo.assumptions.otherReturn,
+            ...parsed.monteCarlo?.assumptions?.otherReturn
+          }
+        }
+      }
+    };
+  } catch {
+    return defaults;
+  }
+}
+
+export function saveEconomicScenarioSettings(value: EconomicScenarioSettings): void {
+  localStorage.setItem(ECONOMIC_SCENARIO_SETTINGS_KEY, JSON.stringify(value));
 }
 
 export function loadRetirementScenarios(defaults: RetirementScenario[]): RetirementScenario[] {

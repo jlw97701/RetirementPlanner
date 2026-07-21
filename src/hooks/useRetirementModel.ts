@@ -7,16 +7,17 @@ import {
   DEFAULT_ASSET_ALLOCATION,
   DEFAULT_RETIREMENT_SCENARIOS,
   DEFAULT_TAX_CONFIG,
-  ACTUAL_BENEFIT_SCENARIOS
+  ACTUAL_BENEFIT_SCENARIOS,
+  DEFAULT_ECONOMIC_SCENARIO_SETTINGS
 } from '../data/defaults';
-
-import { COLA_HISTORY } from '../data/colaHistory';
 
 import { SSBenefitValueType } from '../models/RetirementTypes';
 
-import { EconomicScenarioEngine } from '../services/EconomicScenarioEngine';
 import { calculateRetirementProjection } from '../services/RetirementEngine';
 import { summarizeRetirementScenario } from '../services/ScenarioService';
+import { createEconomicScenario } from '../services/EconomicScenarioService';
+import { HISTORICAL_ECONOMIC_DATA } from '../data/historicalEconomicData';
+import { EconomicScenarioMethod } from '../services/EconomicScenarioEngine';
 
 import {
   loadPlannerInputs,
@@ -30,11 +31,10 @@ import {
   loadRetirementScenarios,
   saveRetirementScenarios,
   loadTaxConfigurations,
-  saveTaxConfigurations
+  saveTaxConfigurations,
+  loadEconomicScenarioSettings,
+  saveEconomicScenarioSettings
 } from '../services/PlannerStorage';
-
-import { EconomicScenarioMethod } from '../services/EconomicScenarioEngine';
-import { projectFutureCOLA } from '../services/SocialSecurityEngine';
 import { getProjectionPeriod } from '../utils/projectionDates';
 
 /**
@@ -50,6 +50,29 @@ export function useRetirementModel() {
   const [assetAllocation, setAssetAllocation] = useState(() => loadAssetAllocation(DEFAULT_ASSET_ALLOCATION));
   const [scenarios, setScenarios] = useState(() => loadRetirementScenarios(DEFAULT_RETIREMENT_SCENARIOS));
   const [taxConfig, setTaxConfig] = useState(() => loadTaxConfigurations(DEFAULT_TAX_CONFIG));
+  const [economicScenarioSettings, setEconomicScenarioSettings] = useState(() => {
+    const loaded = loadEconomicScenarioSettings(DEFAULT_ECONOMIC_SCENARIO_SETTINGS);
+    const hasStoredHistoricalStart = HISTORICAL_ECONOMIC_DATA.some(
+      (item) => item.year === loaded.historicalSequence.historicalStartYear
+    );
+    const normalized = hasStoredHistoricalStart
+      ? loaded
+      : {
+          ...loaded,
+          historicalSequence: {
+            ...loaded.historicalSequence,
+            historicalStartYear:
+              HISTORICAL_ECONOMIC_DATA[0]?.year ?? loaded.historicalSequence.historicalStartYear
+          }
+        };
+    const requiresHistoricalData =
+      normalized.method === EconomicScenarioMethod.HISTORICAL_SEQUENCE ||
+      normalized.method === EconomicScenarioMethod.HISTORICAL_BOOTSTRAP;
+
+    return requiresHistoricalData && HISTORICAL_ECONOMIC_DATA.length === 0
+      ? { ...normalized, method: EconomicScenarioMethod.DETERMINISTIC }
+      : normalized;
+  });
 
   useEffect(() => savePlannerInputs(inputs), [inputs]);
   useEffect(() => saveSocialSecurityIncome(ssIncome), [ssIncome]);
@@ -58,11 +81,10 @@ export function useRetirementModel() {
   useEffect(() => saveTaxConfigurations(taxConfig), [taxConfig]);
   useEffect(() => savePlannerInputs(inputs), [inputs]);
   useEffect(() => saveAssetAllocation(assetAllocation), [assetAllocation]);
+  useEffect(() => saveEconomicScenarioSettings(economicScenarioSettings), [economicScenarioSettings]);
 
   const federalTaxConfig = taxConfig.federal[0],
     stateTaxConfig = taxConfig.state[0];
-
-  // jlw - TO DO: Allow users to select the economic scenario method and parameters in the UI, and then pass those values to the EconomicScenarioEngine.
 
   const period = getProjectionPeriod(inputs.birthDate, inputs.startAge, inputs.endAge);
 
@@ -77,21 +99,15 @@ export function useRetirementModel() {
   }
 
   const economicScenario = useMemo(() => {
-    const engine = new EconomicScenarioEngine();
-
-    return engine.generate({
-      method: EconomicScenarioMethod.DETERMINISTIC,
-      startYear: period.startYear,
-      years: period.yearCount,
-      inflation: inputs.inflation,
-      socialSecurityCola: projectFutureCOLA(colaSettings, inputs),
-      stockReturn: 0.07,
-      bondReturn: 0.035,
-      cashReturn: 0.025,
-      otherReturn: 0.05,
-      knownSocialSecurityColas: COLA_HISTORY
-    });
-  }, [period.startYear, period.yearCount, inputs.inflation, colaSettings]);
+    return createEconomicScenario(
+      economicScenarioSettings,
+      inputs,
+      colaSettings,
+      period.startYear,
+      period.yearCount,
+      HISTORICAL_ECONOMIC_DATA
+    );
+  }, [economicScenarioSettings, inputs, colaSettings, period.startYear, period.yearCount]);
 
   const projections = useMemo(
     () =>
@@ -137,6 +153,8 @@ export function useRetirementModel() {
     activeScenarios,
     taxConfig,
     setTaxConfig,
+    economicScenarioSettings,
+    setEconomicScenarioSettings,
     projections
   };
 }

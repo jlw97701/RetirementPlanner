@@ -25,7 +25,7 @@ export function AccordionPanel({
     <div className="accordion-panel panel">
       <div className="collapsible" {...getToggleProps({ onClick: onToggle })}>
         <h2>
-          {icon} {title}
+          {icon} <span className="collapsible-title">{title}</span>
         </h2>
         {info && (
           <Popover trigger={<Info />} html={info} />

@@ -460,6 +460,12 @@ function sortAndValidateHistoricalData(data: readonly HistoricalEconomicYear[]):
     if (index > 0 && sorted[index].year === sorted[index - 1].year) {
       throw new EconomicScenarioError(`Duplicate historical year: ${sorted[index].year}.`);
     }
+
+    if (index > 0 && sorted[index].year !== sorted[index - 1].year + 1) {
+      throw new EconomicScenarioError(
+        `Historical data must be consecutive: ${sorted[index - 1].year} is followed by ${sorted[index].year}.`
+      );
+    }
   }
 
   return sorted;
@@ -481,6 +487,14 @@ function validateHistoricalYear(item: HistoricalEconomicYear): void {
 
   if (values.some((value) => !Number.isFinite(value))) {
     throw new EconomicScenarioError(`Historical data for ${item.year} contains a non-finite value.`);
+  }
+
+  if (item.inflation <= -1) {
+    throw new EconomicScenarioError(`Historical inflation for ${item.year} must be greater than -100%.`);
+  }
+
+  if ([item.stockReturn, item.bondReturn, item.cashReturn, item.otherReturn].some((value) => value < -1)) {
+    throw new EconomicScenarioError(`Historical data for ${item.year} contains a return below -100%.`);
   }
 }
 
