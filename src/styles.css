@@ -66,7 +66,6 @@ header p {
   grid-template-columns: var(--planner-sidebar-width) minmax(0, 1fr);
   gap: 15px;
   padding: 15px;
-  overflow-x: clip;
   transition:
     grid-template-columns var(--sidebar-slide-duration) cubic-bezier(0.22, 1, 0.36, 1),
     column-gap var(--sidebar-slide-duration) cubic-bezier(0.22, 1, 0.36, 1);
@@ -79,6 +78,8 @@ header p {
 
 .sidebar-shell {
   display: grid;
+  grid-column: 1;
+  grid-row: 1;
   grid-template-rows: minmax(0, 1fr);
   align-self: start;
   position: sticky;
@@ -112,15 +113,19 @@ header p {
 }
 
 .sidebar-slide-toggle {
-  position: absolute;
+  position: sticky;
+  grid-column: 1;
+  grid-row: 1;
+  align-self: start;
+  justify-self: start;
   top: 15px;
-  left: 0;
   z-index: 100;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 30px;
   height: 42px;
+  margin-bottom: -42px;
   padding: 0;
   border: 1px solid #dce5f0;
   border-left: 0;
@@ -129,7 +134,7 @@ header p {
   color: #3182bd;
   box-shadow: 3px 3px 12px -5px rgba(25, 55, 88, 0.16);
   cursor: pointer;
-  transform: translateX(calc(100vw - 35px));
+  transform: translateX(calc(100vw - 50px));
   will-change: transform;
   transition:
     transform var(--sidebar-slide-duration) cubic-bezier(0.22, 1, 0.36, 1),
@@ -148,7 +153,12 @@ header p {
 }
 
 .sidebar-collapsed .sidebar-slide-toggle {
-  transform: translateX(0);
+  transform: translateX(-15px);
+}
+
+.planner-layout > .content {
+  grid-column: 2;
+  grid-row: 1;
 }
 
 .tax-layout {
@@ -809,8 +819,11 @@ tr:hover td {
     grid-template-rows: minmax(0, 0fr);
   }
   .sidebar-shell {
-    position: static;
     width: 100%;
+  }
+  .planner-layout > .content {
+    grid-column: 1;
+    grid-row: 2;
   }
   .sidebar {
     position: static;
@@ -831,7 +844,7 @@ tr:hover td {
 
 @media (min-width: 1051px) {
   .sidebar-slide-toggle {
-    transform: translateX(calc(15px + var(--planner-sidebar-width) - 1px));
+    transform: translateX(calc(var(--planner-sidebar-width) - 1px));
   }
 }
 
