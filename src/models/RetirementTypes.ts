@@ -1,4 +1,4 @@
-import type { FilingStatus } from './TaxTypes';
+import type { FilingStatus, StateCode } from './TaxTypes';
 
 export enum RothConversionType {
   None,
@@ -29,6 +29,7 @@ export type SSClaimAge = 62 | 63 | 64 | 65 | 66 | 67 | 68 | 69 | 70;
 export interface PlannerInputs {
   birthDate: string;
   filingStatus: FilingStatus;
+  residenceState: StateCode;
   startAge: number;
   endAge: number;
   horizonAge: number;
@@ -115,6 +116,12 @@ export interface RetirementYear {
   federalTax: number;
   stateTaxableIncome: number;
   stateTax: number;
+  stateCode: StateCode;
+  stateTaxableSocialSecurity: number;
+  stateRetirementIncomeExclusion: number;
+  statePersonalCredit: number;
+  stateTaxConfigurationYear: number;
+  stateTaxIsEstimated: boolean;
   totalTax: number;
 
   irmaaMagi: number;

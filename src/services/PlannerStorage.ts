@@ -2,6 +2,7 @@ import { EconomicScenarioMethod } from './EconomicScenarioEngine';
 
 import { MedicareModelType } from '../models/RetirementTypes';
 import type { TaxConfigurationSet } from '../models/TaxTypes';
+import { STATE_OPTIONS } from '../data/stateTax2026';
 import type { EconomicScenarioSettings } from '../models/EconomicScenarioSettings';
 
 import type { IrmaaConfiguration } from '../data/irmaaTables';
@@ -63,6 +64,10 @@ export function loadPlannerInputs(defaults: PlannerInputs): PlannerInputs {
       )
     ) {
       inputs.filingStatus = defaults.filingStatus;
+    }
+
+    if (!STATE_OPTIONS.some((state) => state.value === inputs.residenceState)) {
+      inputs.residenceState = defaults.residenceState;
     }
 
     return inputs;

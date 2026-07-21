@@ -1,5 +1,5 @@
 import { FEDERAL_2026_CONFIGURATIONS } from './federal2026';
-import { OREGON_2026_CONFIGURATIONS } from './oregon2026';
+import { STATE_2026_CONFIGURATIONS } from './stateTax2026';
 
 import {
   PlannerInputs,
@@ -23,6 +23,7 @@ import type { EconomicScenarioSettings } from '../models/EconomicScenarioSetting
 export const DEFAULT_INPUTS: PlannerInputs = {
   birthDate: '1964-03-30', // Using ISO date strings avoids ambiguous parsing
   filingStatus: 'single',
+  residenceState: 'OR',
   startAge: 62,
   endAge: 95,
   horizonAge: 80,
@@ -270,5 +271,5 @@ export const ACTUAL_BENEFIT_SCENARIOS: RetirementScenario[] = [
 
 export const DEFAULT_TAX_CONFIG: TaxConfigurationSet = {
   federal: FEDERAL_2026_CONFIGURATIONS,
-  state: OREGON_2026_CONFIGURATIONS
+  state: STATE_2026_CONFIGURATIONS
 };

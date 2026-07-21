@@ -8,7 +8,8 @@ import { NumberInput } from '../shared/NumberInput';
 import { Dropdown } from '../shared/Dropdown';
 
 import type { EconomicScenarioSettings } from '../../models/EconomicScenarioSettings';
-import type { FilingStatus } from '../../models/TaxTypes';
+import type { FilingStatus, StateCode } from '../../models/TaxTypes';
+import { STATE_OPTIONS } from '../../data/stateTax2026';
 
 import { loadAssetAllocationPreferences, saveAssetAllocationPreferences } from '../../services/PlannerStorage';
 import { EconomicScenarioMethod } from '../../services/EconomicScenarioEngine';
@@ -280,8 +281,10 @@ export function PlannerInputsPanel({
               assumptions used by the retirement projection.
             </p>
             <p>
-              Tax Filing Status selects the matching federal and Oregon brackets, deductions,
-              Social Security taxation thresholds, and Medicare IRMAA table.
+              Tax Filing Status selects the matching federal and selected-state brackets, deductions,
+              Social Security taxation thresholds, and Medicare IRMAA table. Residence State
+              selects the statewide income-tax estimate. Local and municipal income taxes are
+              not included.
             </p>
             <p>
               The projection begins January 1, ${projectionStartYear}, the calendar year
@@ -335,6 +338,12 @@ export function PlannerInputsPanel({
               onChange={(v: Date | null) => setBirthDate(v)}
             />
           </div>
+          <Dropdown
+            label="Residence State"
+            options={STATE_OPTIONS}
+            selectedValue={inputs.residenceState}
+            onChange={(value) => setInputs({ ...inputs, residenceState: value as StateCode })}
+          />
           <Dropdown
             label="Tax Filing Status"
             options={filingStatusOptions}

@@ -21,6 +21,12 @@ export function YearDetailsTable({ rows }: { rows: RetirementYear[] }) {
           Account balances and annual amounts are shown in nominal dollars.
         </p>
         <p>
+          <strong>State Taxable Income</strong> reflects the selected residence state's configured Social Security
+          treatment, retirement-income exclusion, deductions, and exemptions. <strong>State Basis</strong> identifies
+          the jurisdiction, configuration year, and whether the calculation is an estimate. Local income taxes are
+          not included.
+        </p>
+        <p>
           Medicare/healthcare details show standard Part B, user-entered Part D or other coverage, out-of-pocket
           healthcare, and IRMAA. <strong>Added to Spending</strong> is zero when Annual Spending already includes
           these costs; otherwise it is included in Spending and funded by the withdrawal calculation.
@@ -53,15 +59,18 @@ export function YearDetailsTable({ rows }: { rows: RetirementYear[] }) {
               <th>Year</th>
               <th>Spending</th>
               <th>Part B</th>
-              <th>Part D/Other</th>
-              <th>Health OOP</th>
-              <th>Total Medicare/Health</th>
-              <th>Added to Spending</th>
-              <th>Social Sec</th>
-              <th>Trad Dist</th>
-              <th>Roth Conv</th>
-              <th>Fed Tax</th>
-              <th>State Tax</th>
+              <th>Part<br/>D/Other</th>
+              <th>Health<br/>OOP</th>
+              <th>Total<br/>Medicare/Health</th>
+              <th>Added to<br/>Spending</th>
+              <th>Social<br/>Security</th>
+              <th>Trad IRA<br/>Distribution</th>
+              <th>Roth IRA<br/>Conversion</th>
+              <th>Federal<br/>Tax</th>
+              <th>{rows[0]?.stateCode ?? 'State'} Taxable<br/>Income</th>
+              <th>Retirement<br/>Exclusion</th>
+              <th>{rows[0]?.stateCode ?? 'State'} Tax</th>
+              <th>State Basis</th>
               {showIrmaa && (
                 <>
                   <th>IRMAA MAGI</th>
@@ -72,11 +81,11 @@ export function YearDetailsTable({ rows }: { rows: RetirementYear[] }) {
                   <th>Conversion Impact</th>
                 </>
               )}
-              <th>Cash Flow</th>
-              <th>End Savings</th>
-              <th>End Trad</th>
-              <th>End Roth</th>
-              <th>End Total</th>
+              <th>Cash<br/>Flow</th>
+              <th>End<br/>Savings</th>
+              <th>End<br/>Trad IRA</th>
+              <th>End<br/>Roth IRA</th>
+              <th>End<br/>Total</th>
             </tr>
           </thead>
           <tbody>
@@ -94,7 +103,10 @@ export function YearDetailsTable({ rows }: { rows: RetirementYear[] }) {
                 <td>{formatMoney(r.traditionalDist)}</td>
                 <td>{formatMoney(r.rothConv)}</td>
                 <td>{formatMoney(r.federalTax)}</td>
+                <td>{formatMoney(r.stateTaxableIncome)}</td>
+                <td>{formatMoney(r.stateRetirementIncomeExclusion)}</td>
                 <td>{formatMoney(r.stateTax)}</td>
+                <td>{`${r.stateCode} ${r.stateTaxConfigurationYear}${r.stateTaxIsEstimated ? ' estimate' : ''}`}</td>
                 {showIrmaa && (
                   <>
                     <td>{formatMoney(r.irmaaMagi)}</td>

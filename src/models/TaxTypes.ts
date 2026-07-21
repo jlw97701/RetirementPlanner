@@ -4,6 +4,18 @@ export type FilingStatus =
   | 'marriedFilingSeparately'
   | 'headOfHousehold';
 
+export type StateCode =
+  | 'AL' | 'AK' | 'AZ' | 'AR' | 'CA' | 'CO' | 'CT' | 'DE' | 'FL' | 'GA'
+  | 'HI' | 'ID' | 'IL' | 'IN' | 'IA' | 'KS' | 'KY' | 'LA' | 'ME' | 'MD'
+  | 'MA' | 'MI' | 'MN' | 'MS' | 'MO' | 'MT' | 'NE' | 'NV' | 'NH' | 'NJ'
+  | 'NM' | 'NY' | 'NC' | 'ND' | 'OH' | 'OK' | 'OR' | 'PA' | 'RI' | 'SC'
+  | 'SD' | 'TN' | 'TX' | 'UT' | 'VT' | 'VA' | 'WA' | 'WV' | 'WI' | 'WY'
+  | 'DC';
+
+export type StateTaxModel = 'none' | 'flat' | 'progressive' | 'custom';
+export type StateIncomeBase = 'retirementIncome' | 'federalAgi' | 'federalTaxableIncome';
+export type StateSocialSecurityTreatment = 'exempt' | 'federalTaxableAmount';
+
 export interface TaxBracket {
   id: string;
   lowerBound: number;
@@ -46,7 +58,26 @@ export interface FederalTaxConfig extends JurisdictionTaxConfig {
 
 export interface StateTaxConfig extends JurisdictionTaxConfig {
   jurisdiction: 'state';
-  taxesSocialSecurity: boolean;
+  stateCode: StateCode;
+  stateName: string;
+  taxModel: StateTaxModel;
+  incomeBase: StateIncomeBase;
+  socialSecurityTreatment: StateSocialSecurityTreatment;
+  socialSecurityExemptionAge?: number;
+  socialSecurityExemptionIncomeLimit?: number;
+  personalExemption: number;
+  personalCredit: number;
+  retirementIncomeExclusions: RetirementIncomeExclusion[];
+  localTaxesIncluded: boolean;
+  estimated: boolean;
+}
+
+export interface RetirementIncomeExclusion {
+  minimumAge: number;
+  maximumAmount: number | null;
+  incomeLimit?: number;
+  phaseoutStart?: number;
+  reducedBySocialSecurity?: boolean;
 }
 
 export interface TaxConfigurationSet {

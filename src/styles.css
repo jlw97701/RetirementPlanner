@@ -108,6 +108,7 @@ header p {
 
 .tax-configuration-select select,
 .tax-deduction-fields input,
+.tax-deduction-fields select,
 .tax-table-editor td input {
   width: 100%;
   border: 1px solid #cbd5e1;

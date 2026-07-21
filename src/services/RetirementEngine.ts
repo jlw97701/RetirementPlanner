@@ -63,6 +63,9 @@ interface WithdrawalEvaluation {
 
   stateTaxableIncome: number;
   stateTax: number;
+  stateTaxableSocialSecurity: number;
+  stateRetirementIncomeExclusion: number;
+  statePersonalCredit: number;
 
   totalTax: number;
 
@@ -100,7 +103,13 @@ function evaluateTraditionalWithdrawal(
   const rothConv = Math.min(requestedRothConversion, Math.max(0, availableTradIra - tradCashWithdraw));
   const traditionalDist = tradCashWithdraw + rothConv;
   const federal = calculateFederalTax(age, traditionalDist, socialSecurity, context.federalTaxConfig);
-  const state = calculateStateTax(age, traditionalDist, federal.taxableSS, context.stateTaxConfig);
+  const state = calculateStateTax(
+    age,
+    traditionalDist,
+    socialSecurity,
+    federal.taxableSS,
+    context.stateTaxConfig
+  );
   const totalTax = federal.tax + state.tax;
 
   return {
@@ -113,6 +122,9 @@ function evaluateTraditionalWithdrawal(
     federalTax: federal.tax,
     stateTaxableIncome: state.taxableIncome,
     stateTax: state.tax,
+    stateTaxableSocialSecurity: state.stateTaxableSocialSecurity,
+    stateRetirementIncomeExclusion: state.stateRetirementIncomeExclusion,
+    statePersonalCredit: state.personalCredit,
     totalTax,
     cashSurplus: socialSecurity + tradCashWithdraw - spending - totalTax
   };
@@ -589,6 +601,9 @@ export function calculateRetirementProjection(
       federalTax,
       stateTaxableIncome,
       stateTax,
+      stateTaxableSocialSecurity,
+      stateRetirementIncomeExclusion,
+      statePersonalCredit,
       totalTax,
       cashSurplus
     } = withdrawalSolution;
@@ -685,6 +700,12 @@ export function calculateRetirementProjection(
       federalTax,
       stateTaxableIncome,
       stateTax,
+      stateCode: context.stateTaxConfig.stateCode,
+      stateTaxableSocialSecurity,
+      stateRetirementIncomeExclusion,
+      statePersonalCredit,
+      stateTaxConfigurationYear: context.stateTaxConfig.year,
+      stateTaxIsEstimated: context.stateTaxConfig.estimated,
       totalTax,
       irmaaMagi,
       irmaaMagiWithoutRothConversion,

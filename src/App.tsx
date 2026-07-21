@@ -90,6 +90,7 @@ export default function App() {
             title="State tax brackets"
             configurations={taxConfig.state}
             initialFilingStatus={inputs.filingStatus}
+            initialStateCode={inputs.residenceState}
             onChange={(state) => setTaxConfig({ ...taxConfig, state })}
           />
         </main>

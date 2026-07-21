@@ -183,6 +183,71 @@ export function EconomicScenarioHelp() {
         </section>
 
         <section>
+          <h3>State income-tax estimates</h3>
+          <p>
+            Select the state where you expect to reside in Planner Inputs. The planner applies that residence for
+            every projection year and estimates tax on modeled traditional-account distributions and any Social
+            Security amount included by that state. States without a broad individual income tax produce a zero
+            ordinary-income estimate.
+          </p>
+          <p>
+            The bundled tables include 2026 statewide schedules for all 50 states and the District of Columbia, plus
+            basic Social Security and retirement-income exclusions. Published Single and Married Filing Jointly
+            schedules are used directly. Married Filing Separately and Head of Household use the Single schedule as a
+            planning approximation unless you edit the table.
+          </p>
+          <p className="help-callout">
+            State results are planning estimates, not tax-return calculations. They assume one residence for the
+            entire projection and do not include local income taxes, planned moves, a spouse's separate age or
+            retirement exclusion, or every state-specific adjustment, phaseout, credit, recapture, and alternative
+            tax. Review the selected state's current instructions before making a tax decision.
+          </p>
+          <ul>
+            <li>
+              <a
+                href="https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/"
+                target="_blank"
+                rel="noopener noreferrer">
+                Tax Foundation: 2026 State Individual Income Tax Rates and Brackets
+              </a>{' '}
+              — baseline statewide rates, brackets, deductions, and exemptions.
+            </li>
+            <li>
+              <a
+                href="https://www.irs.gov/businesses/small-businesses-self-employed/state-government-websites"
+                target="_blank"
+                rel="noopener noreferrer">
+                IRS: State Government Websites
+              </a>{' '}
+              — links to each state's tax authority for current filing instructions.
+            </li>
+            <li>
+              <a
+                href="https://www.aarp.org/social-security/faq/which-states-do-not-tax-benefits/"
+                target="_blank"
+                rel="noopener noreferrer">
+                AARP: State taxation of Social Security benefits
+              </a>{' '}
+              — overview of states that may include benefits in taxable income.
+            </li>
+          </ul>
+          <p>
+            Later-enacted 2026 flat-rate updates are taken from the{' '}
+            <a href="https://dor.georgia.gov/taxes/important-tax-updates" target="_blank" rel="noopener noreferrer">
+              Georgia Department of Revenue
+            </a>{' '}
+            and{' '}
+            <a
+              href="https://le.utah.gov/xcode/Title59/Chapter10/59-10-S104.html"
+              target="_blank"
+              rel="noopener noreferrer">
+              Utah Code §59-10-104
+            </a>
+            .
+          </p>
+        </section>
+
+        <section>
           <h3>Additional guidance</h3>
           <p>
             <a href="https://retirementcalculator.nga.finra.org/" target="_blank" rel="noopener noreferrer">

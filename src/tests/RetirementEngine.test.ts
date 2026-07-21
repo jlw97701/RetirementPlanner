@@ -99,7 +99,9 @@ describe('calculateRetirementProjection', () => {
       retirementScenario,
       {
         federalTaxConfig: DEFAULT_TAX_CONFIG.federal[0],
-        stateTaxConfig: DEFAULT_TAX_CONFIG.state[0],
+        stateTaxConfig: DEFAULT_TAX_CONFIG.state.find(
+          (configuration) => configuration.stateCode === 'OR' && configuration.filingStatus === 'single'
+        )!,
         economicScenario
       }
     );
