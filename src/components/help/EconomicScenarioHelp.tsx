@@ -112,7 +112,8 @@ export function EconomicScenarioHelp() {
           <p>
             <strong>Fully Funded Paths</strong> is the percentage of paths in which every modeled spending need is met
             through the ending age. <strong>Depletion Risk</strong> is the percentage with at least one unfunded need.
-            Ending-balance percentiles and the shaded chart are expressed in first-projection-year purchasing power.
+            Ending-balance percentiles and the shaded chart use inflation-adjusted dollars expressed in the purchasing
+            power of the first projection year.
           </p>
           <p className="help-callout">
             These percentages measure sensitivity to the configured assumptions; they are not forecasts or guarantees.
@@ -194,14 +195,14 @@ export function EconomicScenarioHelp() {
           <h3>What to review</h3>
           <ul>
             <li>portfolio value at the horizon and ending ages;</li>
-            <li>Start-Year dollars, which show inflation-adjusted purchasing power;</li>
+            <li>Inflation-Adjusted Dollars, which show values using first-projection-year purchasing power;</li>
             <li>depletion age and any unfunded need;</li>
             <li>the effect of early losses on withdrawals; and</li>
             <li>whether essential spending depends on favorable assumptions.</li>
           </ul>
           <p>
-            Nominal values are the dollars projected for a future year. Start-Year values express the same balance in
-            the purchasing power of the first projection year.
+            Future-Dollar values are expressed in the dollars projected for a future year. Inflation-Adjusted Dollars
+            express the same balance using the purchasing power of the first projection year.
           </p>
         </section>
 

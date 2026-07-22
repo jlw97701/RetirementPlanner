@@ -28,11 +28,10 @@ export function ScenarioSummaryTable({
           Portfolio values are shown at the selected horizon age and final projection age.
         </p>
         <p>
-          <strong>Nominal</strong> values are projected future account balances.
+          <strong>Future Dollars</strong> are projected account balances expressed in the dollars of that future year.
         </p>
         <p>
-          <strong>Start-Year $</strong> values show the same balances adjusted for inflation 
-          and expressed in the purchasing power of the first projection year.
+          <strong>Inflation-Adjusted Dollars</strong> show the same balances using the purchasing power of the first projection year.
         </p>
         <p>
           The table also shows first-year Social Security, cumulative Social Security and taxes, 
@@ -54,22 +53,22 @@ export function ScenarioSummaryTable({
               <th>
                 Age {inputs.horizonAge}
                 <br />
-                Nominal
+                Future Dollars
               </th>
               <th>
                 Age {inputs.horizonAge}
                 <br />
-                Start-Year $
+                Inflation-Adjusted
               </th>
               <th>
                 Age {inputs.endAge}
                 <br />
-                Nominal
+                Future Dollars
               </th>
               <th>
                 Age {inputs.endAge}
                 <br />
-                Start-Year $
+                Inflation-Adjusted
               </th>
               <th>
                 First-Year

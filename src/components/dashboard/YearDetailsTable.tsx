@@ -18,7 +18,7 @@ export function YearDetailsTable({ rows }: { rows: RetirementYear[] }) {
         </p>
         <p>
           It includes spending, Social Security, investment growth, RMDs, withdrawals, Roth conversions, taxes, and taxable savings activity. 
-          Account balances and annual amounts are shown in nominal dollars.
+          Account balances and annual amounts are shown in the dollars projected for each future year.
         </p>
         <p>
           <strong>State Taxable Income</strong> reflects the selected residence state's configured Social Security

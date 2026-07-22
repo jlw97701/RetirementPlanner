@@ -55,8 +55,8 @@ export const DEFAULT_MONTHLY_SS: SSMonthlyIncome[] = [
   { age: 65, amount: 3311 },
   { age: 66, amount: 3582 },
   { age: 67, amount: 3854 },
-  { age: 68, amount: 4124 }, // ???
-  { age: 69, amount: 4394 }, // ???
+  { age: 68, amount: 4126 },
+  { age: 69, amount: 4451 },
   { age: 70, amount: 4831 }
 ];
 

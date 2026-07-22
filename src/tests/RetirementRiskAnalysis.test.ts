@@ -67,6 +67,14 @@ describe('retirement risk analysis', () => {
     for (const scenario of first.scenarios) {
       expect(scenario.horizonFullyFundedRate).toBeGreaterThanOrEqual(scenario.fullyFundedRate);
       expect(scenario.fullyFundedRate + scenario.depletionRisk).toBeCloseTo(1, 10);
+      expect(scenario.medianTotalUnfundedSpending).toBeGreaterThanOrEqual(0);
+      if (scenario.depletionRisk === 0) {
+        expect(scenario.medianFirstShortfallAge).toBeNull();
+        expect(scenario.medianTotalUnfundedSpending).toBe(0);
+      } else {
+        expect(scenario.medianFirstShortfallAge).toBeGreaterThanOrEqual(parameters.inputs.startAge);
+        expect(scenario.medianFirstShortfallAge).toBeLessThanOrEqual(parameters.inputs.endAge);
+      }
       expect(scenario.endingPortfolioP10).toBeLessThanOrEqual(scenario.endingPortfolioP50);
       expect(scenario.endingPortfolioP50).toBeLessThanOrEqual(scenario.endingPortfolioP90);
     }

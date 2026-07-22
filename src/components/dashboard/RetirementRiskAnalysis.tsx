@@ -42,7 +42,14 @@ const riskAnalysisInfo = `
   </p>
   <p>
     P10 means 10% of outcomes ended at or below that balance, the median divides outcomes in half,
-    and P90 means 90% ended at or below that balance. Balances use Start-Year purchasing power.
+    and P90 means 90% ended at or below that balance. Balances use inflation-adjusted dollars expressed
+    in first-projection-year purchasing power.
+  </p>
+  <p>
+    In the comparison table, <strong>Typical First Shortfall Age</strong> and
+    <strong>Typical Total Shortfall</strong> describe only paths that experienced a spending shortfall.
+    Total shortfall adds unmet spending across the projection using inflation-adjusted dollars. A dash
+    means none of the simulated paths had a shortfall.
   </p>
   <p>
     Results are sensitivity analysis, not forecasts, probabilities guaranteed by history, or financial
@@ -62,7 +69,8 @@ const riskChartInfo = `
     possible outcomes vary more.
   </p>
   <p>
-    Dollar amounts use <strong>Start-Year purchasing power</strong>, removing projected inflation
+    Dollar amounts use <strong>Inflation-Adjusted Dollars</strong>, removing projected inflation and using
+    first-projection-year purchasing power
     so a balance at age 90 can be compared meaningfully with a balance at age 65.
   </p>
   <p>
@@ -82,7 +90,7 @@ function scenarioLabel(scenario: RetirementRiskScenarioResult): string {
 }
 
 function rothConversionLabel(type: RothConversionType): string {
-  if (type === RothConversionType.None) return 'None';
+  if (type === RothConversionType.None) return 'No';
   if (type === RothConversionType.Base) return 'Base';
   return 'Aggressive';
 }
@@ -93,6 +101,10 @@ function formatPercent(value: number): string {
 
 function formatCount(value: number): string {
   return Math.trunc(value).toLocaleString('en-US');
+}
+
+function getMedianPortfolioAtAge(scenario: RetirementRiskScenarioResult, age: number): number {
+  return scenario.portfolioPercentiles.find((point) => point.age === age)?.p50 ?? 0;
 }
 
 function formatNaturalPercent(value: number): string {
@@ -285,14 +297,23 @@ export function RetirementRiskAnalysis({
           <div className="risk-metrics">
             <RiskMetric label="Fully Funded Paths" value={formatPercent(selectedResult.fullyFundedRate)} />
             <RiskMetric label="Depletion Risk" value={formatPercent(selectedResult.depletionRisk)} />
-            <RiskMetric label="P10 Ending (Start-Year $)" value={formatMoney(selectedResult.endingPortfolioP10)} />
-            <RiskMetric label="Median Ending (Start-Year $)" value={formatMoney(selectedResult.endingPortfolioP50)} />
-            <RiskMetric label="P90 Ending (Start-Year $)" value={formatMoney(selectedResult.endingPortfolioP90)} />
+            <RiskMetric
+              label="P10 Ending (Inflation-Adjusted Dollars)"
+              value={formatMoney(selectedResult.endingPortfolioP10)}
+            />
+            <RiskMetric
+              label="Median Ending (Inflation-Adjusted Dollars)"
+              value={formatMoney(selectedResult.endingPortfolioP50)}
+            />
+            <RiskMetric
+              label="P90 Ending (Inflation-Adjusted Dollars)"
+              value={formatMoney(selectedResult.endingPortfolioP90)}
+            />
           </div>
 
           <div className="risk-chart-heading">
             <div className="risk-chart-title">
-              <h3>Portfolio Range in Start-Year Dollars</h3>
+              <h3>Portfolio Range in Inflation-Adjusted Dollars</h3>
               <Popover trigger={<Info />} html={riskChartInfo} placement="bottom-start" />
             </div>
             <p>The shaded area contains the middle 80% of simulated outcomes; the line is the median.</p>
@@ -375,28 +396,25 @@ export function RetirementRiskAnalysis({
                     Age {inputs.horizonAge}
                   </th>
                   <th>
-                    Success Through Age
-                    <br /> {inputs.endAge}
-                  </th>
-                  <th>
-                    Shortfall Through
-                    <br />
+                    Success Through
+                    <br /> 
                     Age {inputs.endAge}
                   </th>
                   <th>
-                    Ending P10
+                    Median Balance at
+                    Age {inputs.horizonAge}
                     <br />
-                    (Start-Year $)
+                    (Inflation-Adjusted Dollars)
                   </th>
                   <th>
-                    Ending Median
+                    Typical First
                     <br />
-                    (Start-Year $)
+                    Shortfall Age
                   </th>
                   <th>
-                    Ending P90
+                    Typical Total Shortfall
                     <br />
-                    (Start-Year $)
+                    (Inflation-Adjusted Dollars)
                   </th>
                 </tr>
               </thead>
@@ -410,10 +428,13 @@ export function RetirementRiskAnalysis({
                     <td>{rothConversionLabel(scenario.rothConvType)}</td>
                     <td>{formatPercent(scenario.horizonFullyFundedRate)}</td>
                     <td>{formatPercent(scenario.fullyFundedRate)}</td>
-                    <td>{formatPercent(scenario.depletionRisk)}</td>
-                    <td>{formatMoney(scenario.endingPortfolioP10)}</td>
-                    <td>{formatMoney(scenario.endingPortfolioP50)}</td>
-                    <td>{formatMoney(scenario.endingPortfolioP90)}</td>
+                    <td>{formatMoney(getMedianPortfolioAtAge(scenario, inputs.horizonAge))}</td>
+                    <td>{scenario.medianFirstShortfallAge ?? '—'}</td>
+                    <td>
+                      {scenario.medianFirstShortfallAge === null
+                        ? '—'
+                        : formatMoney(scenario.medianTotalUnfundedSpending)}
+                    </td>
                   </tr>
                 ))}
               </tbody>

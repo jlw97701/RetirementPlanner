@@ -32,6 +32,8 @@ export interface RetirementRiskScenarioResult {
   horizonFullyFundedRate: number;
   fullyFundedRate: number;
   depletionRisk: number;
+  medianFirstShortfallAge: number | null;
+  medianTotalUnfundedSpending: number;
   endingPortfolioP10: number;
   endingPortfolioP50: number;
   endingPortfolioP90: number;
@@ -66,6 +68,8 @@ interface ScenarioAccumulator {
   horizonFullyFundedCount: number;
   fullyFundedCount: number;
   depletionCount: number;
+  firstShortfallAges: number[];
+  totalUnfundedSpending: number[];
   portfolioBalancesByAge: number[][];
 }
 
@@ -93,6 +97,8 @@ export async function runRetirementRiskAnalysis(
     horizonFullyFundedCount: 0,
     fullyFundedCount: 0,
     depletionCount: 0,
+    firstShortfallAges: [],
+    totalUnfundedSpending: [],
     portfolioBalancesByAge: Array.from({ length: period.yearCount }, () => [])
   }));
   const simulationsPerYield = Math.max(1, Math.floor(25 / Math.max(1, retirementScenarios.length)));
@@ -132,11 +138,19 @@ export async function runRetirementRiskAnalysis(
       const hasUnfundedSpendingThroughHorizon = rows.some(
         (row) => row.age <= inputs.horizonAge && row.unfundedNeed > UNFUNDED_NEED_TOLERANCE
       );
-      const hasUnfundedSpending = rows.some((row) => row.unfundedNeed > UNFUNDED_NEED_TOLERANCE);
+      const shortfallRows = rows.filter((row) => row.unfundedNeed > UNFUNDED_NEED_TOLERANCE);
+      const hasUnfundedSpending = shortfallRows.length > 0;
 
       if (!hasUnfundedSpendingThroughHorizon) accumulator.horizonFullyFundedCount += 1;
-      if (hasUnfundedSpending) accumulator.depletionCount += 1;
-      else accumulator.fullyFundedCount += 1;
+      if (hasUnfundedSpending) {
+        accumulator.depletionCount += 1;
+        accumulator.firstShortfallAges.push(shortfallRows[0].age);
+        accumulator.totalUnfundedSpending.push(
+          shortfallRows.reduce((sum, row) => sum + row.unfundedNeed / row.inflationIndex, 0)
+        );
+      } else {
+        accumulator.fullyFundedCount += 1;
+      }
 
       rows.forEach((row, rowIndex) => {
         accumulator.portfolioBalancesByAge[rowIndex].push(row.endPortfolioCurrentDollars);
@@ -167,6 +181,14 @@ export async function runRetirementRiskAnalysis(
         horizonFullyFundedRate: accumulator.horizonFullyFundedCount / simulations,
         fullyFundedRate: accumulator.fullyFundedCount / simulations,
         depletionRisk: accumulator.depletionCount / simulations,
+        medianFirstShortfallAge:
+          accumulator.firstShortfallAges.length > 0
+            ? Math.round(percentile(accumulator.firstShortfallAges, 0.5))
+            : null,
+        medianTotalUnfundedSpending:
+          accumulator.totalUnfundedSpending.length > 0
+            ? percentile(accumulator.totalUnfundedSpending, 0.5)
+            : 0,
         endingPortfolioP10: ending?.p10 ?? 0,
         endingPortfolioP50: ending?.p50 ?? 0,
         endingPortfolioP90: ending?.p90 ?? 0,
