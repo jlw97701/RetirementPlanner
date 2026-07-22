@@ -172,9 +172,19 @@ export function PlannerInputsPanel({
     selectedAllocation === CUSTOM_ALLOCATION_ID ? null : getAssetAllocationProfile(selectedAllocation);
 
   const customAllocationTotal =
-    customAllocation.stocks + customAllocation.bonds + customAllocation.cash + customAllocation.other;
+    customAllocation.domesticStocks +
+    customAllocation.internationalStocks +
+    customAllocation.bonds +
+    customAllocation.cash +
+    customAllocation.other;
   const customAllocationIsValid =
-    [customAllocation.stocks, customAllocation.bonds, customAllocation.cash, customAllocation.other].every(
+    [
+      customAllocation.domesticStocks,
+      customAllocation.internationalStocks,
+      customAllocation.bonds,
+      customAllocation.cash,
+      customAllocation.other
+    ].every(
       (value) => Number.isFinite(value) && value >= 0
     ) && Math.abs(customAllocationTotal - 1) <= 0.000001;
 
@@ -191,9 +201,10 @@ export function PlannerInputsPanel({
   };
 
   const updateCustomAllocation = (key: keyof AssetAllocation, percent: number) => {
+    const normalizedPercent = Math.round(percent * 10) / 10;
     setAllocationPreferences((current) => ({
       ...current,
-      customAllocation: { ...current.customAllocation, [key]: percent / 100 }
+      customAllocation: { ...current.customAllocation, [key]: normalizedPercent / 100 }
     }));
   };
 
@@ -234,7 +245,7 @@ export function PlannerInputsPanel({
       : deterministicPortfolioReturns[economicScenarioSettings.deterministic.profile];
 
   const updateCustomMarketReturn = (
-    key: 'stockReturn' | 'bondReturn' | 'cashReturn' | 'otherReturn',
+    key: 'domesticStockReturn' | 'internationalStockReturn' | 'bondReturn' | 'cashReturn' | 'otherReturn',
     percent: number
   ) => {
     const normalizedPercent = key === 'otherReturn' ? Math.round(percent * 10) / 10 : percent;
@@ -245,7 +256,13 @@ export function PlannerInputsPanel({
   };
 
   const updateMonteCarloVariable = (
-    key: 'inflation' | 'stockReturn' | 'bondReturn' | 'cashReturn' | 'otherReturn',
+    key:
+      | 'inflation'
+      | 'domesticStockReturn'
+      | 'internationalStockReturn'
+      | 'bondReturn'
+      | 'cashReturn'
+      | 'otherReturn',
     field: 'mean' | 'standardDeviation',
     value: number
   ) => {
@@ -748,8 +765,9 @@ export function PlannerInputsPanel({
           info={`
             <h3>Portfolio Asset Allocation</h3>
             <p>
-              Select a predefined allocation or create a custom mix of stocks, bonds,
-              cash equivalents, and other investments. A custom allocation must total 100%.
+              Select a predefined allocation or create a custom mix of U.S. stocks,
+              foreign stocks, bonds, cash equivalents, and other investments. 
+              A custom allocation must total 100%.
             </p>
             <p>
               The same allocation and calculated return are applied to the Traditional
@@ -761,7 +779,8 @@ export function PlannerInputsPanel({
               The projection assumes the Traditional and Roth accounts are maintained at
               the selected target allocation throughout the projection. Annual portfolio
               returns are calculated by weighting each asset class return according to
-              that allocation.
+              that allocation. Predefined allocations place 30% of their stock portion
+              in foreign stocks and 70% in U.S. stocks.
             </p>
             <p>
               Taxable savings are modeled separately as a non-interest-bearing cash
@@ -795,19 +814,30 @@ export function PlannerInputsPanel({
             {selectedAllocation === CUSTOM_ALLOCATION_ID && (
               <>
                 <NumberInput
-                  label="Stocks %"
-                  value={customAllocation.stocks * 100}
+                  label="U.S. Stocks %"
+                  value={customAllocation.domesticStocks * 100}
                   min={0}
                   max={100}
-                  step={1}
-                  onChange={(value) => updateCustomAllocation('stocks', value)}
+                  step={0.1}
+                  decimalPlaces={1}
+                  onChange={(value) => updateCustomAllocation('domesticStocks', value)}
+                />
+                <NumberInput
+                  label="Foreign Stocks %"
+                  value={customAllocation.internationalStocks * 100}
+                  min={0}
+                  max={100}
+                  step={0.1}
+                  decimalPlaces={1}
+                  onChange={(value) => updateCustomAllocation('internationalStocks', value)}
                 />
                 <NumberInput
                   label="Bonds %"
                   value={customAllocation.bonds * 100}
                   min={0}
                   max={100}
-                  step={1}
+                  step={0.1}
+                  decimalPlaces={1}
                   onChange={(value) => updateCustomAllocation('bonds', value)}
                 />
                 <NumberInput
@@ -815,7 +845,8 @@ export function PlannerInputsPanel({
                   value={customAllocation.cash * 100}
                   min={0}
                   max={100}
-                  step={1}
+                  step={0.1}
+                  decimalPlaces={1}
                   onChange={(value) => updateCustomAllocation('cash', value)}
                 />
                 <NumberInput
@@ -823,7 +854,8 @@ export function PlannerInputsPanel({
                   value={customAllocation.other * 100}
                   min={0}
                   max={100}
-                  step={1}
+                  step={0.1}
+                  decimalPlaces={1}
                   onChange={(value) => updateCustomAllocation('other', value)}
                 />
                 <div className={customAllocationIsValid ? 'allocation-total valid' : 'allocation-total invalid'}>
@@ -841,7 +873,8 @@ export function PlannerInputsPanel({
 
             {selectedAllocation !== CUSTOM_ALLOCATION_ID && (
               <div className="allocation-summary">
-                <span>Stocks: {(assetAllocation.stocks * 100).toFixed(0)}%</span>
+                <span>U.S. Stocks: {(assetAllocation.domesticStocks * 100).toFixed(0)}%</span>
+                <span>Foreign Stocks: {(assetAllocation.internationalStocks * 100).toFixed(0)}%</span>
                 <span>Bonds: {(assetAllocation.bonds * 100).toFixed(0)}%</span>
                 <span>Cash: {(assetAllocation.cash * 100).toFixed(0)}%</span>
                 <span>Other: {(assetAllocation.other * 100).toFixed(0)}%</span>
@@ -938,7 +971,8 @@ export function PlannerInputsPanel({
                 <>
                   {(
                     [
-                      ['stockReturn', 'Stock Return (%)'],
+                      ['domesticStockReturn', 'U.S. Stock Return (%)'],
+                      ['internationalStockReturn', 'Foreign Stock Return (%)'],
                       ['bondReturn', 'Bond Return (%)'],
                       ['cashReturn', 'Cash Return (%)'],
                       ['otherReturn', 'Other Return (%)']
@@ -1060,7 +1094,8 @@ export function PlannerInputsPanel({
               {(
                 [
                   ['inflation', 'Inflation'],
-                  ['stockReturn', 'Stock Return'],
+                  ['domesticStockReturn', 'U.S. Stock Return'],
+                  ['internationalStockReturn', 'Foreign Stock Return'],
                   ['bondReturn', 'Bond Return'],
                   ['cashReturn', 'Cash Return'],
                   ['otherReturn', 'Other Return']

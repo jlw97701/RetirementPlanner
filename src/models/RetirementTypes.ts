@@ -70,7 +70,8 @@ export interface SSColaSettings {
 }
 
 export interface AssetAllocation {
-  stocks: number;
+  domesticStocks: number;
+  internationalStocks: number;
   bonds: number;
   cash: number;
   other: number;

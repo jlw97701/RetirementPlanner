@@ -36,7 +36,8 @@ export function calculateRollingAnnualizedPortfolioReturns(
     for (let offset = 0; offset < period; offset += 1) {
       const year = historicalData[start + offset];
       const portfolioReturn =
-        allocation.stocks * year.stockReturn +
+        allocation.domesticStocks * year.domesticStockReturn +
+        allocation.internationalStocks * year.internationalStockReturn +
         allocation.bonds * year.bondReturn +
         allocation.cash * year.cashReturn +
         allocation.other * year.otherReturn;

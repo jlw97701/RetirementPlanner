@@ -19,24 +19,24 @@ export function EconomicScenarioHelp() {
             whether the plan can fund essential spending across several plausible return and inflation environments.
           </p>
           <p>
-            FINRA notes that investment returns are difficult to predict and recommends trying different assumptions
-            to understand how they affect retirement results. Return assumptions should reflect investment expenses.
+            FINRA notes that investment returns are difficult to predict and recommends trying different assumptions to
+            understand how they affect retirement results. Return assumptions should reflect investment expenses.
           </p>
         </section>
 
         <section>
           <h3>Deterministic</h3>
           <p>
-            The three predefined profiles are calculated from rolling 10- or 20-year annualized portfolio returns in
-            the 1975–2025 historical dataset. Each historical year is weighted using the selected asset allocation,
-            the window's returns are compounded and annualized, and the resulting windows form a distribution.
-            Significantly Below Average uses its 10th percentile as a severe stress test; Below Average, Average, and
-            Above Average use its 25th, 50th, and 75th percentiles, respectively.
+            The three predefined profiles are calculated from rolling 10- or 20-year annualized portfolio returns in the
+            1975–2025 historical dataset. Each historical year is weighted using the selected asset allocation, the
+            window's returns are compounded and annualized, and the resulting windows form a distribution. Significantly
+            Below Average uses its 10th percentile as a severe stress test; Below Average, Average, and Above Average
+            use its 25th, 50th, and 75th percentiles, respectively.
           </p>
           <p>
             The selected portfolio-level rate is then applied every projection year. Custom Market instead lets you
-            enter separate stock, bond, cash, and Other assumptions. The planner's inflation input controls annual
-            spending inflation for either approach.
+            enter separate U.S. stock, foreign stock, bond, cash, and Other assumptions. The planner's inflation input
+            controls annual spending inflation for either approach.
           </p>
           <p>Use deterministic scenarios to establish a baseline and run controlled stress tests:</p>
           <div className="help-table-container">
@@ -68,8 +68,8 @@ export function EconomicScenarioHelp() {
             </table>
           </div>
           <p className="help-callout">
-            Limitation: overlapping rolling periods are not independent observations, and steady annual returns do
-            not capture market volatility or the timing of gains and losses. These historical percentiles are planning
+            Limitation: overlapping rolling periods are not independent observations, and steady annual returns do not
+            capture market volatility or the timing of gains and losses. These historical percentiles are planning
             assumptions, not forecasts or confidence intervals. Significantly Below Average is not a prediction of a
             particular recession.
           </p>
@@ -89,8 +89,8 @@ export function EconomicScenarioHelp() {
             <li>how quickly accounts may be depleted during unfavorable sequences.</li>
           </ul>
           <p>
-            Test several predetermined seeds while leaving the retirement inputs unchanged. Do not repeatedly change
-            the seed until a favorable result appears.
+            Test several predetermined seeds while leaving the retirement inputs unchanged. Do not repeatedly change the
+            seed until a favorable result appears.
           </p>
           <p className="help-callout">
             A single simulated path is not a complete Monte Carlo analysis. It does not calculate probability of
@@ -103,13 +103,13 @@ export function EconomicScenarioHelp() {
           <p>
             Retirement Risk Analysis is an optional multi-path stress test. When Deterministic is selected, the active
             Market Assumption supplies its target average portfolio return. Custom Market supplies the asset-class
-            averages directly. The analysis continues to use the Single Simulated Path volatility, correlation,
-            return limits, inflation, and seed assumptions. The normal deterministic projection remains the default
-            experience.
+            averages directly. The analysis continues to use the Single Simulated Path volatility, correlation, return
+            limits, inflation, and seed assumptions. The normal deterministic projection remains the default experience.
           </p>
           <p>
             Every Social Security claiming and Roth-conversion strategy is evaluated against the same generated paths
-            (100 by default). Using identical paths makes the strategy comparison fair and keeps the result reproducible.
+            (100 by default). Using identical paths makes the strategy comparison fair and keeps the result
+            reproducible.
           </p>
           <p>
             <strong>Fully Funded Paths</strong> is the percentage of paths in which every modeled spending need is met
@@ -119,24 +119,25 @@ export function EconomicScenarioHelp() {
           </p>
           <p className="help-callout">
             These percentages measure sensitivity to the configured assumptions; they are not forecasts or guarantees.
-            Changing expected returns, volatility, correlations, inflation, spending, or longevity can materially
-            change the results.
+            Changing expected returns, volatility, correlations, inflation, spending, or longevity can materially change
+            the results.
           </p>
         </section>
 
         <section>
           <h3>Historical scenarios</h3>
           <p>
-            Historical Sequence and Historical Bootstrap use the planner's reviewed 1975–2025 annual dataset. A
-            sequence replays consecutive historical years; a bootstrap samples contiguous blocks of historical years
-            to produce new paths. Historical results are useful stress tests, but past performance does not guarantee
-            future results.
+            Historical Sequence and Historical Bootstrap use the planner's reviewed 1975–2025 annual dataset. A sequence
+            replays consecutive historical years; a bootstrap samples contiguous blocks of historical years to produce
+            new paths. Historical results are useful stress tests, but past performance does not guarantee future
+            results.
           </p>
           <p>
-            The dataset uses S&amp;P 500 total returns including dividends, modeled total returns on a
-            constant-maturity 10-year U.S. Treasury bond, average 3-month Treasury-bill rates, CPI-U inflation, and
-            official Social Security COLAs. The Other return is zero because that category can contain assets with very
-            different behavior and has no single defensible historical proxy.
+            The dataset uses S&amp;P 500 total returns including dividends for U.S. stocks; value-weighted international
+            developed-market returns in U.S. dollars for foreign stocks; modeled total returns on a constant-maturity
+            10-year U.S. Treasury bond; average 3-month Treasury-bill rates; CPI-U inflation; and official Social
+            Security COLAs. The Other return is zero because that category can contain assets with very different
+            behavior and has no single defensible historical proxy.
           </p>
           <p>
             With wrapping enabled, a sequence that reaches 2025 continues again at 1975. With wrapping disabled, the
@@ -149,6 +150,15 @@ export function EconomicScenarioHelp() {
           <ul>
             <li>
               <a
+                href="https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/data_library.html"
+                target="_blank"
+                rel="noopener noreferrer">
+                Kenneth R. French Data Library: International Research Returns
+              </a>{' '}
+              â€” annual value-weighted developed-market returns in U.S. dollars using EAFE plus Canada country weights.
+            </li>
+            <li>
+              <a
                 href="https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/histret.html"
                 target="_blank"
                 rel="noopener noreferrer">
@@ -157,27 +167,22 @@ export function EconomicScenarioHelp() {
               — annual stock total returns, Treasury bond total returns, Treasury-bill rates, and CPI-U inflation.
             </li>
             <li>
-              <a
-                href="https://www.ssa.gov/oact/cola/colaseries.html"
-                target="_blank"
-                rel="noopener noreferrer">
+              <a href="https://www.ssa.gov/oact/cola/colaseries.html" target="_blank" rel="noopener noreferrer">
                 Social Security Administration: Official COLA History
               </a>{' '}
               — annual automatic Social Security cost-of-living adjustments beginning in 1975.
             </li>
             <li>
-              <a
-                href="https://www.bls.gov/cpi/"
-                target="_blank"
-                rel="noopener noreferrer">
+              <a href="https://www.bls.gov/cpi/" target="_blank" rel="noopener noreferrer">
                 U.S. Bureau of Labor Statistics: Consumer Price Index
               </a>{' '}
               — official CPI definitions, methodology, and supporting inflation data.
             </li>
           </ul>
           <p className="help-callout">
-            Historical data is rounded to six decimal places and stored with the application so results remain
-            reproducible. Data sources and methodologies may be revised after the version included by the planner.
+            Historical data is stored with the application so results remain reproducible. The international source is
+            published to two decimal percentage points; other return series are stored to six decimal places. Data
+            sources and methodologies may be revised after the version included by the planner.
           </p>
         </section>
 
@@ -211,10 +216,10 @@ export function EconomicScenarioHelp() {
         <section>
           <h3>State income-tax estimates</h3>
           <p>
-            Select the state where you expect to reside in Planner Inputs. The planner applies that residence for
-            every projection year and estimates tax on modeled traditional-account distributions and any Social
-            Security amount included by that state. States without a broad individual income tax produce a zero
-            ordinary-income estimate.
+            Select the state where you expect to reside in Planner Inputs. The planner applies that residence for every
+            projection year and estimates tax on modeled traditional-account distributions and any Social Security
+            amount included by that state. States without a broad individual income tax produce a zero ordinary-income
+            estimate.
           </p>
           <p>
             The bundled tables include 2026 statewide schedules for all 50 states and the District of Columbia, plus
@@ -223,10 +228,10 @@ export function EconomicScenarioHelp() {
             planning approximation unless you edit the table.
           </p>
           <p className="help-callout">
-            State results are planning estimates, not tax-return calculations. They assume one residence for the
-            entire projection and do not include local income taxes, planned moves, a spouse's separate age or
-            retirement exclusion, or every state-specific adjustment, phaseout, credit, recapture, and alternative
-            tax. Review the selected state's current instructions before making a tax decision.
+            State results are planning estimates, not tax-return calculations. They assume one residence for the entire
+            projection and do not include local income taxes, planned moves, a spouse's separate age or retirement
+            exclusion, or every state-specific adjustment, phaseout, credit, recapture, and alternative tax. Review the
+            selected state's current instructions before making a tax decision.
           </p>
           <ul>
             <li>
@@ -297,8 +302,8 @@ export function EconomicScenarioHelp() {
         </section>
 
         <div className="notice">
-          Educational planning model only. Review assumptions and retirement decisions with qualified financial and
-          tax professionals.
+          Educational planning model only. Review assumptions and retirement decisions with qualified financial and tax
+          professionals.
         </div>
       </article>
     </main>

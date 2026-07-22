@@ -68,7 +68,8 @@ export const DEFAULT_COLA_SETTINGS: SSColaSettings = {
 };
 
 export const DEFAULT_ASSET_ALLOCATION: AssetAllocation = {
-  stocks: 0.5,
+  domesticStocks: 0.35,
+  internationalStocks: 0.15,
   bonds: 0.4,
   cash: 0.1,
   other: 0
@@ -79,7 +80,8 @@ export const DEFAULT_ECONOMIC_SCENARIO_SETTINGS: EconomicScenarioSettings = {
   deterministic: {
     profile: 'below-average',
     rollingPeriod: 20,
-    stockReturn: 0.07,
+    domesticStockReturn: 0.07,
+    internationalStockReturn: 0.065,
     bondReturn: 0.035,
     cashReturn: 0.025,
     otherReturn: 0.05
@@ -97,16 +99,19 @@ export const DEFAULT_ECONOMIC_SCENARIO_SETTINGS: EconomicScenarioSettings = {
     simulations: 100,
     assumptions: {
       inflation: { mean: 0.03, standardDeviation: 0.015, minimum: -0.02, maximum: 0.1 },
-      stockReturn: { mean: 0.07, standardDeviation: 0.18, minimum: -0.6, maximum: 0.6 },
+      domesticStockReturn: { mean: 0.07, standardDeviation: 0.18, minimum: -0.6, maximum: 0.6 },
+      internationalStockReturn: { mean: 0.065, standardDeviation: 0.2, minimum: -0.65, maximum: 0.65 },
       bondReturn: { mean: 0.035, standardDeviation: 0.07, minimum: -0.3, maximum: 0.3 },
       cashReturn: { mean: 0.025, standardDeviation: 0.015, minimum: 0, maximum: 0.1 },
       otherReturn: { mean: 0.05, standardDeviation: 0.15, minimum: -0.5, maximum: 0.5 },
+      // Rounded sample correlation of the bundled 1975-2025 U.S. and international stock series.
       correlationMatrix: [
-        [1, 0, 0, 0, 0],
-        [0, 1, 0, 0, 0],
-        [0, 0, 1, 0, 0],
-        [0, 0, 0, 1, 0],
-        [0, 0, 0, 0, 1]
+        [1, 0, 0, 0, 0, 0],
+        [0, 1, 0.65, 0, 0, 0],
+        [0, 0.65, 1, 0, 0, 0],
+        [0, 0, 0, 1, 0, 0],
+        [0, 0, 0, 0, 1, 0],
+        [0, 0, 0, 0, 0, 1]
       ]
     }
   }

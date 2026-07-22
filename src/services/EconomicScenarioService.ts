@@ -33,7 +33,8 @@ export function createEconomicScenario(
                 settings.deterministic.rollingPeriod
               )[settings.deterministic.profile];
               return {
-                stockReturn: portfolioReturn,
+                domesticStockReturn: portfolioReturn,
+                internationalStockReturn: portfolioReturn,
                 bondReturn: portfolioReturn,
                 cashReturn: portfolioReturn,
                 otherReturn: portfolioReturn
@@ -45,7 +46,8 @@ export function createEconomicScenario(
         years,
         inflation: inputs.inflation,
         socialSecurityCola: projectFutureCOLA(colaSettings, inputs),
-        stockReturn: deterministicReturns.stockReturn,
+        domesticStockReturn: deterministicReturns.domesticStockReturn,
+        internationalStockReturn: deterministicReturns.internationalStockReturn,
         bondReturn: deterministicReturns.bondReturn,
         cashReturn: deterministicReturns.cashReturn,
         otherReturn: deterministicReturns.otherReturn,

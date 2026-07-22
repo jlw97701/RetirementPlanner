@@ -8,13 +8,16 @@ describe('historical economic data', () => {
     expect(HISTORICAL_ECONOMIC_DATA).toHaveLength(51);
     expect(HISTORICAL_ECONOMIC_DATA[0].year).toBe(1975);
     expect(HISTORICAL_ECONOMIC_DATA.at(-1)?.year).toBe(2025);
+    expect(HISTORICAL_ECONOMIC_DATA[0].internationalStockReturn).toBe(0.3595);
+    expect(HISTORICAL_ECONOMIC_DATA.at(-1)?.internationalStockReturn).toBe(0.3217);
 
     for (let index = 0; index < HISTORICAL_ECONOMIC_DATA.length; index++) {
       const item = HISTORICAL_ECONOMIC_DATA[index];
       const values = [
         item.inflation,
         item.socialSecurityCola,
-        item.stockReturn,
+        item.domesticStockReturn,
+        item.internationalStockReturn,
         item.bondReturn,
         item.cashReturn,
         item.otherReturn
@@ -22,7 +25,8 @@ describe('historical economic data', () => {
 
       expect(values.every(Number.isFinite)).toBe(true);
       expect(item.inflation).toBeGreaterThan(-1);
-      expect(item.stockReturn).toBeGreaterThanOrEqual(-1);
+      expect(item.domesticStockReturn).toBeGreaterThanOrEqual(-1);
+      expect(item.internationalStockReturn).toBeGreaterThanOrEqual(-1);
       expect(item.bondReturn).toBeGreaterThanOrEqual(-1);
       expect(item.cashReturn).toBeGreaterThanOrEqual(-1);
       expect(item.otherReturn).toBeGreaterThanOrEqual(-1);
@@ -45,7 +49,10 @@ describe('historical economic data', () => {
 
     expect(scenario.years.map((item) => item.year)).toEqual([2030, 2031, 2032]);
     expect(scenario.years.map((item) => item.sourceYear)).toEqual([2024, 2025, 1975]);
-    expect(scenario.years[0].stockReturn).toBe(HISTORICAL_ECONOMIC_DATA[49].stockReturn);
+    expect(scenario.years[0].domesticStockReturn).toBe(HISTORICAL_ECONOMIC_DATA[49].domesticStockReturn);
+    expect(scenario.years[0].internationalStockReturn).toBe(
+      HISTORICAL_ECONOMIC_DATA[49].internationalStockReturn
+    );
   });
 
   test('creates a reproducible historical bootstrap path', () => {

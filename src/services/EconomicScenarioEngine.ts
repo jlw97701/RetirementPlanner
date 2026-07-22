@@ -24,10 +24,11 @@ export interface EconomicYear {
    */
   socialSecurityCola: number;
 
-  /**
-   * Nominal annual total return for equities.
-   */
-  stockReturn: number;
+  /** Nominal annual total return for U.S. equities. */
+  domesticStockReturn: number;
+
+  /** Nominal annual total return for international developed-market equities. */
+  internationalStockReturn: number;
 
   /**
    * Nominal annual total return for bonds.
@@ -54,7 +55,8 @@ export interface HistoricalEconomicYear {
   year: number;
   inflation: number;
   socialSecurityCola: number;
-  stockReturn: number;
+  domesticStockReturn: number;
+  internationalStockReturn: number;
   bondReturn: number;
   cashReturn: number;
   otherReturn: number;
@@ -67,7 +69,8 @@ export interface DeterministicScenarioConfig {
 
   inflation: number;
   socialSecurityCola?: number;
-  stockReturn: number;
+  domesticStockReturn: number;
+  internationalStockReturn: number;
   bondReturn: number;
   cashReturn: number;
   otherReturn: number;
@@ -136,7 +139,8 @@ export interface MonteCarloVariableAssumption {
 
 export interface MonteCarloAssumptions {
   inflation: MonteCarloVariableAssumption;
-  stockReturn: MonteCarloVariableAssumption;
+  domesticStockReturn: MonteCarloVariableAssumption;
+  internationalStockReturn: MonteCarloVariableAssumption;
   bondReturn: MonteCarloVariableAssumption;
   cashReturn: MonteCarloVariableAssumption;
   otherReturn: MonteCarloVariableAssumption;
@@ -145,16 +149,19 @@ export interface MonteCarloAssumptions {
    * Correlation matrix in this exact variable order:
    *
    * 0 = inflation
-   * 1 = stock return
-   * 2 = bond return
-   * 3 = cash return
+   * 1 = U.S. stock return
+   * 2 = international stock return
+   * 3 = bond return
+   * 4 = cash return
+   * 5 = other-investment return
    */
   correlationMatrix: readonly [
-    readonly [number, number, number, number, number],
-    readonly [number, number, number, number, number],
-    readonly [number, number, number, number, number],
-    readonly [number, number, number, number, number],
-    readonly [number, number, number, number, number]
+    readonly [number, number, number, number, number, number],
+    readonly [number, number, number, number, number, number],
+    readonly [number, number, number, number, number, number],
+    readonly [number, number, number, number, number, number],
+    readonly [number, number, number, number, number, number],
+    readonly [number, number, number, number, number, number]
   ];
 
   /**
@@ -229,7 +236,8 @@ export class EconomicScenarioEngine {
           config.knownSocialSecurityColas,
           config.socialSecurityCola ?? config.inflation
         ),
-        stockReturn: config.stockReturn,
+        domesticStockReturn: config.domesticStockReturn,
+        internationalStockReturn: config.internationalStockReturn,
         bondReturn: config.bondReturn,
         cashReturn: config.cashReturn,
         otherReturn: config.otherReturn
@@ -331,6 +339,7 @@ export class EconomicScenarioEngine {
         random.nextStandardNormal(),
         random.nextStandardNormal(),
         random.nextStandardNormal(),
+        random.nextStandardNormal(),
         random.nextStandardNormal()
       ];
 
@@ -338,13 +347,18 @@ export class EconomicScenarioEngine {
 
       const inflation = sampleVariable(config.assumptions.inflation, correlatedNormals[0]);
 
-      const stockReturn = sampleVariable(config.assumptions.stockReturn, correlatedNormals[1]);
+      const domesticStockReturn = sampleVariable(config.assumptions.domesticStockReturn, correlatedNormals[1]);
 
-      const bondReturn = sampleVariable(config.assumptions.bondReturn, correlatedNormals[2]);
+      const internationalStockReturn = sampleVariable(
+        config.assumptions.internationalStockReturn,
+        correlatedNormals[2]
+      );
 
-      const cashReturn = sampleVariable(config.assumptions.cashReturn, correlatedNormals[3]);
+      const bondReturn = sampleVariable(config.assumptions.bondReturn, correlatedNormals[3]);
 
-      const otherReturn = sampleVariable(config.assumptions.otherReturn, correlatedNormals[4]);
+      const cashReturn = sampleVariable(config.assumptions.cashReturn, correlatedNormals[4]);
+
+      const otherReturn = sampleVariable(config.assumptions.otherReturn, correlatedNormals[5]);
 
       const projectionYear = config.startYear + index;
 
@@ -354,7 +368,8 @@ export class EconomicScenarioEngine {
         year: projectionYear,
         inflation,
         socialSecurityCola: getKnownOrProjectedCola(projectionYear, config.knownSocialSecurityColas, projectedCola),
-        stockReturn,
+        domesticStockReturn,
+        internationalStockReturn,
         bondReturn,
         cashReturn,
         otherReturn
@@ -390,7 +405,9 @@ function validateBaseConfig(config: EconomicScenarioConfig): void {
 function validateMonteCarloAssumptions(assumptions: MonteCarloAssumptions): void {
   validateVariableAssumption('inflation', assumptions.inflation);
 
-  validateVariableAssumption('stockReturn', assumptions.stockReturn);
+  validateVariableAssumption('domesticStockReturn', assumptions.domesticStockReturn);
+
+  validateVariableAssumption('internationalStockReturn', assumptions.internationalStockReturn);
 
   validateVariableAssumption('bondReturn', assumptions.bondReturn);
 
@@ -479,7 +496,8 @@ function validateHistoricalYear(item: HistoricalEconomicYear): void {
   const values = [
     item.inflation,
     item.socialSecurityCola,
-    item.stockReturn,
+    item.domesticStockReturn,
+    item.internationalStockReturn,
     item.bondReturn,
     item.cashReturn,
     item.otherReturn
@@ -493,7 +511,11 @@ function validateHistoricalYear(item: HistoricalEconomicYear): void {
     throw new EconomicScenarioError(`Historical inflation for ${item.year} must be greater than -100%.`);
   }
 
-  if ([item.stockReturn, item.bondReturn, item.cashReturn, item.otherReturn].some((value) => value < -1)) {
+  if (
+    [item.domesticStockReturn, item.internationalStockReturn, item.bondReturn, item.cashReturn, item.otherReturn].some(
+      (value) => value < -1
+    )
+  ) {
     throw new EconomicScenarioError(`Historical data for ${item.year} contains a return below -100%.`);
   }
 }
@@ -507,7 +529,8 @@ function mapHistoricalYear(
     year: projectionYear,
     inflation: source.inflation,
     socialSecurityCola: getKnownOrProjectedCola(projectionYear, knownColas, source.socialSecurityCola),
-    stockReturn: source.stockReturn,
+    domesticStockReturn: source.domesticStockReturn,
+    internationalStockReturn: source.internationalStockReturn,
     bondReturn: source.bondReturn,
     cashReturn: source.cashReturn,
     otherReturn: source.otherReturn,

@@ -6,7 +6,8 @@ export interface EconomicScenarioSettings {
   deterministic: {
     profile: DeterministicMarketProfileId;
     rollingPeriod: RollingReturnPeriod;
-    stockReturn: number;
+    domesticStockReturn: number;
+    internationalStockReturn: number;
     bondReturn: number;
     cashReturn: number;
     otherReturn: number;

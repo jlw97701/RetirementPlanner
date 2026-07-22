@@ -53,7 +53,8 @@ describe('calculateRetirementProjection', () => {
     };
 
     const assetAllocation: AssetAllocation = {
-      stocks: 0,
+      domesticStocks: 0,
+      internationalStocks: 0,
       bonds: 0,
       cash: 1,
       other: 0
@@ -73,7 +74,8 @@ describe('calculateRetirementProjection', () => {
           year: 2039,
           inflation: economicInflation,
           socialSecurityCola: 0,
-          stockReturn: 0,
+          domesticStockReturn: 0,
+          internationalStockReturn: 0,
           bondReturn: 0,
           cashReturn: 0,
           otherReturn: 0
@@ -82,7 +84,8 @@ describe('calculateRetirementProjection', () => {
           year: 2040,
           inflation: economicInflation,
           socialSecurityCola: 0,
-          stockReturn: 0,
+          domesticStockReturn: 0,
+          internationalStockReturn: 0,
           bondReturn: 0,
           cashReturn: 0,
           otherReturn: 0

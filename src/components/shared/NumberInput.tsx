@@ -6,6 +6,7 @@ export function NumberInput({
   min = 0,
   max = 99999999,
   step = 1,
+  decimalPlaces,
   readonly = false,
   selected = false,
   onChange = undefined
@@ -15,16 +16,19 @@ export function NumberInput({
   min?: number;
   max?: number;
   step?: number;
+  decimalPlaces?: number;
   readonly?: boolean;
   selected?: boolean;
   onChange?: (v: number) => void;
 }) {
-  const [draftValue, setDraftValue] = useState(() => String(value));
+  const formatValue = (nextValue: number) =>
+    decimalPlaces === undefined ? String(nextValue) : nextValue.toFixed(decimalPlaces);
+  const [draftValue, setDraftValue] = useState(() => formatValue(value));
   const isEditing = useRef(false);
 
   useEffect(() => {
-    if (!isEditing.current) setDraftValue(String(value));
-  }, [value]);
+    if (!isEditing.current) setDraftValue(formatValue(value));
+  }, [value, decimalPlaces]);
 
   const parseValidValue = (rawValue: string): number | null => {
     if (rawValue.trim() === '') return null;
@@ -46,7 +50,7 @@ export function NumberInput({
         className={selected ? 'selected' : ''}
         onFocus={() => {
           isEditing.current = true;
-          setDraftValue(String(value));
+          setDraftValue(formatValue(value));
         }}
         onChange={(event) => {
           const rawValue = event.target.value;
@@ -58,9 +62,9 @@ export function NumberInput({
           isEditing.current = false;
           const parsed = parseValidValue(draftValue);
           if (parsed === null) {
-            setDraftValue(String(value));
+            setDraftValue(formatValue(value));
           } else {
-            setDraftValue(String(parsed));
+            setDraftValue(formatValue(parsed));
             onChange?.(parsed);
           }
         }}

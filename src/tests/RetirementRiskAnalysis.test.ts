@@ -35,7 +35,8 @@ describe('retirement risk analysis', () => {
       DEFAULT_ECONOMIC_SCENARIO_SETTINGS.deterministic.rollingPeriod
     )[DEFAULT_ECONOMIC_SCENARIO_SETTINGS.deterministic.profile as 'below-average'];
     const weightedResolvedMean =
-      DEFAULT_ASSET_ALLOCATION.stocks * resolved.assumptions.stockReturn.mean +
+      DEFAULT_ASSET_ALLOCATION.domesticStocks * resolved.assumptions.domesticStockReturn.mean +
+      DEFAULT_ASSET_ALLOCATION.internationalStocks * resolved.assumptions.internationalStockReturn.mean +
       DEFAULT_ASSET_ALLOCATION.bonds * resolved.assumptions.bondReturn.mean +
       DEFAULT_ASSET_ALLOCATION.cash * resolved.assumptions.cashReturn.mean +
       DEFAULT_ASSET_ALLOCATION.other * resolved.assumptions.otherReturn.mean;
@@ -43,8 +44,8 @@ describe('retirement risk analysis', () => {
     expect(resolved.label).toContain('Below Average');
     expect(resolved.targetPortfolioReturn).toBeCloseTo(expectedTarget, 12);
     expect(weightedResolvedMean).toBeCloseTo(expectedTarget, 12);
-    expect(resolved.assumptions.stockReturn.standardDeviation).toBe(
-      DEFAULT_ECONOMIC_SCENARIO_SETTINGS.monteCarlo.assumptions.stockReturn.standardDeviation
+    expect(resolved.assumptions.domesticStockReturn.standardDeviation).toBe(
+      DEFAULT_ECONOMIC_SCENARIO_SETTINGS.monteCarlo.assumptions.domesticStockReturn.standardDeviation
     );
     expect(resolved.assumptions.correlationMatrix).toBe(
       DEFAULT_ECONOMIC_SCENARIO_SETTINGS.monteCarlo.assumptions.correlationMatrix
@@ -57,7 +58,8 @@ describe('retirement risk analysis', () => {
       deterministic: {
         ...DEFAULT_ECONOMIC_SCENARIO_SETTINGS.deterministic,
         profile: 'custom-market' as const,
-        stockReturn: 0.11,
+        domesticStockReturn: 0.11,
+        internationalStockReturn: 0.08,
         bondReturn: 0.04,
         cashReturn: 0.02,
         otherReturn: 0.07
@@ -66,7 +68,8 @@ describe('retirement risk analysis', () => {
     const resolved = resolveRiskMarketAssumption(settings, DEFAULT_ASSET_ALLOCATION);
 
     expect(resolved.label).toBe('Custom Market');
-    expect(resolved.assumptions.stockReturn.mean).toBe(0.11);
+    expect(resolved.assumptions.domesticStockReturn.mean).toBe(0.11);
+    expect(resolved.assumptions.internationalStockReturn.mean).toBe(0.08);
     expect(resolved.assumptions.bondReturn.mean).toBe(0.04);
     expect(resolved.assumptions.cashReturn.mean).toBe(0.02);
     expect(resolved.assumptions.otherReturn.mean).toBe(0.07);

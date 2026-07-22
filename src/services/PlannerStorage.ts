@@ -150,14 +150,8 @@ export function loadAssetAllocation(defaults: AssetAllocation): AssetAllocation 
       return defaults;
     }
 
-    const parsed = JSON.parse(stored) as Partial<AssetAllocation>;
-
-    const assets: AssetAllocation = {
-      ...defaults,
-      ...parsed
-    };
-
-    return assets;
+    const parsed = JSON.parse(stored) as Partial<AssetAllocation> & { stocks?: unknown };
+    return normalizeAssetAllocation(parsed, defaults);
   } catch {
     return defaults;
   }
@@ -177,7 +171,10 @@ export function loadAssetAllocationPreferences(defaults: AssetAllocationPreferen
     }
 
     const parsed = JSON.parse(stored) as Partial<AssetAllocationPreferences>;
-    const custom = parsed.customAllocation;
+    const custom = parsed.customAllocation as
+      | (Partial<AssetAllocation> & { stocks?: unknown })
+      | undefined;
+    const normalizedCustom = custom ? normalizeAssetAllocation(custom, defaults.customAllocation) : null;
 
     const validSelections = new Set<string>([
       CUSTOM_ALLOCATION_ID,
@@ -187,8 +184,14 @@ export function loadAssetAllocationPreferences(defaults: AssetAllocationPreferen
     if (
       typeof parsed.selection !== 'string' ||
       !validSelections.has(parsed.selection) ||
-      !custom ||
-      ![custom.stocks, custom.bonds, custom.cash, custom.other].every(
+      !normalizedCustom ||
+      ![
+        normalizedCustom.domesticStocks,
+        normalizedCustom.internationalStocks,
+        normalizedCustom.bonds,
+        normalizedCustom.cash,
+        normalizedCustom.other
+      ].every(
         (value) => typeof value === 'number' && Number.isFinite(value) && value >= 0
       )
     ) {
@@ -197,7 +200,7 @@ export function loadAssetAllocationPreferences(defaults: AssetAllocationPreferen
 
     return {
       selection: parsed.selection as AssetAllocationPreferences['selection'],
-      customAllocation: custom
+      customAllocation: normalizedCustom
     };
   } catch {
     return defaults;
@@ -217,6 +220,17 @@ export function loadEconomicScenarioSettings(defaults: EconomicScenarioSettings)
     }
 
     const parsed = JSON.parse(stored) as Partial<EconomicScenarioSettings>;
+    const legacyDeterministic = parsed.deterministic as
+      | (Partial<EconomicScenarioSettings['deterministic']> & { stockReturn?: number })
+      | undefined;
+    const legacyStockAssumption = (
+      parsed.monteCarlo?.assumptions as
+        | (Partial<EconomicScenarioSettings['monteCarlo']['assumptions']> & {
+            stockReturn?: EconomicScenarioSettings['monteCarlo']['assumptions']['domesticStockReturn'];
+          })
+        | undefined
+    )?.stockReturn;
+    const storedCorrelationMatrix = parsed.monteCarlo?.assumptions?.correlationMatrix;
     const validMethods = new Set(Object.values(EconomicScenarioMethod));
     const method = validMethods.has(parsed.method as EconomicScenarioMethod) ? parsed.method! : defaults.method;
 
@@ -224,7 +238,18 @@ export function loadEconomicScenarioSettings(defaults: EconomicScenarioSettings)
       ...defaults,
       ...parsed,
       method,
-      deterministic: { ...defaults.deterministic, ...parsed.deterministic },
+      deterministic: {
+        ...defaults.deterministic,
+        ...parsed.deterministic,
+        domesticStockReturn:
+          parsed.deterministic?.domesticStockReturn ??
+          legacyDeterministic?.stockReturn ??
+          defaults.deterministic.domesticStockReturn,
+        internationalStockReturn:
+          parsed.deterministic?.internationalStockReturn ??
+          legacyDeterministic?.stockReturn ??
+          defaults.deterministic.internationalStockReturn
+      },
       historicalSequence: { ...defaults.historicalSequence, ...parsed.historicalSequence },
       historicalBootstrap: { ...defaults.historicalBootstrap, ...parsed.historicalBootstrap },
       monteCarlo: {
@@ -237,9 +262,15 @@ export function loadEconomicScenarioSettings(defaults: EconomicScenarioSettings)
             ...defaults.monteCarlo.assumptions.inflation,
             ...parsed.monteCarlo?.assumptions?.inflation
           },
-          stockReturn: {
-            ...defaults.monteCarlo.assumptions.stockReturn,
-            ...parsed.monteCarlo?.assumptions?.stockReturn
+          domesticStockReturn: {
+            ...defaults.monteCarlo.assumptions.domesticStockReturn,
+            ...legacyStockAssumption,
+            ...parsed.monteCarlo?.assumptions?.domesticStockReturn
+          },
+          internationalStockReturn: {
+            ...defaults.monteCarlo.assumptions.internationalStockReturn,
+            ...legacyStockAssumption,
+            ...parsed.monteCarlo?.assumptions?.internationalStockReturn
           },
           bondReturn: {
             ...defaults.monteCarlo.assumptions.bondReturn,
@@ -252,13 +283,41 @@ export function loadEconomicScenarioSettings(defaults: EconomicScenarioSettings)
           otherReturn: {
             ...defaults.monteCarlo.assumptions.otherReturn,
             ...parsed.monteCarlo?.assumptions?.otherReturn
-          }
+          },
+          correlationMatrix: isSixBySixMatrix(storedCorrelationMatrix)
+            ? storedCorrelationMatrix
+            : defaults.monteCarlo.assumptions.correlationMatrix
         }
       }
     };
   } catch {
     return defaults;
   }
+}
+
+function normalizeAssetAllocation(
+  value: Partial<AssetAllocation> & { stocks?: unknown },
+  defaults: AssetAllocation
+): AssetAllocation {
+  const legacyStocks =
+    typeof value.stocks === 'number' && Number.isFinite(value.stocks) && value.stocks >= 0
+      ? value.stocks
+      : undefined;
+
+  return {
+    domesticStocks: value.domesticStocks ?? (legacyStocks === undefined ? defaults.domesticStocks : legacyStocks * 0.7),
+    internationalStocks:
+      value.internationalStocks ?? (legacyStocks === undefined ? defaults.internationalStocks : legacyStocks * 0.3),
+    bonds: value.bonds ?? defaults.bonds,
+    cash: value.cash ?? defaults.cash,
+    other: value.other ?? defaults.other
+  };
+}
+
+function isSixBySixMatrix(
+  value: unknown
+): value is EconomicScenarioSettings['monteCarlo']['assumptions']['correlationMatrix'] {
+  return Array.isArray(value) && value.length === 6 && value.every((row) => Array.isArray(row) && row.length === 6);
 }
 
 export function saveEconomicScenarioSettings(value: EconomicScenarioSettings): void {

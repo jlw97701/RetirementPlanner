@@ -92,10 +92,17 @@ interface ScenarioAccumulator {
 
 function calculateWeightedReturn(
   allocation: AssetAllocation,
-  returns: { stockReturn: number; bondReturn: number; cashReturn: number; otherReturn: number }
+  returns: {
+    domesticStockReturn: number;
+    internationalStockReturn: number;
+    bondReturn: number;
+    cashReturn: number;
+    otherReturn: number;
+  }
 ): number {
   return (
-    allocation.stocks * returns.stockReturn +
+    allocation.domesticStocks * returns.domesticStockReturn +
+    allocation.internationalStocks * returns.internationalStockReturn +
     allocation.bonds * returns.bondReturn +
     allocation.cash * returns.cashReturn +
     allocation.other * returns.otherReturn
@@ -104,11 +111,21 @@ function calculateWeightedReturn(
 
 function withReturnMeans(
   assumptions: MonteCarloAssumptions,
-  means: { stockReturn: number; bondReturn: number; cashReturn: number; otherReturn: number }
+  means: {
+    domesticStockReturn: number;
+    internationalStockReturn: number;
+    bondReturn: number;
+    cashReturn: number;
+    otherReturn: number;
+  }
 ): MonteCarloAssumptions {
   return {
     ...assumptions,
-    stockReturn: { ...assumptions.stockReturn, mean: means.stockReturn },
+    domesticStockReturn: { ...assumptions.domesticStockReturn, mean: means.domesticStockReturn },
+    internationalStockReturn: {
+      ...assumptions.internationalStockReturn,
+      mean: means.internationalStockReturn
+    },
     bondReturn: { ...assumptions.bondReturn, mean: means.bondReturn },
     cashReturn: { ...assumptions.cashReturn, mean: means.cashReturn },
     otherReturn: { ...assumptions.otherReturn, mean: means.otherReturn }
@@ -121,7 +138,8 @@ export function resolveRiskMarketAssumption(
 ): ResolvedRiskMarketAssumption {
   const baseAssumptions = economicScenarioSettings.monteCarlo.assumptions;
   const baseMeans = {
-    stockReturn: baseAssumptions.stockReturn.mean,
+    domesticStockReturn: baseAssumptions.domesticStockReturn.mean,
+    internationalStockReturn: baseAssumptions.internationalStockReturn.mean,
     bondReturn: baseAssumptions.bondReturn.mean,
     cashReturn: baseAssumptions.cashReturn.mean,
     otherReturn: baseAssumptions.otherReturn.mean
@@ -138,7 +156,8 @@ export function resolveRiskMarketAssumption(
   const profileId = economicScenarioSettings.deterministic.profile;
   if (profileId === 'custom-market') {
     const customMeans = {
-      stockReturn: economicScenarioSettings.deterministic.stockReturn,
+      domesticStockReturn: economicScenarioSettings.deterministic.domesticStockReturn,
+      internationalStockReturn: economicScenarioSettings.deterministic.internationalStockReturn,
       bondReturn: economicScenarioSettings.deterministic.bondReturn,
       cashReturn: economicScenarioSettings.deterministic.cashReturn,
       otherReturn: economicScenarioSettings.deterministic.otherReturn
@@ -158,7 +177,8 @@ export function resolveRiskMarketAssumption(
   const basePortfolioReturn = calculateWeightedReturn(assetAllocation, baseMeans);
   const returnShift = targetPortfolioReturn - basePortfolioReturn;
   const shiftedMeans = {
-    stockReturn: baseMeans.stockReturn + returnShift,
+    domesticStockReturn: baseMeans.domesticStockReturn + returnShift,
+    internationalStockReturn: baseMeans.internationalStockReturn + returnShift,
     bondReturn: baseMeans.bondReturn + returnShift,
     cashReturn: baseMeans.cashReturn + returnShift,
     otherReturn: baseMeans.otherReturn + returnShift

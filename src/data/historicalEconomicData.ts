@@ -1,4 +1,9 @@
 import type { HistoricalEconomicYear } from '../services/EconomicScenarioEngine';
+import { INTERNATIONAL_STOCK_RETURNS } from './internationalStockReturns';
+
+type BaseHistoricalEconomicYear = Omit<HistoricalEconomicYear, 'domesticStockReturn' | 'internationalStockReturn'> & {
+  stockReturn: number;
+};
 
 /*
  * Historical economic data, 1975-2025.
@@ -9,7 +14,9 @@ import type { HistoricalEconomicYear } from '../services/EconomicScenarioEngine'
  *   https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/histret.html
  *
  * Proxies:
- *   stockReturn - S&P 500 total return, including dividends
+ *   domesticStockReturn      - S&P 500 total return, including dividends
+ *   internationalStockReturn - Fama/French value-weighted international
+ *                              developed-market return in U.S. dollars
  *   bondReturn  - modeled total return on a constant-maturity 10-year U.S. Treasury bond
  *   cashReturn  - average 3-month U.S. Treasury bill rate during the year
  *   inflation   - CPI-U, not seasonally adjusted
@@ -23,7 +30,7 @@ import type { HistoricalEconomicYear } from '../services/EconomicScenarioEngine'
  * REIT, precious-metals, and cryptocurrency assets allowed by that category.
  * Rates are decimal values and are rounded to six decimal places.
  */
-export const HISTORICAL_ECONOMIC_DATA: readonly HistoricalEconomicYear[] = [
+const BASE_HISTORICAL_ECONOMIC_DATA: readonly BaseHistoricalEconomicYear[] = [
   { year: 1975, inflation: 0.069364, socialSecurityCola: 0.08, stockReturn: 0.369951, bondReturn: 0.036053, cashReturn: 0.057864, otherReturn: 0 },
   { year: 1976, inflation: 0.048649, socialSecurityCola: 0.064, stockReturn: 0.23831, bondReturn: 0.159846, cashReturn: 0.049766, otherReturn: 0 },
   { year: 1977, inflation: 0.06701, socialSecurityCola: 0.059, stockReturn: -0.069797, bondReturn: 0.0129, cashReturn: 0.05261, otherReturn: 0 },
@@ -76,3 +83,18 @@ export const HISTORICAL_ECONOMIC_DATA: readonly HistoricalEconomicYear[] = [
   { year: 2024, inflation: 0.028881, socialSecurityCola: 0.025, stockReturn: 0.248786, bondReturn: -0.016372, cashReturn: 0.0518, otherReturn: 0 },
   { year: 2025, inflation: 0.027351, socialSecurityCola: 0.028, stockReturn: 0.177237, bondReturn: 0.077955, cashReturn: 0.0421, otherReturn: 0 }
 ];
+
+export const HISTORICAL_ECONOMIC_DATA: readonly HistoricalEconomicYear[] = BASE_HISTORICAL_ECONOMIC_DATA.map(
+  ({ stockReturn, ...year }) => {
+    const internationalStockReturn = INTERNATIONAL_STOCK_RETURNS[year.year];
+    if (internationalStockReturn === undefined) {
+      throw new Error(`Missing international stock return for ${year.year}.`);
+    }
+
+    return {
+      ...year,
+      domesticStockReturn: stockReturn,
+      internationalStockReturn
+    };
+  }
+);

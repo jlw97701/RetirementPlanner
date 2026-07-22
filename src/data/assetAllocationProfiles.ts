@@ -21,25 +21,25 @@ export const ASSET_ALLOCATION_PROFILES: readonly AssetAllocationProfile[] = [
     id: 'conservative',
     label: 'Conservative',
     description: 'Lower stock exposure with greater emphasis on bonds and cash.',
-    allocation: { stocks: 0.3, bonds: 0.5, cash: 0.2, other: 0 }
+    allocation: { domesticStocks: 0.21, internationalStocks: 0.09, bonds: 0.5, cash: 0.2, other: 0 }
   },
   {
     id: 'balanced',
     label: 'Balanced',
     description: 'A balance between growth-oriented and income-oriented assets.',
-    allocation: { stocks: 0.5, bonds: 0.4, cash: 0.1, other: 0 }
+    allocation: { domesticStocks: 0.35, internationalStocks: 0.15, bonds: 0.4, cash: 0.1, other: 0 }
   },
   {
     id: 'growth',
     label: 'Growth',
     description: 'Greater stock exposure for long-term growth with moderate bonds and cash.',
-    allocation: { stocks: 0.6, bonds: 0.3, cash: 0.1, other: 0 }
+    allocation: { domesticStocks: 0.42, internationalStocks: 0.18, bonds: 0.3, cash: 0.1, other: 0 }
   },
   {
     id: 'aggressive-growth',
     label: 'Aggressive Growth',
     description: 'High stock exposure with greater expected volatility.',
-    allocation: { stocks: 0.8, bonds: 0.15, cash: 0.05, other: 0 }
+    allocation: { domesticStocks: 0.56, internationalStocks: 0.24, bonds: 0.15, cash: 0.05, other: 0 }
   }
 ];
 
@@ -58,7 +58,8 @@ export function getAssetAllocationProfile(method: AssetAllocationMethod): AssetA
 export function identifyAssetAllocationProfile(allocation: AssetAllocation): AssetAllocationMethod | null {
   const profile = ASSET_ALLOCATION_PROFILES.find(
     (item) =>
-      Math.abs(item.allocation.stocks - allocation.stocks) <= ALLOCATION_TOLERANCE &&
+      Math.abs(item.allocation.domesticStocks - allocation.domesticStocks) <= ALLOCATION_TOLERANCE &&
+      Math.abs(item.allocation.internationalStocks - allocation.internationalStocks) <= ALLOCATION_TOLERANCE &&
       Math.abs(item.allocation.bonds - allocation.bonds) <= ALLOCATION_TOLERANCE &&
       Math.abs(item.allocation.cash - allocation.cash) <= ALLOCATION_TOLERANCE &&
       Math.abs(item.allocation.other - allocation.other) <= ALLOCATION_TOLERANCE

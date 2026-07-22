@@ -298,7 +298,13 @@ function validateProjectionInputs(inputs: PlannerInputs): void {
 }
 
 function calculatePortfolioReturn(economicYear: EconomicYear, allocation: AssetAllocation): number {
-  const weights = [allocation.stocks, allocation.bonds, allocation.cash, allocation.other];
+  const weights = [
+    allocation.domesticStocks,
+    allocation.internationalStocks,
+    allocation.bonds,
+    allocation.cash,
+    allocation.other
+  ];
 
   if (weights.some((weight) => !Number.isFinite(weight) || weight < 0)) {
     throw new Error('Asset-allocation weights must be nonnegative finite numbers.');
@@ -311,7 +317,8 @@ function calculatePortfolioReturn(economicYear: EconomicYear, allocation: AssetA
   }
 
   const portfolioReturn =
-    allocation.stocks * economicYear.stockReturn +
+    allocation.domesticStocks * economicYear.domesticStockReturn +
+    allocation.internationalStocks * economicYear.internationalStockReturn +
     allocation.bonds * economicYear.bondReturn +
     allocation.cash * economicYear.cashReturn +
     allocation.other * economicYear.otherReturn;

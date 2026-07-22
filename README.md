@@ -15,6 +15,8 @@ required minimum distributions, and portfolio withdrawals.
 - Applies the withdrawal order Traditional IRA, taxable savings, then Roth IRA.
 - Models annual spending, inflation, Social Security COLAs, taxes, RMDs, Medicare costs, and IRMAA.
 - Includes Conservative, Balanced, Growth, and Aggressive Growth asset allocations plus a persistent custom allocation.
+  Every allocation models U.S. and international developed-market stocks separately; presets use a 70/30 split within
+  their total stock allocation.
 - Supports deterministic, single simulated path, historical sequence, and historical bootstrap economic scenarios.
 - Includes editable federal and state tax configurations for four filing statuses and all 50 states plus the District of
   Columbia.
@@ -80,6 +82,13 @@ success, a forecast, or a guarantee.
 The default experience uses a deterministic Below Average Market profile. Deterministic market presets are derived
 from rolling 10- or 20-year annualized portfolio returns in the bundled 1975–2025 historical dataset. A Custom Market
 profile accepts user-entered asset-class returns.
+
+The bundled historical model uses separate annual U.S. and international stock returns. U.S. stocks use S&amp;P 500
+total returns from the NYU Stern dataset. International stocks use the value-weighted market return from the
+[Kenneth R. French International Index Portfolios](https://mba.tuck.dartmouth.edu/pages/Faculty/ken.french/Data_Library/int_index_port_formed.html),
+weighted using EAFE plus Canada country weights and expressed in U.S. dollars. Historical replay and bootstrap paths
+preserve both stock series. Single Simulated Path and Retirement Risk Analysis generate the two stock returns
+separately and model their correlation.
 
 Other scenario methods include:
 
