@@ -397,12 +397,11 @@ export function RetirementRiskAnalysis({
                   </th>
                   <th>
                     Success Through
-                    <br /> 
+                    <br />
                     Age {inputs.endAge}
                   </th>
                   <th>
-                    Median Balance at
-                    Age {inputs.horizonAge}
+                    Median Balance at Age {inputs.horizonAge}
                     <br />
                     (Inflation-Adjusted Dollars)
                   </th>
