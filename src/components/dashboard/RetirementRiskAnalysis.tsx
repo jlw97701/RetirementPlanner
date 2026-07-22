@@ -331,9 +331,10 @@ export function RetirementRiskAnalysis({
               <strong>{formatNaturalPercent(selectedResult.horizonFullyFundedRate)}</strong> of simulations, or{' '}
               <strong>{describeModeledFrequency(selectedResult.horizonFullyFundedRate)}</strong>. That represents a{' '}
               <strong>
-                {describeSuccessLevel(selectedResult.horizonFullyFundedRate)} modeled probability of success through
-                the primary horizon
-              </strong>.{' '}
+                {describeSuccessLevel(selectedResult.horizonFullyFundedRate)} modeled probability of success through the
+                primary horizon
+              </strong>
+              .{' '}
               {inputs.horizonAge !== inputs.endAge && (
                 <>
                   When the projection extends through the ending age of {inputs.endAge}, the modeled success rate{' '}
@@ -368,11 +369,35 @@ export function RetirementRiskAnalysis({
                 <tr>
                   <th>Claim Age</th>
                   <th>Roth</th>
-                  <th>Fully Funded</th>
-                  <th>Depletion Risk</th>
-                  <th>Ending P10 (Start-Year $)</th>
-                  <th>Ending Median (Start-Year $)</th>
-                  <th>Ending P90 (Start-Year $)</th>
+                  <th>
+                    Success Through
+                    <br />
+                    Age {inputs.horizonAge}
+                  </th>
+                  <th>
+                    Success Through Age
+                    <br /> {inputs.endAge}
+                  </th>
+                  <th>
+                    Shortfall Through
+                    <br />
+                    Age {inputs.endAge}
+                  </th>
+                  <th>
+                    Ending P10
+                    <br />
+                    (Start-Year $)
+                  </th>
+                  <th>
+                    Ending Median
+                    <br />
+                    (Start-Year $)
+                  </th>
+                  <th>
+                    Ending P90
+                    <br />
+                    (Start-Year $)
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -383,6 +408,7 @@ export function RetirementRiskAnalysis({
                     onClick={() => onSelect(scenario.scenarioId)}>
                     <td>{scenario.claimAge ?? 'Already Claimed'}</td>
                     <td>{rothConversionLabel(scenario.rothConvType)}</td>
+                    <td>{formatPercent(scenario.horizonFullyFundedRate)}</td>
                     <td>{formatPercent(scenario.fullyFundedRate)}</td>
                     <td>{formatPercent(scenario.depletionRisk)}</td>
                     <td>{formatMoney(scenario.endingPortfolioP10)}</td>
