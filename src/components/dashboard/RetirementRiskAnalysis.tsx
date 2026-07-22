@@ -437,7 +437,13 @@ export function RetirementRiskAnalysis({
                     className={scenario.scenarioId === selectedResult.scenarioId ? 'scenario selected' : 'scenario'}
                     onClick={() => onSelect(scenario.scenarioId)}>
                     <td>{scenario.claimAge ?? 'Already Claimed'}</td>
-                    <td>{rothConversionLabel(scenario.rothConvType)}</td>
+                    <td>
+                      {scenario.rothConvType === RothConversionType.None
+                        ? 'None'
+                        : scenario.rothConvType === RothConversionType.Base
+                          ? 'Base'
+                          : 'Aggressive'}
+                    </td>
                     <td>{formatPercent(scenario.horizonFullyFundedRate)}</td>
                     <td>{formatPercent(scenario.fullyFundedRate)}</td>
                     <td>{formatMoney(getMedianPortfolioAtAge(scenario, inputs.horizonAge))}</td>
