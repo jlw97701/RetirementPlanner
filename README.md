@@ -57,6 +57,11 @@ unfunded spending.
 Retirement Risk Analysis is an optional multi-path stress test. Every active claiming and conversion strategy is run
 against the same seeded market and inflation paths so strategy comparisons use identical economic conditions.
 
+When the active scenario method is Deterministic, the selected Market Assumption supplies the risk analysis target
+average portfolio return. Custom Market values become the simulated asset-class averages. Volatility, correlations,
+return limits, inflation, and the seed remain controlled by the Single Simulated Path settings. The risk panel displays
+the effective market assumption and target return used for each run.
+
 The analysis reports:
 
 - modeled probability of covering all spending through the Primary Horizon Age;

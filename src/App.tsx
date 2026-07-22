@@ -10,6 +10,7 @@ import { useRetirementModel } from './hooks/useRetirementModel';
 import { EconomicScenarioHelp } from './components/help/EconomicScenarioHelp';
 import { IrmaaTableEditor } from './components/irmaa/IrmaaTableEditor';
 import { RetirementRiskAnalysis } from './components/dashboard/RetirementRiskAnalysis';
+import { resolveRiskMarketAssumption } from './services/RetirementRiskAnalysisService';
 
 type AppPage = 'planner' | 'taxes' | 'irmaa' | 'help';
 
@@ -38,6 +39,7 @@ export default function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const selected = projections.find((p) => p.scenario.id === selectedId) ?? projections[0];
   const summaries = projections.map((p) => p.summary);
+  const riskMarketAssumption = resolveRiskMarketAssumption(economicScenarioSettings, assetAllocation);
 
   useEffect(() => {
     const selectedStillExists = projections.some((projection) => projection.scenario.id === selectedId);
@@ -153,6 +155,7 @@ export default function App() {
             <RetirementRiskAnalysis
               inputs={inputs}
               simulations={economicScenarioSettings.monteCarlo.simulations}
+              marketAssumption={riskMarketAssumption}
               selectedId={selected?.scenario.id ?? ''}
               onSelect={setSelectedId}
               runAnalysis={runRiskAnalysis}

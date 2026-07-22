@@ -1,4 +1,9 @@
 import { COLA_HISTORY } from '../data/colaHistory';
+import {
+  calculateDeterministicMarketReturns,
+  DETERMINISTIC_MARKET_PROFILES
+} from '../data/deterministicMarketProfiles';
+import { HISTORICAL_ECONOMIC_DATA } from '../data/historicalEconomicData';
 import type { IrmaaConfiguration } from '../data/irmaaTables';
 import type { EconomicScenarioSettings } from '../models/EconomicScenarioSettings';
 import type {
@@ -12,7 +17,11 @@ import type {
 } from '../models/RetirementTypes';
 import type { FederalTaxConfig, StateTaxConfig } from '../models/TaxTypes';
 import { getProjectionPeriod } from '../utils/projectionDates';
-import { EconomicScenarioEngine, EconomicScenarioMethod } from './EconomicScenarioEngine';
+import {
+  EconomicScenarioEngine,
+  EconomicScenarioMethod,
+  type MonteCarloAssumptions
+} from './EconomicScenarioEngine';
 import { calculateRetirementProjection } from './RetirementEngine';
 
 const UNFUNDED_NEED_TOLERANCE = 0.01;
@@ -43,7 +52,15 @@ export interface RetirementRiskScenarioResult {
 export interface RetirementRiskAnalysisResult {
   simulations: number;
   baseSeed: number;
+  marketAssumptionLabel: string;
+  targetPortfolioReturn: number;
   scenarios: RetirementRiskScenarioResult[];
+}
+
+export interface ResolvedRiskMarketAssumption {
+  label: string;
+  targetPortfolioReturn: number;
+  assumptions: MonteCarloAssumptions;
 }
 
 export interface RetirementRiskAnalysisParameters {
@@ -73,6 +90,89 @@ interface ScenarioAccumulator {
   portfolioBalancesByAge: number[][];
 }
 
+function calculateWeightedReturn(
+  allocation: AssetAllocation,
+  returns: { stockReturn: number; bondReturn: number; cashReturn: number; otherReturn: number }
+): number {
+  return (
+    allocation.stocks * returns.stockReturn +
+    allocation.bonds * returns.bondReturn +
+    allocation.cash * returns.cashReturn +
+    allocation.other * returns.otherReturn
+  );
+}
+
+function withReturnMeans(
+  assumptions: MonteCarloAssumptions,
+  means: { stockReturn: number; bondReturn: number; cashReturn: number; otherReturn: number }
+): MonteCarloAssumptions {
+  return {
+    ...assumptions,
+    stockReturn: { ...assumptions.stockReturn, mean: means.stockReturn },
+    bondReturn: { ...assumptions.bondReturn, mean: means.bondReturn },
+    cashReturn: { ...assumptions.cashReturn, mean: means.cashReturn },
+    otherReturn: { ...assumptions.otherReturn, mean: means.otherReturn }
+  };
+}
+
+export function resolveRiskMarketAssumption(
+  economicScenarioSettings: EconomicScenarioSettings,
+  assetAllocation: AssetAllocation
+): ResolvedRiskMarketAssumption {
+  const baseAssumptions = economicScenarioSettings.monteCarlo.assumptions;
+  const baseMeans = {
+    stockReturn: baseAssumptions.stockReturn.mean,
+    bondReturn: baseAssumptions.bondReturn.mean,
+    cashReturn: baseAssumptions.cashReturn.mean,
+    otherReturn: baseAssumptions.otherReturn.mean
+  };
+
+  if (economicScenarioSettings.method !== EconomicScenarioMethod.DETERMINISTIC) {
+    return {
+      label: 'Single Simulated Path Averages',
+      targetPortfolioReturn: calculateWeightedReturn(assetAllocation, baseMeans),
+      assumptions: baseAssumptions
+    };
+  }
+
+  const profileId = economicScenarioSettings.deterministic.profile;
+  if (profileId === 'custom-market') {
+    const customMeans = {
+      stockReturn: economicScenarioSettings.deterministic.stockReturn,
+      bondReturn: economicScenarioSettings.deterministic.bondReturn,
+      cashReturn: economicScenarioSettings.deterministic.cashReturn,
+      otherReturn: economicScenarioSettings.deterministic.otherReturn
+    };
+    return {
+      label: 'Custom Market',
+      targetPortfolioReturn: calculateWeightedReturn(assetAllocation, customMeans),
+      assumptions: withReturnMeans(baseAssumptions, customMeans)
+    };
+  }
+
+  const targetPortfolioReturn = calculateDeterministicMarketReturns(
+    HISTORICAL_ECONOMIC_DATA,
+    assetAllocation,
+    economicScenarioSettings.deterministic.rollingPeriod
+  )[profileId];
+  const basePortfolioReturn = calculateWeightedReturn(assetAllocation, baseMeans);
+  const returnShift = targetPortfolioReturn - basePortfolioReturn;
+  const shiftedMeans = {
+    stockReturn: baseMeans.stockReturn + returnShift,
+    bondReturn: baseMeans.bondReturn + returnShift,
+    cashReturn: baseMeans.cashReturn + returnShift,
+    otherReturn: baseMeans.otherReturn + returnShift
+  };
+  const profileLabel =
+    DETERMINISTIC_MARKET_PROFILES.find((profile) => profile.id === profileId)?.label ?? profileId;
+
+  return {
+    label: `${profileLabel} (${economicScenarioSettings.deterministic.rollingPeriod}-Year Rolling Target)`,
+    targetPortfolioReturn,
+    assumptions: withReturnMeans(baseAssumptions, shiftedMeans)
+  };
+}
+
 export async function runRetirementRiskAnalysis(
   parameters: RetirementRiskAnalysisParameters,
   options: RetirementRiskAnalysisOptions = {}
@@ -91,6 +191,7 @@ export async function runRetirementRiskAnalysis(
   const period = getProjectionPeriod(inputs.birthDate, inputs.startAge, inputs.endAge);
   const simulations = normalizeSimulationCount(economicScenarioSettings.monteCarlo.simulations);
   const baseSeed = Math.trunc(economicScenarioSettings.monteCarlo.seed);
+  const marketAssumption = resolveRiskMarketAssumption(economicScenarioSettings, assetAllocation);
   const engine = new EconomicScenarioEngine();
   const accumulators: ScenarioAccumulator[] = retirementScenarios.map((scenario) => ({
     scenario,
@@ -116,7 +217,7 @@ export async function runRetirementRiskAnalysis(
       method: EconomicScenarioMethod.MONTE_CARLO,
       startYear: period.startYear,
       years: period.yearCount,
-      assumptions: economicScenarioSettings.monteCarlo.assumptions,
+      assumptions: marketAssumption.assumptions,
       seed: deriveSimulationSeed(baseSeed, simulationIndex),
       knownSocialSecurityColas: COLA_HISTORY
     });
@@ -165,6 +266,8 @@ export async function runRetirementRiskAnalysis(
   return {
     simulations,
     baseSeed,
+    marketAssumptionLabel: marketAssumption.label,
+    targetPortfolioReturn: marketAssumption.targetPortfolioReturn,
     scenarios: accumulators.map((accumulator) => {
       const portfolioPercentiles = accumulator.portfolioBalancesByAge.map((balances, index) => ({
         age: inputs.startAge + index,

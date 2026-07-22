@@ -9,8 +9,15 @@ import {
   DEFAULT_TAX_CONFIG
 } from '../data/defaults';
 import { IRMAA_CONFIGURATIONS } from '../data/irmaaTables';
+import { HISTORICAL_ECONOMIC_DATA } from '../data/historicalEconomicData';
+import { calculateDeterministicMarketReturns } from '../data/deterministicMarketProfiles';
 import { RothConversionType, type RetirementScenario } from '../models/RetirementTypes';
-import { percentile, runRetirementRiskAnalysis } from '../services/RetirementRiskAnalysisService';
+import { EconomicScenarioMethod } from '../services/EconomicScenarioEngine';
+import {
+  percentile,
+  resolveRiskMarketAssumption,
+  runRetirementRiskAnalysis
+} from '../services/RetirementRiskAnalysisService';
 import { selectStateTaxConfiguration, selectTaxConfiguration } from '../services/TaxEngine';
 
 describe('retirement risk analysis', () => {
@@ -18,6 +25,100 @@ describe('retirement risk analysis', () => {
     expect(percentile([0, 10, 20, 30, 40], 0.1)).toBe(4);
     expect(percentile([0, 10, 20, 30, 40], 0.5)).toBe(20);
     expect(percentile([0, 10, 20, 30, 40], 0.9)).toBe(36);
+  });
+
+  it('uses a deterministic preset as the target average portfolio return', () => {
+    const resolved = resolveRiskMarketAssumption(DEFAULT_ECONOMIC_SCENARIO_SETTINGS, DEFAULT_ASSET_ALLOCATION);
+    const expectedTarget = calculateDeterministicMarketReturns(
+      HISTORICAL_ECONOMIC_DATA,
+      DEFAULT_ASSET_ALLOCATION,
+      DEFAULT_ECONOMIC_SCENARIO_SETTINGS.deterministic.rollingPeriod
+    )[DEFAULT_ECONOMIC_SCENARIO_SETTINGS.deterministic.profile as 'below-average'];
+    const weightedResolvedMean =
+      DEFAULT_ASSET_ALLOCATION.stocks * resolved.assumptions.stockReturn.mean +
+      DEFAULT_ASSET_ALLOCATION.bonds * resolved.assumptions.bondReturn.mean +
+      DEFAULT_ASSET_ALLOCATION.cash * resolved.assumptions.cashReturn.mean +
+      DEFAULT_ASSET_ALLOCATION.other * resolved.assumptions.otherReturn.mean;
+
+    expect(resolved.label).toContain('Below Average');
+    expect(resolved.targetPortfolioReturn).toBeCloseTo(expectedTarget, 12);
+    expect(weightedResolvedMean).toBeCloseTo(expectedTarget, 12);
+    expect(resolved.assumptions.stockReturn.standardDeviation).toBe(
+      DEFAULT_ECONOMIC_SCENARIO_SETTINGS.monteCarlo.assumptions.stockReturn.standardDeviation
+    );
+    expect(resolved.assumptions.correlationMatrix).toBe(
+      DEFAULT_ECONOMIC_SCENARIO_SETTINGS.monteCarlo.assumptions.correlationMatrix
+    );
+  });
+
+  it('uses Custom Market returns as the simulated asset-class averages', () => {
+    const settings = {
+      ...DEFAULT_ECONOMIC_SCENARIO_SETTINGS,
+      deterministic: {
+        ...DEFAULT_ECONOMIC_SCENARIO_SETTINGS.deterministic,
+        profile: 'custom-market' as const,
+        stockReturn: 0.11,
+        bondReturn: 0.04,
+        cashReturn: 0.02,
+        otherReturn: 0.07
+      }
+    };
+    const resolved = resolveRiskMarketAssumption(settings, DEFAULT_ASSET_ALLOCATION);
+
+    expect(resolved.label).toBe('Custom Market');
+    expect(resolved.assumptions.stockReturn.mean).toBe(0.11);
+    expect(resolved.assumptions.bondReturn.mean).toBe(0.04);
+    expect(resolved.assumptions.cashReturn.mean).toBe(0.02);
+    expect(resolved.assumptions.otherReturn.mean).toBe(0.07);
+  });
+
+  it('changes risk outcomes when the deterministic Market Assumption changes', async () => {
+    const retirementScenarios: RetirementScenario[] = [
+      { id: 'no-spending', claimAge: 70, rothConvType: RothConversionType.None }
+    ];
+    const baseParameters = {
+      inputs: {
+        ...DEFAULT_INPUTS,
+        startAge: 62,
+        endAge: 65,
+        horizonAge: 64,
+        annualSpend: 0
+      },
+      ssIncome: DEFAULT_MONTHLY_SS,
+      colaSettings: DEFAULT_COLA_SETTINGS,
+      assetAllocation: DEFAULT_ASSET_ALLOCATION,
+      retirementScenarios,
+      federalTaxConfig: selectTaxConfiguration(DEFAULT_TAX_CONFIG.federal, DEFAULT_INPUTS.filingStatus),
+      stateTaxConfig: selectStateTaxConfiguration(
+        DEFAULT_TAX_CONFIG.state,
+        DEFAULT_INPUTS.residenceState,
+        DEFAULT_INPUTS.filingStatus
+      ),
+      irmaaConfigurations: IRMAA_CONFIGURATIONS
+    };
+    const belowAverage = await runRetirementRiskAnalysis({
+      ...baseParameters,
+      economicScenarioSettings: {
+        ...DEFAULT_ECONOMIC_SCENARIO_SETTINGS,
+        method: EconomicScenarioMethod.DETERMINISTIC,
+        deterministic: { ...DEFAULT_ECONOMIC_SCENARIO_SETTINGS.deterministic, profile: 'below-average' },
+        monteCarlo: { ...DEFAULT_ECONOMIC_SCENARIO_SETTINGS.monteCarlo, simulations: 4, seed: 24680 }
+      }
+    });
+    const aboveAverage = await runRetirementRiskAnalysis({
+      ...baseParameters,
+      economicScenarioSettings: {
+        ...DEFAULT_ECONOMIC_SCENARIO_SETTINGS,
+        method: EconomicScenarioMethod.DETERMINISTIC,
+        deterministic: { ...DEFAULT_ECONOMIC_SCENARIO_SETTINGS.deterministic, profile: 'above-average' },
+        monteCarlo: { ...DEFAULT_ECONOMIC_SCENARIO_SETTINGS.monteCarlo, simulations: 4, seed: 24680 }
+      }
+    });
+
+    expect(aboveAverage.targetPortfolioReturn).toBeGreaterThan(belowAverage.targetPortfolioReturn);
+    expect(aboveAverage.scenarios[0].endingPortfolioP50).toBeGreaterThan(
+      belowAverage.scenarios[0].endingPortfolioP50
+    );
   });
 
   it('is reproducible and applies identical economic paths to every strategy', async () => {

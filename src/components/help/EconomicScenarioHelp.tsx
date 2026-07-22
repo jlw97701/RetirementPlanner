@@ -101,9 +101,11 @@ export function EconomicScenarioHelp() {
         <section>
           <h3>Retirement Risk Analysis</h3>
           <p>
-            Retirement Risk Analysis is an optional multi-path stress test. It uses the selected asset allocation and
-            the Single Simulated Path return, volatility, inflation, correlation, and seed assumptions. The normal
-            deterministic projection remains the default experience.
+            Retirement Risk Analysis is an optional multi-path stress test. When Deterministic is selected, the active
+            Market Assumption supplies its target average portfolio return. Custom Market supplies the asset-class
+            averages directly. The analysis continues to use the Single Simulated Path volatility, correlation,
+            return limits, inflation, and seed assumptions. The normal deterministic projection remains the default
+            experience.
           </p>
           <p>
             Every Social Security claiming and Roth-conversion strategy is evaluated against the same generated paths

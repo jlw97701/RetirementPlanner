@@ -12,7 +12,8 @@ type AnalysisStatus = 'idle' | 'running' | 'complete' | 'error';
 import type {
   RetirementRiskAnalysisOptions,
   RetirementRiskAnalysisResult,
-  RetirementRiskScenarioResult
+  RetirementRiskScenarioResult,
+  ResolvedRiskMarketAssumption
 } from '../../services/RetirementRiskAnalysisService';
 
 interface RiskChartPoint {
@@ -27,8 +28,14 @@ interface RiskChartPoint {
 const riskAnalysisInfo = `
   <h3>Retirement Risk Analysis</h3>
   <p>
-    This optional analysis reuses the selected asset allocation and the return, volatility,
-    inflation, correlation, and seed assumptions configured for Single Simulated Path.
+    When Deterministic is selected, the chosen Market Assumption supplies the target average portfolio return.
+    The analysis shifts the configured asset-class return averages so their weighted portfolio average matches
+    that target while preserving their relative differences.
+  </p>
+  <p>
+    Custom Market values become the simulated asset-class averages. Volatility, correlations, return limits,
+    inflation assumptions, and the seed continue to come from Single Simulated Path. When another scenario method
+    is selected, the analysis uses the Single Simulated Path return averages as well.
   </p>
   <p>
     Every Social Security claiming and Roth-conversion strategy is evaluated against the same
@@ -185,12 +192,14 @@ function RiskChartTooltip({ active, payload }: { active?: boolean; payload?: Arr
 export function RetirementRiskAnalysis({
   inputs,
   simulations,
+  marketAssumption,
   selectedId,
   onSelect,
   runAnalysis
 }: {
   inputs: PlannerInputs;
   simulations: number;
+  marketAssumption: ResolvedRiskMarketAssumption;
   selectedId: string;
   onSelect: (scenarioId: string) => void;
   runAnalysis: (options?: RetirementRiskAnalysisOptions) => Promise<RetirementRiskAnalysisResult>;
@@ -261,6 +270,10 @@ export function RetirementRiskAnalysis({
           <p className="risk-analysis-description">
             Optionally test every retirement strategy across the same {formatCount(simulations)} seeded market and
             inflation paths.
+          </p>
+          <p className="risk-market-assumption">
+            <strong>Effective market assumption:</strong> {marketAssumption.label}; target average portfolio return{' '}
+            {formatNaturalPercent(marketAssumption.targetPortfolioReturn)}
           </p>
         </div>
         <button className="risk-analysis-button" type="button" disabled={status === 'running'} onClick={startAnalysis}>

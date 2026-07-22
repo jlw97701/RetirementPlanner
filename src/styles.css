@@ -622,6 +622,13 @@ header p {
   animation: risk-analysis-spin 900ms linear infinite;
 }
 
+.risk-market-assumption {
+  margin: 7px 0 0;
+  color: #334155;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .risk-analysis-disclaimer {
   margin: 14px 0 0;
   padding: 10px 12px;

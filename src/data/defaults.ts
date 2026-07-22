@@ -49,24 +49,15 @@ export const DEFAULT_INPUTS: PlannerInputs = {
 };
 
 export const DEFAULT_MONTHLY_SS: SSMonthlyIncome[] = [
-  // { age: 62, amount: 2685 },
-  // { age: 63, amount: 2830 },
-  // { age: 64, amount: 3038 },
-  // { age: 65, amount: 3311 },
-  // { age: 66, amount: 3582 },
-  // { age: 67, amount: 3854 },
-  // { age: 68, amount: 4126 },
-  // { age: 69, amount: 4451 },
-  // { age: 70, amount: 4831 }
-  { age: 62, amount: 2500 },
-  { age: 63, amount: 2750 },
-  { age: 64, amount: 3000 },
-  { age: 65, amount: 3250 },
-  { age: 66, amount: 3500 },
-  { age: 67, amount: 3750 },
-  { age: 68, amount: 4000 },
-  { age: 69, amount: 4250 },
-  { age: 70, amount: 4500 }
+  { age: 62, amount: 2750 },
+  { age: 63, amount: 3000 },
+  { age: 64, amount: 3250 },
+  { age: 65, amount: 3500 },
+  { age: 66, amount: 3750 },
+  { age: 67, amount: 4000 },
+  { age: 68, amount: 4250 },
+  { age: 69, amount: 4500 },
+  { age: 70, amount: 4750 }
 ];
 
 export const DEFAULT_COLA_SETTINGS: SSColaSettings = {
