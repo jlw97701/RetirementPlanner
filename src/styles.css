@@ -7,7 +7,7 @@
     BlinkMacSystemFont,
     'Segoe UI',
     sans-serif;
-  color: #172033;
+  color: #173a5e;
   background: #f3f6fb;
 }
 
@@ -178,7 +178,8 @@ header p {
 }
 
 .tax-editor-heading,
-.irmaa-editor-heading {
+.irmaa-editor-heading,
+.risk-analysis-title {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -536,6 +537,201 @@ header p {
   outline: 3px solid #93c5fd;
 }
 
+.risk-analysis-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  .risk-analysis-description {
+    margin: 0;
+  }
+  h2 {
+    margin-bottom: 5px;
+  }
+}
+
+.risk-analysis-button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 230px;
+  border: 1px solid #2563eb;
+  border-radius: 10px;
+  padding: 10px 14px;
+  background: #2563eb;
+  color: white;
+  cursor: pointer;
+}
+
+.risk-analysis-button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.risk-analysis-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.risk-analysis-button .spinning {
+  animation: risk-analysis-spin 900ms linear infinite;
+}
+
+.risk-analysis-disclaimer {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-left: 4px solid #3182bd;
+  border-radius: 0 8px 8px 0;
+  background: #eff6ff;
+  color: #334155;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.risk-analysis-progress {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  margin-top: 14px;
+  color: #526174;
+  font-size: 13px;
+}
+
+.risk-analysis-progress progress {
+  width: 100%;
+  height: 10px;
+  accent-color: #2563eb;
+}
+
+.risk-analysis-error {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.risk-analysis-context {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 16px;
+  margin-top: 18px;
+}
+
+.risk-analysis-context span {
+  color: #526174;
+  font-size: 13px;
+}
+
+.risk-metrics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(130px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.risk-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #dce5f0;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.risk-metric span {
+  color: #526174;
+  font-size: 12px;
+}
+
+.risk-metric strong {
+  font-size: 18px;
+  overflow-wrap: anywhere;
+}
+
+.risk-chart-heading {
+  margin-top: 20px;
+}
+
+.risk-chart-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.risk-chart-title h3 {
+  margin: 0 0 4px;
+}
+
+.risk-chart-title .popover-trigger {
+  margin-bottom: 4px;
+}
+
+.risk-chart-tooltip {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 8px 24px rgba(25, 55, 88, 0.14);
+  font-size: 13px;
+}
+
+.risk-result-summary {
+  margin-top: 8px;
+  padding: 12px 14px;
+  border: 1px solid #dce5f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.risk-result-summary p {
+  margin: 0;
+}
+
+.risk-results-table {
+  margin-top: 12px;
+}
+
+@keyframes risk-analysis-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 900px) {
+  .risk-metrics {
+    grid-template-columns: repeat(2, minmax(130px, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .risk-analysis-heading {
+    flex-direction: column;
+  }
+
+  .risk-analysis-button {
+    width: 100%;
+  }
+
+  .risk-metrics {
+    grid-template-columns: 1fr;
+  }
+}
+
 .table-panel {
   overflow-x: auto;
 }
@@ -768,6 +964,7 @@ tr:hover td {
   background: #eaf2fb;
   border: 1px solid #d1d5db;
   border-radius: 0.5rem;
+  color: #526174;
   box-sizing: border-box;
   box-shadow:
     0 10px 15px -3px rgb(0 0 0 / 0.1),
@@ -775,6 +972,9 @@ tr:hover td {
   width: max-content;
   max-width: min(36rem, calc(100vw - 1rem));
   padding: 1rem;
+  h3 {
+    margin-bottom: 0;
+  }
 }
 
 /*

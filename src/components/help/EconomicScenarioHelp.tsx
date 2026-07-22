@@ -99,6 +99,29 @@ export function EconomicScenarioHelp() {
         </section>
 
         <section>
+          <h3>Retirement Risk Analysis</h3>
+          <p>
+            Retirement Risk Analysis is an optional multi-path stress test. It uses the selected asset allocation and
+            the Single Simulated Path return, volatility, inflation, correlation, and seed assumptions. The normal
+            deterministic projection remains the default experience.
+          </p>
+          <p>
+            Every Social Security claiming and Roth-conversion strategy is evaluated against the same generated paths
+            (100 by default). Using identical paths makes the strategy comparison fair and keeps the result reproducible.
+          </p>
+          <p>
+            <strong>Fully Funded Paths</strong> is the percentage of paths in which every modeled spending need is met
+            through the ending age. <strong>Depletion Risk</strong> is the percentage with at least one unfunded need.
+            Ending-balance percentiles and the shaded chart are expressed in first-projection-year purchasing power.
+          </p>
+          <p className="help-callout">
+            These percentages measure sensitivity to the configured assumptions; they are not forecasts or guarantees.
+            Changing expected returns, volatility, correlations, inflation, spending, or longevity can materially
+            change the results.
+          </p>
+        </section>
+
+        <section>
           <h3>Historical scenarios</h3>
           <p>
             Historical Sequence and Historical Bootstrap use the planner's reviewed 1975–2025 annual dataset. A

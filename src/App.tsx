@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Calculator, ArrowLeft, ChevronLeft, ChevronRight, CircleHelp, TableConfig, Menu } from 'lucide-react';
+import { Calculator, ArrowLeft, CircleHelp, TableConfig, Menu } from 'lucide-react';
 import { PlannerInputsPanel } from './components/inputs/PlannerInputsPanel';
 import { ScenarioCards } from './components/scenarios/ScenarioCards';
 import { ScenarioChart } from './components/dashboard/ScenarioChart';
@@ -9,6 +9,7 @@ import { TaxTableEditor } from './components/tax/TaxTableEditor';
 import { useRetirementModel } from './hooks/useRetirementModel';
 import { EconomicScenarioHelp } from './components/help/EconomicScenarioHelp';
 import { IrmaaTableEditor } from './components/irmaa/IrmaaTableEditor';
+import { RetirementRiskAnalysis } from './components/dashboard/RetirementRiskAnalysis';
 
 type AppPage = 'planner' | 'taxes' | 'irmaa' | 'help';
 
@@ -28,6 +29,7 @@ export default function App() {
     setIrmaaConfigurations,
     economicScenarioSettings,
     setEconomicScenarioSettings,
+    runRiskAnalysis,
     projections
   } = useRetirementModel();
 
@@ -146,6 +148,13 @@ export default function App() {
                 <YearDetailsTable rows={selected.rows} />
               </>
             )}
+            <RetirementRiskAnalysis
+              inputs={inputs}
+              simulations={economicScenarioSettings.monteCarlo.simulations}
+              selectedId={selected?.scenario.id ?? ''}
+              onSelect={setSelectedId}
+              runAnalysis={runRiskAnalysis}
+            />
             <div className="notice">
               Educational planning model only. Verify tax rules, Social Security amounts, Medicare IRMAA, and conversion
               strategy with a qualified professional.

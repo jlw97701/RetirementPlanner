@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   DEFAULT_INPUTS,
@@ -19,6 +19,10 @@ import { summarizeRetirementScenario } from '../services/ScenarioService';
 import { createEconomicScenario } from '../services/EconomicScenarioService';
 import { HISTORICAL_ECONOMIC_DATA } from '../data/historicalEconomicData';
 import { EconomicScenarioMethod } from '../services/EconomicScenarioEngine';
+import {
+  runRetirementRiskAnalysis,
+  type RetirementRiskAnalysisOptions
+} from '../services/RetirementRiskAnalysisService';
 
 import {
   loadPlannerInputs,
@@ -152,6 +156,35 @@ export function useRetirementModel() {
       irmaaConfigurations
     ]
   );
+
+  const runRiskAnalysis = useCallback(
+    (options?: RetirementRiskAnalysisOptions) =>
+      runRetirementRiskAnalysis(
+        {
+          inputs,
+          ssIncome,
+          colaSettings,
+          assetAllocation,
+          retirementScenarios: activeScenarios,
+          economicScenarioSettings,
+          federalTaxConfig,
+          stateTaxConfig,
+          irmaaConfigurations
+        },
+        options
+      ),
+    [
+      inputs,
+      ssIncome,
+      colaSettings,
+      assetAllocation,
+      activeScenarios,
+      economicScenarioSettings,
+      federalTaxConfig,
+      stateTaxConfig,
+      irmaaConfigurations
+    ]
+  );
   //console.log('useRetirementModel: projections = ', projections);
 
   return {
@@ -172,6 +205,7 @@ export function useRetirementModel() {
     setIrmaaConfigurations,
     economicScenarioSettings,
     setEconomicScenarioSettings,
+    runRiskAnalysis,
     projections
   };
 }

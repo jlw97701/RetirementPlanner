@@ -94,7 +94,7 @@ export const DEFAULT_ECONOMIC_SCENARIO_SETTINGS: EconomicScenarioSettings = {
   },
   monteCarlo: {
     seed: 12345,
-    simulations: 1000,
+    simulations: 100,
     assumptions: {
       inflation: { mean: 0.03, standardDeviation: 0.015, minimum: -0.02, maximum: 0.1 },
       stockReturn: { mean: 0.07, standardDeviation: 0.18, minimum: -0.6, maximum: 0.6 },
