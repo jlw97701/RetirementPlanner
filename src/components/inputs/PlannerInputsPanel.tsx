@@ -320,6 +320,18 @@ export function PlannerInputsPanel({
           `}
           isOpen={expandedIndex === 0}
           onToggle={() => setSelectedPanel(0)}>
+          <Dropdown
+            label="Residence State"
+            options={STATE_OPTIONS}
+            selectedValue={inputs.residenceState}
+            onChange={(value) => setInputs({ ...inputs, residenceState: value as StateCode })}
+          />
+          <Dropdown
+            label="Tax Filing Status"
+            options={filingStatusOptions}
+            selectedValue={inputs.filingStatus}
+            onChange={(value) => setInputs({ ...inputs, filingStatus: value as FilingStatus })}
+          />
           <div className="input-row">
             <label>
               <span>Birth Date:</span>
@@ -334,18 +346,6 @@ export function PlannerInputsPanel({
               onChange={(v: Date | null) => setBirthDate(v)}
             />
           </div>
-          <Dropdown
-            label="Residence State"
-            options={STATE_OPTIONS}
-            selectedValue={inputs.residenceState}
-            onChange={(value) => setInputs({ ...inputs, residenceState: value as StateCode })}
-          />
-          <Dropdown
-            label="Tax Filing Status"
-            options={filingStatusOptions}
-            selectedValue={inputs.filingStatus}
-            onChange={(value) => setInputs({ ...inputs, filingStatus: value as FilingStatus })}
-          />
           <NumberInput
             label="Start Age"
             value={inputs.startAge}
@@ -789,63 +789,65 @@ export function PlannerInputsPanel({
             onChange={selectAssetAllocation}
           />
 
-          {selectedAllocationProfile && <p className="input-help">{selectedAllocationProfile.description}</p>}
+          <div className="info-container">
+            {selectedAllocationProfile && <p className="input-help">{selectedAllocationProfile.description}</p>}
 
-          {selectedAllocation === CUSTOM_ALLOCATION_ID && (
-            <>
-              <NumberInput
-                label="Stocks %"
-                value={customAllocation.stocks * 100}
-                min={0}
-                max={100}
-                step={1}
-                onChange={(value) => updateCustomAllocation('stocks', value)}
-              />
-              <NumberInput
-                label="Bonds %"
-                value={customAllocation.bonds * 100}
-                min={0}
-                max={100}
-                step={1}
-                onChange={(value) => updateCustomAllocation('bonds', value)}
-              />
-              <NumberInput
-                label="Cash %"
-                value={customAllocation.cash * 100}
-                min={0}
-                max={100}
-                step={1}
-                onChange={(value) => updateCustomAllocation('cash', value)}
-              />
-              <NumberInput
-                label="Other %"
-                value={customAllocation.other * 100}
-                min={0}
-                max={100}
-                step={1}
-                onChange={(value) => updateCustomAllocation('other', value)}
-              />
-              <div className={customAllocationIsValid ? 'allocation-total valid' : 'allocation-total invalid'}>
-                Total: {(customAllocationTotal * 100).toFixed(1)}%
+            {selectedAllocation === CUSTOM_ALLOCATION_ID && (
+              <>
+                <NumberInput
+                  label="Stocks %"
+                  value={customAllocation.stocks * 100}
+                  min={0}
+                  max={100}
+                  step={1}
+                  onChange={(value) => updateCustomAllocation('stocks', value)}
+                />
+                <NumberInput
+                  label="Bonds %"
+                  value={customAllocation.bonds * 100}
+                  min={0}
+                  max={100}
+                  step={1}
+                  onChange={(value) => updateCustomAllocation('bonds', value)}
+                />
+                <NumberInput
+                  label="Cash %"
+                  value={customAllocation.cash * 100}
+                  min={0}
+                  max={100}
+                  step={1}
+                  onChange={(value) => updateCustomAllocation('cash', value)}
+                />
+                <NumberInput
+                  label="Other %"
+                  value={customAllocation.other * 100}
+                  min={0}
+                  max={100}
+                  step={1}
+                  onChange={(value) => updateCustomAllocation('other', value)}
+                />
+                <div className={customAllocationIsValid ? 'allocation-total valid' : 'allocation-total invalid'}>
+                  Total: {(customAllocationTotal * 100).toFixed(1)}%
+                </div>
+                <button
+                  type="button"
+                  className="apply-allocation-button"
+                  disabled={!customAllocationIsValid}
+                  onClick={() => setAssetAllocation({ ...customAllocation })}>
+                  Apply Custom Allocation
+                </button>
+              </>
+            )}
+
+            {selectedAllocation !== CUSTOM_ALLOCATION_ID && (
+              <div className="allocation-summary">
+                <span>Stocks: {(assetAllocation.stocks * 100).toFixed(0)}%</span>
+                <span>Bonds: {(assetAllocation.bonds * 100).toFixed(0)}%</span>
+                <span>Cash: {(assetAllocation.cash * 100).toFixed(0)}%</span>
+                <span>Other: {(assetAllocation.other * 100).toFixed(0)}%</span>
               </div>
-              <button
-                type="button"
-                className="apply-allocation-button"
-                disabled={!customAllocationIsValid}
-                onClick={() => setAssetAllocation({ ...customAllocation })}>
-                Apply Custom Allocation
-              </button>
-            </>
-          )}
-
-          {selectedAllocation !== CUSTOM_ALLOCATION_ID && (
-            <div className="allocation-summary">
-              <span>Stocks: {(assetAllocation.stocks * 100).toFixed(0)}%</span>
-              <span>Bonds: {(assetAllocation.bonds * 100).toFixed(0)}%</span>
-              <span>Cash: {(assetAllocation.cash * 100).toFixed(0)}%</span>
-              <span>Other: {(assetAllocation.other * 100).toFixed(0)}%</span>
-            </div>
-          )}
+            )}
+          </div>
         </AccordionPanel>
         <AccordionPanel
           title="Economic Scenario"
@@ -922,12 +924,13 @@ export function PlannerInputsPanel({
                       })
                     }
                   />
-                  <div className="allocation-summary">
-                    <span>Annualized portfolio return: {((selectedCalculatedReturn ?? 0) * 100).toFixed(2)}%</span>
-                    <span>
+                  <div className="info-container">
+                    <div>Annualized portfolio return:&nbsp;&nbsp;{((selectedCalculatedReturn ?? 0) * 100).toFixed(2)}%</div>
+                    <br/>
+                    <div>
                       Based on {economicScenarioSettings.deterministic.rollingPeriod}-year rolling periods from
                       1975–2025
-                    </span>
+                    </div>
                   </div>
                 </>
               )}

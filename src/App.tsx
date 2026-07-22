@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Calculator, ArrowLeft, CircleHelp, TableConfig, Menu } from 'lucide-react';
 import { PlannerInputsPanel } from './components/inputs/PlannerInputsPanel';
-import { ScenarioCards } from './components/scenarios/ScenarioCards';
+import { ScenarioCards } from './components/dashboard/ScenarioCards';
 import { ScenarioChart } from './components/dashboard/ScenarioChart';
 import { ScenarioSummaryTable } from './components/dashboard/ScenarioSummaryTable';
 import { YearDetailsTable } from './components/dashboard/YearDetailsTable';
@@ -131,11 +131,13 @@ export default function App() {
             <Menu />
           </button>
           <section className="content">
-            {/* <ScenarioCards
+            <ScenarioCards
               summaries={summaries}
-              selectedId={selected?.scenario.id ?? ""}
+              horizonAge={inputs.horizonAge}
+              endAge={inputs.endAge}
+              selectedId={selected?.scenario.id ?? ''}
               onSelect={setSelectedId}
-            /> */}
+            />
             <ScenarioSummaryTable
               summaries={summaries}
               inputs={inputs}

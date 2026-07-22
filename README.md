@@ -23,6 +23,13 @@ required minimum distributions, and portfolio withdrawals.
 
 ## Planner output
 
+### Scenario Highlights
+
+Up to six cards call out notable strategies, including the baseline, highest horizon or ending balance, longest funding,
+lowest taxes among the longest-funded strategies, and most Social Security received through the horizon. Duplicate
+winners are collapsed. A highlight identifies one favorable characteristic and is not an overall recommendation.
+Selecting a card opens that strategy in the summary, chart, and year-by-year details.
+
 ### Scenario Summary
 
 The summary compares claiming and conversion strategies at the Primary Horizon Age and Ending Age. It includes

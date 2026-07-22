@@ -7,7 +7,7 @@
     BlinkMacSystemFont,
     'Segoe UI',
     sans-serif;
-  color: #173a5e;
+  color: #526174;
   background: #f3f6fb;
 }
 
@@ -342,7 +342,7 @@ header p {
   align-self: start;
   position: sticky;
   top: 15px;
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .input-row {
@@ -459,6 +459,20 @@ header p {
   line-height: 1.4;
 }
 
+.info-container {
+  margin-top: 8px;
+  padding: 12px 14px;
+  border: 1px solid #dce5f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  font-size: 13px;
+  line-height: 1.5;
+  .input-row,
+  .input-help {
+    margin-top: 0;
+  }
+}
+
 .allocation-summary {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -508,6 +522,13 @@ header p {
   margin-bottom: 4px;
 }
 
+.scenario-highlights-description {
+  margin: 0 0 14px;
+  color: #526174;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .scenario-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -531,6 +552,28 @@ header p {
 .scenario-card span {
   color: #526174;
   font-size: 13px;
+}
+
+.scenario-card .scenario-card-reason {
+  align-self: flex-start;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: #eaf2fb;
+  color: #1d4f91;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.scenario-card:hover {
+  border-color: #93c5fd;
+  background: #f8fbff;
+}
+
+.scenario-card:focus-visible {
+  outline: 3px solid #93c5fd;
+  outline-offset: 2px;
 }
 
 .scenario-card.selected {
@@ -883,7 +926,7 @@ tr:hover td {
 
   .dropdown-label {
     display: grid;
-    grid-template-columns: 1fr 135px;
+    grid-template-columns: 1fr 145px;
     gap: 10px;
     align-items: center;
     margin: 10px 0;
@@ -1029,7 +1072,7 @@ tr:hover td {
     position: static;
   }
   .scenario-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .irmaa-fields {
     grid-template-columns: 1fr;
@@ -1039,6 +1082,12 @@ tr:hover td {
   }
   .irmaa-source-field {
     grid-column: auto;
+  }
+}
+
+@media (max-width: 620px) {
+  .scenario-grid {
+    grid-template-columns: 1fr;
   }
 }
 
