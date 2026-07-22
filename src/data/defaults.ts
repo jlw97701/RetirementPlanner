@@ -28,17 +28,17 @@ export const DEFAULT_INPUTS: PlannerInputs = {
   endAge: 95,
   horizonAge: 80,
   stopConvAge: 75,
-  taxableAcct: 100000,
-  tradIra: 750000,
+  taxableAcct: 50000,
+  tradIra: 500000,
   rothIra: 0,
-  annualSpend: 75000,
+  annualSpend: 50000,
   medicareModel: MedicareModelType.SimpleDeterministic,
   annualSpendingIncludesHealthcare: true,
   medicareStartAge: 65,
   monthlyPartDOtherPremium: 0,
   annualOutOfPocketHealthcare: 0,
-  rothBaseConv: 35000,
-  rothAggressiveConv: 70000,
+  rothBaseConv: 25000,
+  rothAggressiveConv: 50000,
   inflation: 0.03,
   ssBenefitValueType: SSBenefitValueType.CurrentDollars,
   ssEstimateYear: 2026,
@@ -49,15 +49,15 @@ export const DEFAULT_INPUTS: PlannerInputs = {
 };
 
 export const DEFAULT_MONTHLY_SS: SSMonthlyIncome[] = [
-  { age: 62, amount: 2750 },
-  { age: 63, amount: 3000 },
-  { age: 64, amount: 3250 },
-  { age: 65, amount: 3500 },
-  { age: 66, amount: 3750 },
-  { age: 67, amount: 4000 },
-  { age: 68, amount: 4250 },
-  { age: 69, amount: 4500 },
-  { age: 70, amount: 4750 }
+  { age: 62, amount: 2500 },
+  { age: 63, amount: 2750 },
+  { age: 64, amount: 3000 },
+  { age: 65, amount: 3250 },
+  { age: 66, amount: 3500 },
+  { age: 67, amount: 3750 },
+  { age: 68, amount: 4000 },
+  { age: 69, amount: 4250 },
+  { age: 70, amount: 4500 }
 ];
 
 export const DEFAULT_COLA_SETTINGS: SSColaSettings = {
@@ -104,11 +104,10 @@ export const DEFAULT_ECONOMIC_SCENARIO_SETTINGS: EconomicScenarioSettings = {
       bondReturn: { mean: 0.035, standardDeviation: 0.07, minimum: -0.3, maximum: 0.3 },
       cashReturn: { mean: 0.025, standardDeviation: 0.015, minimum: 0, maximum: 0.1 },
       otherReturn: { mean: 0.05, standardDeviation: 0.15, minimum: -0.5, maximum: 0.5 },
-      // Rounded sample correlation of the bundled 1975-2025 U.S. and international stock series.
       correlationMatrix: [
         [1, 0, 0, 0, 0, 0],
-        [0, 1, 0.65, 0, 0, 0],
-        [0, 0.65, 1, 0, 0, 0],
+        [0, 1, 0.75, 0, 0, 0],
+        [0, 0.75, 1, 0, 0, 0],
         [0, 0, 0, 1, 0, 0],
         [0, 0, 0, 0, 1, 0],
         [0, 0, 0, 0, 0, 1]
