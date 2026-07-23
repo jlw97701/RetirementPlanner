@@ -50,8 +50,9 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
           role-session-name: retirement-planner-deployment
+          aws-region: ${{ env.AWS_REGION }}
+          audience: sts.amazonaws.com
 
       - name: Upload application to S3
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
