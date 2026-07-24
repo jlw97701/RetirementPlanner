@@ -8,8 +8,10 @@ import type {
   SocialSecurityTaxConfig,
   DeductionConfig,
   StateCode,
+  RetirementIncomeExclusion,
   StateSocialSecurityTreatment,
   StateTaxConfig,
+  StateTaxInflationIndexing,
   StateTaxModel,
   TaxBracket
 } from '../../models/TaxTypes';
@@ -23,6 +25,8 @@ type EditableTaxConfigChanges = {
   personalExemption?: number;
   personalCredit?: number;
   socialSecurityTreatment?: StateSocialSecurityTreatment;
+  inflationIndexing?: StateTaxInflationIndexing;
+  retirementIncomeExclusions?: RetirementIncomeExclusion[];
 };
 
 function isFederalTaxConfig(configuration: JurisdictionTaxConfig): configuration is FederalTaxConfig {
@@ -88,7 +92,9 @@ const statePanelInfo = `
     Changes are saved in this browser and immediately recalculate projections. The bundled
     configurations use published 2026 statewide schedules. Local, county, and municipal income
     taxes are not included. The planner uses an exact configuration-year table when available
-    and otherwise inflation-adjusts the nearest usable table's monetary amounts.
+    and otherwise carries its values forward. Only amounts explicitly selected under
+    <strong> Future-Year Inflation Adjustments</strong> are increased with modeled inflation.
+    Bundled state configurations leave these adjustments off because indexing rules vary by state.
   </p>
 `;
 
@@ -172,6 +178,30 @@ export function TaxTableEditor<T extends JurisdictionTaxConfig>({
 
   const federal = isFederalTaxConfig(selected) ? selected : null;
   const state = isStateTaxConfig(selected) ? selected : null;
+  const updateStateInflationIndexing = (
+    field: keyof StateTaxInflationIndexing,
+    value: boolean
+  ) => {
+    if (!state) return;
+    updateConfiguration({
+      inflationIndexing: {
+        ...state.inflationIndexing,
+        [field]: value
+      }
+    });
+  };
+  const updateRetirementIncomeExclusion = (
+    index: number,
+    changes: Partial<RetirementIncomeExclusion>
+  ) => {
+    if (!state) return;
+    updateConfiguration({
+      retirementIncomeExclusions: state.retirementIncomeExclusions.map(
+        (exclusion, exclusionIndex) =>
+          exclusionIndex === index ? { ...exclusion, ...changes } : exclusion
+      )
+    });
+  };
 
   return (
     <section className="panel tax-table-editor">
@@ -329,6 +359,165 @@ export function TaxTableEditor<T extends JurisdictionTaxConfig>({
           </>
         )}
       </div>
+
+      {state && (
+        <fieldset className="state-tax-indexing">
+          <legend>Future-Year Inflation Adjustments</legend>
+          <p className="input-help">
+            These settings apply only when an exact state table is unavailable for a projection year.
+            Select an amount only when the state's rules index it for inflation.
+          </p>
+          <div className="state-tax-indexing-options">
+            <label>
+              <input
+                type="checkbox"
+                checked={state.inflationIndexing.bracketThresholds}
+                disabled={state.brackets.every(
+                  (bracket) =>
+                    bracket.lowerBound === 0 && bracket.upperBound === null
+                )}
+                onChange={(event) =>
+                  updateStateInflationIndexing(
+                    'bracketThresholds',
+                    event.target.checked
+                  )
+                }
+              />
+              Tax-bracket thresholds
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={state.inflationIndexing.standardDeduction}
+                disabled={state.deductions.standardDeduction === 0}
+                onChange={(event) =>
+                  updateStateInflationIndexing(
+                    'standardDeduction',
+                    event.target.checked
+                  )
+                }
+              />
+              Standard deduction
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={state.inflationIndexing.additionalDeduction65}
+                disabled={state.deductions.additionalDeduction65 === 0}
+                onChange={(event) =>
+                  updateStateInflationIndexing(
+                    'additionalDeduction65',
+                    event.target.checked
+                  )
+                }
+              />
+              Additional age-65 deduction
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={
+                  state.inflationIndexing
+                    .socialSecurityExemptionIncomeLimit
+                }
+                disabled={
+                  state.socialSecurityExemptionIncomeLimit === undefined
+                }
+                onChange={(event) =>
+                  updateStateInflationIndexing(
+                    'socialSecurityExemptionIncomeLimit',
+                    event.target.checked
+                  )
+                }
+              />
+              Social Security exemption income limit
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={state.inflationIndexing.personalExemption}
+                disabled={state.personalExemption === 0}
+                onChange={(event) =>
+                  updateStateInflationIndexing(
+                    'personalExemption',
+                    event.target.checked
+                  )
+                }
+              />
+              Personal exemption
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={state.inflationIndexing.personalCredit}
+                disabled={state.personalCredit === 0}
+                onChange={(event) =>
+                  updateStateInflationIndexing(
+                    'personalCredit',
+                    event.target.checked
+                  )
+                }
+              />
+              Personal credit
+            </label>
+          </div>
+
+          {state.retirementIncomeExclusions.map((exclusion, index) => (
+            <div
+              className="state-exclusion-indexing"
+              key={`${exclusion.minimumAge}-${index}`}>
+              <strong>
+                Retirement-income exclusion beginning at age{' '}
+                {exclusion.minimumAge}
+              </strong>
+              <div className="state-tax-indexing-options">
+                {exclusion.maximumAmount !== null && (
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={exclusion.maximumAmountInflationIndexed}
+                      onChange={(event) =>
+                        updateRetirementIncomeExclusion(index, {
+                          maximumAmountInflationIndexed: event.target.checked
+                        })
+                      }
+                    />
+                    Maximum exclusion
+                  </label>
+                )}
+                {exclusion.incomeLimit !== undefined && (
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={exclusion.incomeLimitInflationIndexed}
+                      onChange={(event) =>
+                        updateRetirementIncomeExclusion(index, {
+                          incomeLimitInflationIndexed: event.target.checked
+                        })
+                      }
+                    />
+                    Income limit
+                  </label>
+                )}
+                {exclusion.phaseoutStart !== undefined && (
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={exclusion.phaseoutStartInflationIndexed}
+                      onChange={(event) =>
+                        updateRetirementIncomeExclusion(index, {
+                          phaseoutStartInflationIndexed: event.target.checked
+                        })
+                      }
+                    />
+                    Phaseout starting amount
+                  </label>
+                )}
+              </div>
+            </div>
+          ))}
+        </fieldset>
+      )}
 
       <table>
         <thead>

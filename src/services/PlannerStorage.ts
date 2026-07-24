@@ -5,7 +5,11 @@ import {
   MedicareModelType,
   RothConversionType
 } from '../models/RetirementTypes';
-import type { TaxConfigurationSet } from '../models/TaxTypes';
+import {
+  NO_STATE_TAX_INFLATION_INDEXING,
+  type StateTaxConfig,
+  type TaxConfigurationSet
+} from '../models/TaxTypes';
 import { STATE_OPTIONS } from '../data/stateTax2026';
 import type { EconomicScenarioSettings } from '../models/EconomicScenarioSettings';
 import type {
@@ -446,6 +450,31 @@ export function saveAppliedRothConversionScenarios(value: readonly RetirementSce
   localStorage.setItem(APPLIED_ROTH_CONVERSION_SCENARIOS_KEY, JSON.stringify(value));
 }
 
+function normalizeStateTaxConfiguration(
+  configuration: StateTaxConfig
+): StateTaxConfig {
+  return {
+    ...configuration,
+    inflationIndexing: {
+      ...NO_STATE_TAX_INFLATION_INDEXING,
+      ...(configuration.inflationIndexing ?? {})
+    },
+    retirementIncomeExclusions: Array.isArray(
+      configuration.retirementIncomeExclusions
+    )
+      ? configuration.retirementIncomeExclusions.map((exclusion) => ({
+          ...exclusion,
+          maximumAmountInflationIndexed:
+            exclusion.maximumAmountInflationIndexed === true,
+          incomeLimitInflationIndexed:
+            exclusion.incomeLimitInflationIndexed === true,
+          phaseoutStartInflationIndexed:
+            exclusion.phaseoutStartInflationIndexed === true
+        }))
+      : []
+  };
+}
+
 export function loadTaxConfigurations(defaults: TaxConfigurationSet): TaxConfigurationSet {
   //console.log('loadTaxConfigurations: defaults = ', defaults);
   try {
@@ -457,12 +486,14 @@ export function loadTaxConfigurations(defaults: TaxConfigurationSet): TaxConfigu
 
     const parsed = JSON.parse(stored) as Partial<TaxConfigurationSet>;
 
-    const config: TaxConfigurationSet = {
-      ...defaults,
-      ...parsed
-    };
+    const federal = Array.isArray(parsed.federal)
+      ? parsed.federal
+      : defaults.federal;
+    const state = (
+      Array.isArray(parsed.state) ? parsed.state : defaults.state
+    ).map(normalizeStateTaxConfiguration);
 
-    return config;
+    return { federal, state };
   } catch {
     return defaults;
   }

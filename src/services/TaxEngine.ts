@@ -8,6 +8,7 @@ import type {
   SocialSecurityTaxConfig,
   TaxBracket
 } from '../models/TaxTypes';
+import { NO_STATE_TAX_INFLATION_INDEXING } from '../models/TaxTypes';
 
 export interface ResolvedTaxConfiguration<T extends JurisdictionTaxConfig> {
   configuration: T;
@@ -96,25 +97,53 @@ function projectStateTaxConfiguration(
   projectionYear: number,
   inflationFactor: number
 ): StateTaxConfig {
+  const indexing = {
+    ...NO_STATE_TAX_INFLATION_INDEXING,
+    ...source.inflationIndexing
+  };
+
   return {
     ...source,
     year: projectionYear,
-    brackets: projectTaxBrackets(source.brackets, inflationFactor),
-    deductions: projectDeductions(source.deductions, inflationFactor),
+    brackets: indexing.bracketThresholds
+      ? projectTaxBrackets(source.brackets, inflationFactor)
+      : source.brackets,
+    deductions: {
+      standardDeduction:
+        source.deductions.standardDeduction *
+        (indexing.standardDeduction ? inflationFactor : 1),
+      additionalDeduction65:
+        source.deductions.additionalDeduction65 *
+        (indexing.additionalDeduction65 ? inflationFactor : 1)
+    },
     socialSecurityExemptionIncomeLimit:
       source.socialSecurityExemptionIncomeLimit === undefined
         ? undefined
-        : source.socialSecurityExemptionIncomeLimit * inflationFactor,
-    personalExemption: source.personalExemption * inflationFactor,
-    personalCredit: source.personalCredit * inflationFactor,
+        : source.socialSecurityExemptionIncomeLimit *
+          (indexing.socialSecurityExemptionIncomeLimit ? inflationFactor : 1),
+    personalExemption:
+      source.personalExemption *
+      (indexing.personalExemption ? inflationFactor : 1),
+    personalCredit:
+      source.personalCredit * (indexing.personalCredit ? inflationFactor : 1),
+    inflationIndexing: indexing,
     retirementIncomeExclusions: source.retirementIncomeExclusions.map((exclusion) => ({
       ...exclusion,
       maximumAmount:
-        exclusion.maximumAmount === null ? null : exclusion.maximumAmount * inflationFactor,
+        exclusion.maximumAmount === null
+          ? null
+          : exclusion.maximumAmount *
+            (exclusion.maximumAmountInflationIndexed ? inflationFactor : 1),
       incomeLimit:
-        exclusion.incomeLimit === undefined ? undefined : exclusion.incomeLimit * inflationFactor,
+        exclusion.incomeLimit === undefined
+          ? undefined
+          : exclusion.incomeLimit *
+            (exclusion.incomeLimitInflationIndexed ? inflationFactor : 1),
       phaseoutStart:
-        exclusion.phaseoutStart === undefined ? undefined : exclusion.phaseoutStart * inflationFactor
+        exclusion.phaseoutStart === undefined
+          ? undefined
+          : exclusion.phaseoutStart *
+            (exclusion.phaseoutStartInflationIndexed ? inflationFactor : 1)
     }))
   };
 }

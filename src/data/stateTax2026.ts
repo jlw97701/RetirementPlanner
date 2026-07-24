@@ -6,6 +6,7 @@ import type {
   StateTaxConfig,
   TaxBracket
 } from '../models/TaxTypes';
+import { NO_STATE_TAX_INFLATION_INDEXING } from '../models/TaxTypes';
 
 export interface StateOption {
   value: StateCode;
@@ -32,6 +33,13 @@ interface StateTaxBaseline {
   singleExemption: AmountOrCredit;
   jointExemption: AmountOrCredit;
 }
+
+type RetirementIncomeExclusionBaseline = Omit<
+  RetirementIncomeExclusion,
+  | 'maximumAmountInflationIndexed'
+  | 'incomeLimitInflationIndexed'
+  | 'phaseoutStartInflationIndexed'
+>;
 
 const SOURCE_URL = 'https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/';
 const SOURCE_NAME = 'Tax Foundation 2026 state income tax survey with later enacted official rate updates';
@@ -2456,7 +2464,7 @@ function socialSecurityIncomeLimit(stateCode: StateCode, filingStatus: FilingSta
 function retirementIncomeExclusions(
   stateCode: StateCode,
   filingStatus: FilingStatus
-): RetirementIncomeExclusion[] {
+): RetirementIncomeExclusionBaseline[] {
   const joint = filingStatus === 'marriedFilingJointly';
   switch (stateCode) {
     case 'AL': return [{ minimumAge: 65, maximumAmount: 12_000 }];
@@ -2529,7 +2537,23 @@ function createConfiguration(
     personalExemption: exemption.isCredit ? 0 : exemption.amount,
     personalCredit:
       (deduction.isCredit ? deduction.amount : 0) + (exemption.isCredit ? exemption.amount : 0),
-    retirementIncomeExclusions: retirementIncomeExclusions(baseline.code, filingStatus),
+    inflationIndexing: {
+      /*
+       * Bundled state schedules are planning estimates. Do not assume that a
+       * state indexes any amount unless a maintained configuration explicitly
+       * enables it.
+       */
+      ...NO_STATE_TAX_INFLATION_INDEXING
+    },
+    retirementIncomeExclusions: retirementIncomeExclusions(
+      baseline.code,
+      filingStatus
+    ).map((exclusion): RetirementIncomeExclusion => ({
+      ...exclusion,
+      maximumAmountInflationIndexed: false,
+      incomeLimitInflationIndexed: false,
+      phaseoutStartInflationIndexed: false
+    })),
     localTaxesIncluded: false,
     estimated: true,
     metadata: {

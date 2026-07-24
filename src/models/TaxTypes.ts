@@ -56,6 +56,29 @@ export interface FederalTaxConfig extends JurisdictionTaxConfig {
   socialSecurity: SocialSecurityTaxConfig;
 }
 
+/**
+ * Controls which state-table amounts may be inflation-adjusted when an exact
+ * table is unavailable for a projection year. State rules vary, so each field
+ * is explicit rather than assuming every dollar amount is indexed.
+ */
+export interface StateTaxInflationIndexing {
+  bracketThresholds: boolean;
+  standardDeduction: boolean;
+  additionalDeduction65: boolean;
+  socialSecurityExemptionIncomeLimit: boolean;
+  personalExemption: boolean;
+  personalCredit: boolean;
+}
+
+export const NO_STATE_TAX_INFLATION_INDEXING: Readonly<StateTaxInflationIndexing> = {
+  bracketThresholds: false,
+  standardDeduction: false,
+  additionalDeduction65: false,
+  socialSecurityExemptionIncomeLimit: false,
+  personalExemption: false,
+  personalCredit: false
+};
+
 export interface StateTaxConfig extends JurisdictionTaxConfig {
   jurisdiction: 'state';
   stateCode: StateCode;
@@ -67,6 +90,7 @@ export interface StateTaxConfig extends JurisdictionTaxConfig {
   socialSecurityExemptionIncomeLimit?: number;
   personalExemption: number;
   personalCredit: number;
+  inflationIndexing: StateTaxInflationIndexing;
   retirementIncomeExclusions: RetirementIncomeExclusion[];
   localTaxesIncluded: boolean;
   estimated: boolean;
@@ -75,8 +99,11 @@ export interface StateTaxConfig extends JurisdictionTaxConfig {
 export interface RetirementIncomeExclusion {
   minimumAge: number;
   maximumAmount: number | null;
+  maximumAmountInflationIndexed: boolean;
   incomeLimit?: number;
+  incomeLimitInflationIndexed: boolean;
   phaseoutStart?: number;
+  phaseoutStartInflationIndexed: boolean;
   reducedBySocialSecurity?: boolean;
 }
 
