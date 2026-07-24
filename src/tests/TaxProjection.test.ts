@@ -59,12 +59,23 @@ describe('projection-year tax configuration resolution', () => {
       socialSecurityExemptionIncomeLimit: 25_000,
       personalExemption: 2_000,
       personalCredit: 100,
+      inflationIndexing: {
+        bracketThresholds: true,
+        standardDeduction: true,
+        additionalDeduction65: true,
+        socialSecurityExemptionIncomeLimit: true,
+        personalExemption: true,
+        personalCredit: true
+      },
       retirementIncomeExclusions: [
         {
           minimumAge: 65,
           maximumAmount: 8_000,
+          maximumAmountInflationIndexed: true,
           incomeLimit: 40_000,
-          phaseoutStart: 30_000
+          incomeLimitInflationIndexed: true,
+          phaseoutStart: 30_000,
+          phaseoutStartInflationIndexed: true
         }
       ]
     };
@@ -90,5 +101,45 @@ describe('projection-year tax configuration resolution', () => {
     expect(resolved.configuration.retirementIncomeExclusions[0].maximumAmount).toBeCloseTo(8_800);
     expect(resolved.configuration.retirementIncomeExclusions[0].incomeLimit).toBeCloseTo(44_000);
     expect(resolved.configuration.retirementIncomeExclusions[0].phaseoutStart).toBeCloseTo(33_000);
+  });
+
+  test('carries unindexed bundled state amounts forward without increasing them', () => {
+    const newYorkSingle2026 = DEFAULT_TAX_CONFIG.state.find(
+      (configuration) =>
+        configuration.stateCode === 'NY' &&
+        configuration.filingStatus === 'single' &&
+        configuration.year === 2026
+    )!;
+
+    const resolved = resolveStateTaxConfiguration(
+      [newYorkSingle2026],
+      'NY',
+      'single',
+      2030,
+      () => 1.5
+    );
+
+    expect(
+      Object.values(newYorkSingle2026.inflationIndexing).every(
+        (isIndexed) => isIndexed === false
+      )
+    ).toBe(true);
+    expect(resolved.configuration.brackets).toEqual(
+      newYorkSingle2026.brackets
+    );
+    expect(resolved.configuration.deductions).toEqual(
+      newYorkSingle2026.deductions
+    );
+    expect(resolved.configuration.personalExemption).toBe(
+      newYorkSingle2026.personalExemption
+    );
+    expect(resolved.configuration.personalCredit).toBe(
+      newYorkSingle2026.personalCredit
+    );
+    expect(
+      resolved.configuration.retirementIncomeExclusions[0].maximumAmount
+    ).toBe(
+      newYorkSingle2026.retirementIncomeExclusions[0].maximumAmount
+    );
   });
 });

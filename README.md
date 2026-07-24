@@ -7,6 +7,39 @@ required minimum distributions, and portfolio withdrawals.
 > This application is a planning and sensitivity-analysis tool, not financial, tax, legal, or investment advice.
 > Results are projections based on the selected assumptions and are not forecasts or guarantees.
 
+## Positioning and scope
+
+Retirement Income Planner is a transparent, do-it-yourself retirement-income strategy tool. It goes beyond a
+single-result retirement calculator by comparing Social Security claiming ages and Roth-conversion approaches inside
+the same annual cash-flow model. Users can see how spending, withdrawals, taxes, Medicare, IRMAA, required minimum
+distributions, and market assumptions interact instead of reviewing those decisions in separate calculators.
+
+The application is most useful for exploring questions such as:
+
+- How does claiming Social Security earlier or later affect portfolio longevity?
+- Does a fixed or bracket-targeted Roth-conversion schedule improve the projected after-tax outcome?
+- What are the tax and IRMAA tradeoffs of converting more Traditional IRA assets?
+- How does a strategy perform under below-average, historical, or simulated market conditions?
+- When and why does a projected spending shortfall occur?
+
+Its principal advantage is calculation transparency. Scenario summaries provide comparisons, while the chart and
+Year-by-Year Details expose the annual balances, income, withdrawals, conversions, taxes, healthcare costs, and
+shortfalls behind each result.
+
+The application is not intended to replace a comprehensive household financial plan, tax-preparation software,
+investment management, or professional advice. It currently does not model:
+
+- separate spouses, spousal or survivor Social Security benefits, or filing-status changes after a spouse's death;
+- pensions, annuities, employment or rental income, debts, real estate, estate planning, or one-time financial events;
+- changing spending phases or separate essential and discretionary spending goals;
+- taxable-investment cost basis, dividends, capital gains, qualified charitable distributions, the net investment
+  income tax, ACA subsidies, itemized deductions, local taxes, or every federal and state tax provision; or
+- linked financial accounts, automatic data imports, cloud synchronization, advisor collaboration, or automatic
+  regulatory-data updates.
+
+The intended use is to compare plausible strategies and understand their sensitivities, then verify important
+decisions and current rules with qualified financial and tax professionals.
+
 ## Features
 
 - Compares Social Security claiming ages 62 through 70 using No Conversion and one user-entered Fixed Conversion.
@@ -133,7 +166,9 @@ Federal and state tax tables can be maintained from the application header. Stat
 the District of Columbia, but do not include local taxes or every state-specific credit, phaseout, recapture, or
 alternative tax. Each projection year uses an exact-year table when available. Otherwise, indexed monetary values are
 inflation-adjusted from the most recent prior table (or the earliest available table for an earlier projection), and
-the Year-by-Year Details identify the source year and estimated basis.
+the Year-by-Year Details identify the source year and estimated basis. Federal brackets and deductions use the
+inflation-adjusted fallback. State amounts are carried forward unchanged unless their individual bracket, deduction,
+credit, exemption, or retirement-income-exclusion indexing setting is enabled in Tax Tables.
 
 The default Medicare model requires no additional user input. Optional Medicare inputs can add standard Part B,
 Part D or other coverage, out-of-pocket healthcare, and calculated IRMAA to spending when those costs are not already

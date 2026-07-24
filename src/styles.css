@@ -1349,6 +1349,9 @@ tr:hover td {
   .tax-deduction-fields {
     grid-template-columns: 1fr;
   }
+  .state-tax-indexing-options {
+    grid-template-columns: 1fr;
+  }
   .irmaa-source-field {
     grid-column: auto;
   }
