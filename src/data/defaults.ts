@@ -20,25 +20,64 @@ import { formatDecimal } from '../utils/format';
 import { EconomicScenarioMethod } from '../services/EconomicScenarioEngine';
 import type { EconomicScenarioSettings } from '../models/EconomicScenarioSettings';
 
+// export const DEFAULT_INPUTS: PlannerInputs = {
+//   birthDate: '1970-01-01', // Using ISO date strings avoids ambiguous parsing
+//   filingStatus: 'single',
+//   residenceState: 'OR',
+//   startAge: 62,
+//   endAge: 95,
+//   horizonAge: 80,
+//   stopConvAge: 75,
+//   taxableAcct: 50000,
+//   tradIra: 500000,
+//   rothIra: 0,
+//   annualSpend: 50000,
+//   medicareModel: MedicareModelType.SimpleDeterministic,
+//   annualSpendingIncludesHealthcare: true,
+//   medicareStartAge: 65,
+//   monthlyPartDOtherPremium: 0,
+//   annualOutOfPocketHealthcare: 0,
+//   rothBaseConv: 25000,
+//   rothAggressiveConv: 50000,
+//   inflation: 0.03,
+//   ssBenefitValueType: SSBenefitValueType.CurrentDollars,
+//   ssEstimateYear: 2026,
+//   actualMonthlySS: 0,
+//   actualBenefitYear: 2026,
+//   irmaaMagiTwoYearsPrior: 0,
+//   irmaaMagiOneYearPrior: 0
+// };
+
+// export const DEFAULT_MONTHLY_SS: SSMonthlyIncome[] = [
+//   { age: 62, amount: 2500 },
+//   { age: 63, amount: 2750 },
+//   { age: 64, amount: 3000 },
+//   { age: 65, amount: 3250 },
+//   { age: 66, amount: 3500 },
+//   { age: 67, amount: 3750 },
+//   { age: 68, amount: 4000 },
+//   { age: 69, amount: 4250 },
+//   { age: 70, amount: 4500 }
+// ];
 export const DEFAULT_INPUTS: PlannerInputs = {
-  birthDate: '1970-01-01', // Using ISO date strings avoids ambiguous parsing
-  filingStatus: 'single',
+  birthDate: '1964-03-30', // Using ISO date strings avoids ambiguous parsing
+  filingStatus: 'headOfHousehold',
   residenceState: 'OR',
-  startAge: 62,
+  startAge: 63,
   endAge: 95,
   horizonAge: 80,
   stopConvAge: 75,
-  taxableAcct: 50000,
-  tradIra: 500000,
+  taxableAcct: 25000,
+  tradIra: 590000,
   rothIra: 0,
-  annualSpend: 50000,
+  annualSpend: 60000,
   medicareModel: MedicareModelType.SimpleDeterministic,
   annualSpendingIncludesHealthcare: true,
   medicareStartAge: 65,
   monthlyPartDOtherPremium: 0,
   annualOutOfPocketHealthcare: 0,
-  rothBaseConv: 25000,
-  rothAggressiveConv: 50000,
+  rothBaseConv: 30000,
+  rothAggressiveConv: 60000,
   inflation: 0.03,
   ssBenefitValueType: SSBenefitValueType.CurrentDollars,
   ssEstimateYear: 2026,
@@ -49,15 +88,15 @@ export const DEFAULT_INPUTS: PlannerInputs = {
 };
 
 export const DEFAULT_MONTHLY_SS: SSMonthlyIncome[] = [
-  { age: 62, amount: 2500 },
-  { age: 63, amount: 2750 },
-  { age: 64, amount: 3000 },
-  { age: 65, amount: 3250 },
-  { age: 66, amount: 3500 },
-  { age: 67, amount: 3750 },
-  { age: 68, amount: 4000 },
-  { age: 69, amount: 4250 },
-  { age: 70, amount: 4500 }
+  { age: 62, amount: 2685 },
+  { age: 63, amount: 2830 },
+  { age: 64, amount: 3038 },
+  { age: 65, amount: 3311 },
+  { age: 66, amount: 3582 },
+  { age: 67, amount: 3854 },
+  { age: 68, amount: 4126 },
+  { age: 69, amount: 4451 },
+  { age: 70, amount: 4831 }
 ];
 
 export const DEFAULT_COLA_SETTINGS: SSColaSettings = {
