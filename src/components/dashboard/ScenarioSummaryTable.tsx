@@ -3,24 +3,70 @@ import { RothConversionType, SSBenefitValueType, type ScenarioSummary } from '..
 import { formatMoney } from '../../utils/format';
 import { CollapsiblePanel } from '../shared/CollapsiblePanel';
 import type { PlannerInputs } from '../../models/RetirementTypes';
+import { useEffect, useRef } from 'react';
+
+export interface ScenarioSummaryScrollRequest {
+  scenarioId: string;
+  requestId: number;
+}
+
+export function sortScenarioSummaries(summaries: readonly ScenarioSummary[]): ScenarioSummary[] {
+  return [...summaries].sort((left, right) => {
+    const leftClaimAge = left.claimAge ?? Number.NEGATIVE_INFINITY;
+    const rightClaimAge = right.claimAge ?? Number.NEGATIVE_INFINITY;
+
+    if (leftClaimAge !== rightClaimAge) return leftClaimAge - rightClaimAge;
+    if (left.rothConvType !== right.rothConvType) {
+      return left.rothConvType - right.rothConvType;
+    }
+
+    return left.scenarioId.localeCompare(right.scenarioId);
+  });
+}
 
 export function ScenarioSummaryTable({
   summaries,
   inputs,
   selectedId,
-  onSelect
+  onSelect,
+  scrollRequest
 }: {
   summaries: ScenarioSummary[];
   inputs: PlannerInputs;
   selectedId: string;
   onSelect: (id: string) => void;
+  scrollRequest?: ScenarioSummaryScrollRequest;
 }) {
   const showIrmaa = summaries.some((summary) => summary.totalIrmaaSurcharge > 0);
+  const sortedSummaries = sortScenarioSummaries(summaries);
+  const tableContainerRef = useRef<HTMLDivElement | null>(null);
+  const rowRefs = useRef(new Map<string, HTMLTableRowElement>());
+
+  useEffect(() => {
+    if (!scrollRequest) return;
+
+    const tableIsCollapsed = (tableContainerRef.current?.clientHeight ?? 0) === 0;
+    const scrollDelay = tableIsCollapsed ? 350 : 0;
+    const timeoutId = window.setTimeout(() => {
+      const row = rowRefs.current.get(scrollRequest.scenarioId);
+      if (!row) return;
+
+      const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      row.scrollIntoView({
+        behavior: prefersReducedMotion ? 'auto' : 'smooth',
+        block: 'center',
+        inline: 'nearest'
+      });
+    }, scrollDelay);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [scrollRequest]);
 
   return (
     <CollapsiblePanel
       title="Scenario Summary"
       icon={<Summary />}
+      expandRequestKey={scrollRequest?.requestId}
       info={`
         <h3>Scenario Summary</h3>
         <p>
@@ -40,7 +86,7 @@ export function ScenarioSummaryTable({
           and IRMAA. It is added to withdrawals only when Annual Spending excludes those costs.
         </p>
       `}>
-      <div className="table-container">
+      <div className="table-container" ref={tableContainerRef}>
         <table className="sticky-table selectable">
           <thead>
             <tr>
@@ -105,18 +151,23 @@ export function ScenarioSummaryTable({
             </tr>
           </thead>
           <tbody>
-            {summaries.map((s) => (
+            {sortedSummaries.map((s) => (
               <tr
                 key={s.scenarioId}
+                ref={(row) => {
+                  if (row) rowRefs.current.set(s.scenarioId, row);
+                  else rowRefs.current.delete(s.scenarioId);
+                }}
                 className={s.scenarioId === selectedId ? 'scenario selected' : 'scenario'}
                 onClick={() => onSelect(s.scenarioId)}>
                 <td>{s.claimAge === null ? 'Already Claimed' : s.claimAge}</td>
                 <td>
-                  {s.rothConvType === RothConversionType.None
-                    ? 'None'
-                    : s.rothConvType === RothConversionType.Base
-                      ? 'Base'
-                      : 'Aggressive'}
+                  {s.rothConversionLabel ??
+                    (s.rothConvType === RothConversionType.None
+                      ? 'None'
+                      : s.rothConvType === RothConversionType.Fixed
+                        ? 'Fixed'
+                        : 'Optimized')}
                 </td>
                 <td>{formatMoney(s.horizonPortfolioAge)}</td>
                 <td>{formatMoney(s.horizonPortfolioCurrentDollars)}</td>

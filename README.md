@@ -9,7 +9,8 @@ required minimum distributions, and portfolio withdrawals.
 
 ## Features
 
-- Compares Social Security claiming ages 62 through 70 with no, base, and aggressive Roth-conversion strategies.
+- Compares Social Security claiming ages 62 through 70 using No Conversion and one user-entered Fixed Conversion.
+- Includes an optional Roth Conversion Optimizer with federal-bracket, annual-cap, IRMAA, and future-tax-rate controls.
 - Supports an entered benefit for someone already receiving Social Security.
 - Projects Traditional IRA, Roth IRA, and non-interest-bearing taxable savings balances.
 - Applies the withdrawal order Traditional IRA, taxable savings, then Roth IRA.
@@ -53,6 +54,32 @@ for the selected strategy.
 The detailed table exposes the annual cash flow and calculation results, including investment growth, Social Security,
 withdrawals, conversions, RMDs, taxable income, federal and state taxes, Medicare, IRMAA, account balances, and any
 unfunded spending.
+
+### Roth Conversion Optimizer
+
+The optional optimizer evaluates the selected Social Security claiming choice using No Conversion, the user-entered
+Fixed Conversion, and annual schedules that fill federal tax brackets up to a user-selected limit. Scheduled conversions
+use the same projection engine, RMD rules, withdrawal order, taxes, market path, and Medicare assumptions as the other
+scenarios.
+
+Users can set a maximum annual conversion, an IRMAA guardrail, and an estimated future combined tax rate for the
+Traditional IRA remaining at the horizon and ending ages. Strategies must satisfy the selected limits before they can
+be recommended. The comparison prioritizes covering spending and then estimated after-tax portfolio value; fixed
+strategies that exceed a selected limit remain visible as reference-only results. The recommended annual schedule shows
+both requested and actual conversions because taxes, spending, RMDs, and available Traditional IRA funds can reduce the
+amount completed. Incremental IRMAA changes are included in the comparison when the surcharge is not already added
+separately to spending.
+
+The recommendation can be tested against the planner's seeded simulated market and inflation paths. This produces
+modeled spending-success rates for the recommended schedule and No Conversion. The optimizer is an educational
+comparison, not a tax recommendation or a substitute for year-by-year review with a qualified professional.
+
+When a bracket-target policy is recommended, selecting **Use Optimized Schedule** adds it as an Optimized Roth scenario in the Scenario Summary,
+portfolio chart, Year-by-Year Details, Scenario Highlights, and Retirement Risk Analysis. Reapplying replaces the
+previous optimized schedule for the same Social Security claiming choice. The schedule is saved in browser storage.
+If the assumptions used to create it later change, its label becomes **Optimized (Review)** until the optimizer is run
+again and the updated schedule is applied. No Conversion and Fixed Conversion are already standard scenarios and are
+not duplicated as Optimized schedules.
 
 ### Retirement Risk Analysis
 
@@ -104,7 +131,9 @@ The in-app Help page explains the methodology, recommended workflow, limitations
 The planner supports Single, Married Filing Jointly, Married Filing Separately, and Head of Household filing statuses.
 Federal and state tax tables can be maintained from the application header. State estimates cover all 50 states and
 the District of Columbia, but do not include local taxes or every state-specific credit, phaseout, recapture, or
-alternative tax.
+alternative tax. Each projection year uses an exact-year table when available. Otherwise, indexed monetary values are
+inflation-adjusted from the most recent prior table (or the earliest available table for an earlier projection), and
+the Year-by-Year Details identify the source year and estimated basis.
 
 The default Medicare model requires no additional user input. Optional Medicare inputs can add standard Part B,
 Part D or other coverage, out-of-pocket healthcare, and calculated IRMAA to spending when those costs are not already
@@ -167,5 +196,5 @@ npm run preview
 
 ## Local data
 
-Planner inputs, scenario settings, custom allocations, tax tables, and IRMAA configurations are saved in browser local
-storage. Clearing the site's local storage restores application defaults on the next load.
+Planner inputs, scenario settings, Roth optimizer settings, custom allocations, tax tables, and IRMAA configurations
+are saved in browser local storage. Clearing the site's local storage restores application defaults on the next load.

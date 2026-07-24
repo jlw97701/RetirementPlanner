@@ -1,9 +1,17 @@
 import { EconomicScenarioMethod } from './EconomicScenarioEngine';
 
-import { ColaStrategyType, MedicareModelType } from '../models/RetirementTypes';
+import {
+  ColaStrategyType,
+  MedicareModelType,
+  RothConversionType
+} from '../models/RetirementTypes';
 import type { TaxConfigurationSet } from '../models/TaxTypes';
 import { STATE_OPTIONS } from '../data/stateTax2026';
 import type { EconomicScenarioSettings } from '../models/EconomicScenarioSettings';
+import type {
+  RothConversionIrmaaGuardrail,
+  RothConversionOptimizerSettings
+} from '../models/RothConversionOptimizerTypes';
 
 import type { IrmaaConfiguration } from '../data/irmaaTables';
 
@@ -21,13 +29,15 @@ import type {
   RetirementScenario
 } from '../models/RetirementTypes';
 
-const INPUTS_KEY = 'retirement-planner-inputs',
+const INPUTS_KEY = 'retirement-planner-inputs-v2',
   INCOME_KEY = 'retirement-planner-income',
   COLA_KEY = 'retirement-planner-cola',
   ASSET_ALLOCATION_KEY = 'retirement-planner-asset-allocation',
   ASSET_ALLOCATION_PREFERENCES_KEY = 'retirement-planner-asset-allocation-preferences',
   ECONOMIC_SCENARIO_SETTINGS_KEY = 'retirement-planner-economic-scenario-settings',
-  SCENARIO_KEY = 'retirement-planner-scenarios',
+  ROTH_CONVERSION_OPTIMIZER_SETTINGS_KEY = 'retirement-planner-roth-conversion-optimizer-settings',
+  APPLIED_ROTH_CONVERSION_SCENARIOS_KEY = 'retirement-planner-applied-roth-conversion-scenarios-v2',
+  SCENARIO_KEY = 'retirement-planner-scenarios-v2',
   TAX_CONFIG_KEY = 'retirement-planner-tax-config',
   IRMAA_CONFIGURATIONS_KEY = 'retirement-planner-irmaa-configurations';
 
@@ -324,6 +334,48 @@ export function saveEconomicScenarioSettings(value: EconomicScenarioSettings): v
   localStorage.setItem(ECONOMIC_SCENARIO_SETTINGS_KEY, JSON.stringify(value));
 }
 
+export function loadRothConversionOptimizerSettings(
+  defaults: RothConversionOptimizerSettings
+): RothConversionOptimizerSettings {
+  try {
+    const parsed = JSON.parse(
+      localStorage.getItem(ROTH_CONVERSION_OPTIMIZER_SETTINGS_KEY) ?? 'null'
+    ) as Partial<RothConversionOptimizerSettings> | null;
+    const validGuardrails = new Set<RothConversionIrmaaGuardrail>([
+      'avoid-increase',
+      'allow-first-tier',
+      'ignore'
+    ]);
+
+    if (
+      !parsed ||
+      !Number.isFinite(parsed.maxFederalBracketRate) ||
+      parsed.maxFederalBracketRate! <= 0 ||
+      !Number.isFinite(parsed.maxAnnualConversion) ||
+      parsed.maxAnnualConversion! < 0 ||
+      !Number.isFinite(parsed.terminalTraditionalTaxRate) ||
+      parsed.terminalTraditionalTaxRate! < 0 ||
+      parsed.terminalTraditionalTaxRate! > 1 ||
+      !validGuardrails.has(parsed.irmaaGuardrail as RothConversionIrmaaGuardrail)
+    ) {
+      return defaults;
+    }
+
+    return {
+      maxFederalBracketRate: parsed.maxFederalBracketRate!,
+      maxAnnualConversion: parsed.maxAnnualConversion!,
+      terminalTraditionalTaxRate: parsed.terminalTraditionalTaxRate!,
+      irmaaGuardrail: parsed.irmaaGuardrail!
+    };
+  } catch {
+    return defaults;
+  }
+}
+
+export function saveRothConversionOptimizerSettings(value: RothConversionOptimizerSettings): void {
+  localStorage.setItem(ROTH_CONVERSION_OPTIMIZER_SETTINGS_KEY, JSON.stringify(value));
+}
+
 export function loadRetirementScenarios(defaults: RetirementScenario[]): RetirementScenario[] {
   try {
     const stored = localStorage.getItem(SCENARIO_KEY);
@@ -347,6 +399,51 @@ export function loadRetirementScenarios(defaults: RetirementScenario[]): Retirem
 export function saveRetirementScenarios(value: RetirementScenario[]): void {
   //console.log('saveScenarios: value = ', value);
   localStorage.setItem(SCENARIO_KEY, JSON.stringify(value));
+}
+
+export function loadAppliedRothConversionScenarios(): RetirementScenario[] {
+  try {
+    const parsed: unknown = JSON.parse(
+      localStorage.getItem(APPLIED_ROTH_CONVERSION_SCENARIOS_KEY) ?? '[]'
+    );
+
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed.filter((scenario): scenario is RetirementScenario => {
+      if (typeof scenario !== 'object' || scenario === null) return false;
+
+      const candidate = scenario as Partial<RetirementScenario>;
+      const validClaimAge =
+        candidate.claimAge === null ||
+        (Number.isInteger(candidate.claimAge) &&
+          candidate.claimAge! >= 62 &&
+          candidate.claimAge! <= 70);
+      const schedule = candidate.rothConversionSchedule;
+      const validSchedule =
+        typeof schedule === 'object' &&
+        schedule !== null &&
+        Object.entries(schedule).every(
+          ([age, amount]) =>
+            Number.isInteger(Number(age)) &&
+            Number.isFinite(amount) &&
+            amount >= 0
+        );
+
+      return (
+        typeof candidate.id === 'string' &&
+        validClaimAge &&
+        candidate.rothConvType === RothConversionType.Optimized &&
+        typeof candidate.optimizerSourceKey === 'string' &&
+        validSchedule
+      );
+    });
+  } catch {
+    return [];
+  }
+}
+
+export function saveAppliedRothConversionScenarios(value: readonly RetirementScenario[]): void {
+  localStorage.setItem(APPLIED_ROTH_CONVERSION_SCENARIOS_KEY, JSON.stringify(value));
 }
 
 export function loadTaxConfigurations(defaults: TaxConfigurationSet): TaxConfigurationSet {

@@ -8,13 +8,13 @@ import {
   DEFAULT_RETIREMENT_SCENARIOS,
   DEFAULT_TAX_CONFIG,
   ACTUAL_BENEFIT_SCENARIOS,
-  DEFAULT_ECONOMIC_SCENARIO_SETTINGS
+  DEFAULT_ECONOMIC_SCENARIO_SETTINGS,
+  DEFAULT_ROTH_CONVERSION_OPTIMIZER_SETTINGS
 } from '../data/defaults';
 
-import { SSBenefitValueType } from '../models/RetirementTypes';
+import { SSBenefitValueType, type RetirementScenario } from '../models/RetirementTypes';
 
-import { calculateRetirementProjection } from '../services/RetirementEngine';
-import { selectStateTaxConfiguration, selectTaxConfiguration } from '../services/TaxEngine';
+import { calculateRetirementProjection, resolveProjectionTaxConfigurations } from '../services/RetirementEngine';
 import { summarizeRetirementScenario } from '../services/ScenarioService';
 import { createEconomicScenario } from '../services/EconomicScenarioService';
 import { HISTORICAL_ECONOMIC_DATA } from '../data/historicalEconomicData';
@@ -23,6 +23,12 @@ import {
   runRetirementRiskAnalysis,
   type RetirementRiskAnalysisOptions
 } from '../services/RetirementRiskAnalysisService';
+import {
+  createAppliedRothConversionScenario,
+  optimizeRothConversions,
+  runRothConversionOptimizerRiskAnalysis,
+  type RothConversionOptimizerResult
+} from '../services/RothConversionOptimizer';
 
 import {
   loadPlannerInputs,
@@ -40,15 +46,31 @@ import {
   loadEconomicScenarioSettings,
   saveEconomicScenarioSettings,
   loadIrmaaConfigurations,
-  saveIrmaaConfigurations
+  saveIrmaaConfigurations,
+  loadRothConversionOptimizerSettings,
+  saveRothConversionOptimizerSettings,
+  loadAppliedRothConversionScenarios,
+  saveAppliedRothConversionScenarios
 } from '../services/PlannerStorage';
 import { getProjectionPeriod } from '../utils/projectionDates';
 import { IRMAA_CONFIGURATIONS } from '../data/irmaaTables';
 
+function createOptimizerSourceKey(value: unknown): string {
+  const serialized = JSON.stringify(value);
+  let hash = 0x811c9dc5;
+
+  for (let index = 0; index < serialized.length; index += 1) {
+    hash ^= serialized.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193);
+  }
+
+  return `v1-${serialized.length}-${(hash >>> 0).toString(36)}`;
+}
+
 /**
  * Main application hook
- * Loads and saves retirement-planner settings, constructs the economic scenario, 
- * selects the applicable retirement scenarios, calculates each projection, 
+ * Loads and saves retirement-planner settings, constructs the economic scenario,
+ * selects the applicable retirement scenarios, calculates each projection,
  * and exposes the resulting data and state setters to the UI.
  */
 export function useRetirementModel() {
@@ -58,8 +80,12 @@ export function useRetirementModel() {
   const [assetAllocation, setAssetAllocation] = useState(() => loadAssetAllocation(DEFAULT_ASSET_ALLOCATION));
   const [scenarios, setScenarios] = useState(() => loadRetirementScenarios(DEFAULT_RETIREMENT_SCENARIOS));
   const [taxConfig, setTaxConfig] = useState(() => loadTaxConfigurations(DEFAULT_TAX_CONFIG));
-  const [irmaaConfigurations, setIrmaaConfigurations] = useState(() =>
-    loadIrmaaConfigurations(IRMAA_CONFIGURATIONS)
+  const [irmaaConfigurations, setIrmaaConfigurations] = useState(() => loadIrmaaConfigurations(IRMAA_CONFIGURATIONS));
+  const [rothConversionOptimizerSettings, setRothConversionOptimizerSettings] = useState(() =>
+    loadRothConversionOptimizerSettings(DEFAULT_ROTH_CONVERSION_OPTIMIZER_SETTINGS)
+  );
+  const [appliedRothConversionScenarios, setAppliedRothConversionScenarios] = useState(() =>
+    loadAppliedRothConversionScenarios()
   );
   const [economicScenarioSettings, setEconomicScenarioSettings] = useState(() => {
     const loaded = loadEconomicScenarioSettings(DEFAULT_ECONOMIC_SCENARIO_SETTINGS);
@@ -72,8 +98,7 @@ export function useRetirementModel() {
           ...loaded,
           historicalSequence: {
             ...loaded.historicalSequence,
-            historicalStartYear:
-              HISTORICAL_ECONOMIC_DATA[0]?.year ?? loaded.historicalSequence.historicalStartYear
+            historicalStartYear: HISTORICAL_ECONOMIC_DATA[0]?.year ?? loaded.historicalSequence.historicalStartYear
           }
         };
     const requiresHistoricalData =
@@ -90,25 +115,53 @@ export function useRetirementModel() {
   useEffect(() => saveSSCOLASettings(colaSettings), [colaSettings]);
   useEffect(() => saveRetirementScenarios(scenarios), [scenarios]);
   useEffect(() => saveTaxConfigurations(taxConfig), [taxConfig]);
-  useEffect(() => savePlannerInputs(inputs), [inputs]);
   useEffect(() => saveAssetAllocation(assetAllocation), [assetAllocation]);
   useEffect(() => saveEconomicScenarioSettings(economicScenarioSettings), [economicScenarioSettings]);
   useEffect(() => saveIrmaaConfigurations(irmaaConfigurations), [irmaaConfigurations]);
-
-  const federalTaxConfig = selectTaxConfiguration(taxConfig.federal, inputs.filingStatus);
-  const stateTaxConfig = selectStateTaxConfiguration(
-    taxConfig.state,
-    inputs.residenceState,
-    inputs.filingStatus
+  useEffect(
+    () => saveRothConversionOptimizerSettings(rothConversionOptimizerSettings),
+    [rothConversionOptimizerSettings]
   );
+  useEffect(() => saveAppliedRothConversionScenarios(appliedRothConversionScenarios), [appliedRothConversionScenarios]);
 
   const period = getProjectionPeriod(inputs.birthDate, inputs.startAge, inputs.endAge);
 
-  const activeScenarios = useMemo(
+  const optimizerSourceKey = useMemo(
     () =>
-      inputs.ssBenefitValueType === SSBenefitValueType.ActualCurrentBenefit ? ACTUAL_BENEFIT_SCENARIOS : scenarios,
-    [inputs.ssBenefitValueType, scenarios]
+      createOptimizerSourceKey({
+        inputs,
+        ssIncome,
+        colaSettings,
+        assetAllocation,
+        economicScenarioSettings,
+        taxConfig,
+        irmaaConfigurations,
+        rothConversionOptimizerSettings
+      }),
+    [
+      inputs,
+      ssIncome,
+      colaSettings,
+      assetAllocation,
+      economicScenarioSettings,
+      taxConfig,
+      irmaaConfigurations,
+      rothConversionOptimizerSettings
+    ]
   );
+
+  const activeScenarios = useMemo(() => {
+    const usesActualBenefit = inputs.ssBenefitValueType === SSBenefitValueType.ActualCurrentBenefit;
+    const baseScenarios = usesActualBenefit ? ACTUAL_BENEFIT_SCENARIOS : scenarios;
+    const visibleAppliedScenarios = appliedRothConversionScenarios
+      .filter((scenario) => (usesActualBenefit ? scenario.claimAge === null : scenario.claimAge !== null))
+      .map((scenario) => ({
+        ...scenario,
+        rothConversionLabel: scenario.optimizerSourceKey === optimizerSourceKey ? 'Optimized' : 'Optimized (Review)'
+      }));
+
+    return [...baseScenarios, ...visibleAppliedScenarios];
+  }, [inputs.ssBenefitValueType, scenarios, appliedRothConversionScenarios, optimizerSourceKey]);
 
   if (!Array.isArray(activeScenarios)) {
     throw new Error('Active retirement scenarios must be an array.');
@@ -126,14 +179,30 @@ export function useRetirementModel() {
     );
   }, [economicScenarioSettings, inputs, colaSettings, period.startYear, period.yearCount, assetAllocation]);
 
+  const federalTaxConfig = useMemo(
+    () =>
+      resolveProjectionTaxConfigurations(
+        inputs,
+        period.startYear,
+        {
+          federalTaxConfigurations: taxConfig.federal,
+          stateTaxConfigurations: taxConfig.state,
+          economicScenario,
+          irmaaConfigurations
+        },
+        period.startYear
+      ).federal.configuration,
+    [inputs, period.startYear, taxConfig, economicScenario, irmaaConfigurations]
+  );
+
   const projections = useMemo(
     () =>
       activeScenarios
         // .filter((scenario) => scenario.claimAge === null || scenario.claimAge >= inputs.startAge)
         .map((scenario) => {
           const rows = calculateRetirementProjection(inputs, ssIncome, colaSettings, assetAllocation, scenario, {
-            federalTaxConfig,
-            stateTaxConfig,
+            federalTaxConfigurations: taxConfig.federal,
+            stateTaxConfigurations: taxConfig.state,
             economicScenario,
             irmaaConfigurations
           });
@@ -144,17 +213,7 @@ export function useRetirementModel() {
             summary: summarizeRetirementScenario(inputs, scenario, rows)
           };
         }),
-    [
-      inputs,
-      ssIncome,
-      colaSettings,
-      assetAllocation,
-      activeScenarios,
-      federalTaxConfig,
-      stateTaxConfig,
-      economicScenario,
-      irmaaConfigurations
-    ]
+    [inputs, ssIncome, colaSettings, assetAllocation, activeScenarios, taxConfig, economicScenario, irmaaConfigurations]
   );
 
   const runRiskAnalysis = useCallback(
@@ -167,8 +226,8 @@ export function useRetirementModel() {
           assetAllocation,
           retirementScenarios: activeScenarios,
           economicScenarioSettings,
-          federalTaxConfig,
-          stateTaxConfig,
+          federalTaxConfigurations: taxConfig.federal,
+          stateTaxConfigurations: taxConfig.state,
           irmaaConfigurations
         },
         options
@@ -180,10 +239,73 @@ export function useRetirementModel() {
       assetAllocation,
       activeScenarios,
       economicScenarioSettings,
-      federalTaxConfig,
-      stateTaxConfig,
+      taxConfig,
       irmaaConfigurations
     ]
+  );
+
+  const runRothConversionOptimizer = useCallback(
+    (retirementScenario: RetirementScenario) =>
+      optimizeRothConversions({
+        inputs,
+        ssIncome,
+        colaSettings,
+        assetAllocation,
+        retirementScenario,
+        federalTaxConfigurations: taxConfig.federal,
+        stateTaxConfigurations: taxConfig.state,
+        economicScenario,
+        irmaaConfigurations,
+        settings: rothConversionOptimizerSettings
+      }),
+    [
+      inputs,
+      ssIncome,
+      colaSettings,
+      assetAllocation,
+      taxConfig,
+      economicScenario,
+      irmaaConfigurations,
+      rothConversionOptimizerSettings
+    ]
+  );
+
+  const runOptimizerRiskAnalysis = useCallback(
+    (
+      retirementScenario: RetirementScenario,
+      result: RothConversionOptimizerResult,
+      options?: RetirementRiskAnalysisOptions
+    ) =>
+      runRothConversionOptimizerRiskAnalysis(
+        {
+          inputs,
+          ssIncome,
+          colaSettings,
+          assetAllocation,
+          retirementScenario,
+          economicScenarioSettings,
+          federalTaxConfigurations: taxConfig.federal,
+          stateTaxConfigurations: taxConfig.state,
+          irmaaConfigurations
+        },
+        result,
+        options
+      ),
+    [inputs, ssIncome, colaSettings, assetAllocation, economicScenarioSettings, taxConfig, irmaaConfigurations]
+  );
+
+  const applyOptimizedRothConversionSchedule = useCallback(
+    (result: RothConversionOptimizerResult): string => {
+      const appliedScenario = createAppliedRothConversionScenario(inputs, result, optimizerSourceKey);
+
+      setAppliedRothConversionScenarios((current) => [
+        ...current.filter((scenario) => scenario.id !== appliedScenario.id),
+        appliedScenario
+      ]);
+
+      return appliedScenario.id;
+    },
+    [inputs, optimizerSourceKey]
   );
   //console.log('useRetirementModel: projections = ', projections);
 
@@ -205,6 +327,12 @@ export function useRetirementModel() {
     setIrmaaConfigurations,
     economicScenarioSettings,
     setEconomicScenarioSettings,
+    federalTaxConfig,
+    rothConversionOptimizerSettings,
+    setRothConversionOptimizerSettings,
+    runRothConversionOptimizer,
+    runOptimizerRiskAnalysis,
+    applyOptimizedRothConversionSchedule,
     runRiskAnalysis,
     projections
   };

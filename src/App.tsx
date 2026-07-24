@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Calculator, ArrowLeft, CircleHelp, TableConfig, Menu } from 'lucide-react';
-import { PlannerInputsPanel } from './components/inputs/PlannerInputsPanel';
+import { PlannerInputs } from './components/inputs/PlannerInputs';
 import { ScenarioCards } from './components/dashboard/ScenarioCards';
 import { ScenarioChart } from './components/dashboard/ScenarioChart';
 import { ScenarioSummaryTable } from './components/dashboard/ScenarioSummaryTable';
@@ -11,6 +11,8 @@ import { EconomicScenarioHelp } from './components/help/EconomicScenarioHelp';
 import { IrmaaTableEditor } from './components/irmaa/IrmaaTableEditor';
 import { RetirementRiskAnalysis } from './components/dashboard/RetirementRiskAnalysis';
 import { resolveRiskMarketAssumption } from './services/RetirementRiskAnalysisService';
+import { RothConversionOptimizer } from './components/dashboard/RothConversionOptimizer';
+import type { ScenarioSummaryScrollRequest } from './components/dashboard/ScenarioSummaryTable';
 
 type AppPage = 'planner' | 'taxes' | 'irmaa' | 'help';
 
@@ -30,6 +32,12 @@ export default function App() {
     setIrmaaConfigurations,
     economicScenarioSettings,
     setEconomicScenarioSettings,
+    federalTaxConfig,
+    rothConversionOptimizerSettings,
+    setRothConversionOptimizerSettings,
+    runRothConversionOptimizer,
+    runOptimizerRiskAnalysis,
+    applyOptimizedRothConversionSchedule,
     runRiskAnalysis,
     projections
   } = useRetirementModel();
@@ -37,6 +45,7 @@ export default function App() {
   const [selectedId, setSelectedId] = useState(projections[0]?.scenario.id ?? '');
   const [activePage, setActivePage] = useState<AppPage>('planner');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [summaryScrollRequest, setSummaryScrollRequest] = useState<ScenarioSummaryScrollRequest>();
   const selected = projections.find((p) => p.scenario.id === selectedId) ?? projections[0];
   const summaries = projections.map((p) => p.summary);
   const riskMarketAssumption = resolveRiskMarketAssumption(economicScenarioSettings, assetAllocation);
@@ -109,7 +118,7 @@ export default function App() {
       ) : (
         <main className={`planner-layout ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
           <div id="planner-sidebar" className="sidebar-shell" aria-hidden={isSidebarCollapsed}>
-            <PlannerInputsPanel
+            <PlannerInputs
               inputs={inputs}
               setInputs={setInputs}
               ssIncome={ssIncome}
@@ -138,18 +147,40 @@ export default function App() {
               horizonAge={inputs.horizonAge}
               endAge={inputs.endAge}
               selectedId={selected?.scenario.id ?? ''}
-              onSelect={setSelectedId}
+              onSelect={(scenarioId) => {
+                setSelectedId(scenarioId);
+                setSummaryScrollRequest((current) => ({
+                  scenarioId,
+                  requestId: (current?.requestId ?? 0) + 1
+                }));
+              }}
             />
             <ScenarioSummaryTable
               summaries={summaries}
               inputs={inputs}
               selectedId={selected?.scenario.id ?? ''}
               onSelect={setSelectedId}
+              scrollRequest={summaryScrollRequest}
             />
             {selected && (
               <>
                 <ScenarioChart rows={selected.rows} scenario={selected.scenario} />
-                <YearDetailsTable rows={selected.rows} />
+                <YearDetailsTable rows={selected.rows} scenario={selected.scenario} />
+                <RothConversionOptimizer
+                  inputs={inputs}
+                  selectedScenario={selected.scenario}
+                  federalTaxConfig={federalTaxConfig}
+                  simulations={economicScenarioSettings.monteCarlo.simulations}
+                  settings={rothConversionOptimizerSettings}
+                  setSettings={setRothConversionOptimizerSettings}
+                  runOptimizer={runRothConversionOptimizer}
+                  runRiskAnalysis={runOptimizerRiskAnalysis}
+                  onUseSchedule={(result) => {
+                    const scenarioId = applyOptimizedRothConversionSchedule(result);
+                    setSelectedId(scenarioId);
+                    return scenarioId;
+                  }}
+                />
               </>
             )}
             <RetirementRiskAnalysis

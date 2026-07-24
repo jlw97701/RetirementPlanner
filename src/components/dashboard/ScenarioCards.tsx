@@ -10,13 +10,14 @@ export interface ScenarioHighlight {
 
 function rothConversionLabel(type: RothConversionType): string {
   if (type === RothConversionType.None) return 'No Roth';
-  if (type === RothConversionType.Base) return 'Base Roth';
-  return 'Aggressive Roth';
+  if (type === RothConversionType.Fixed) return 'Fixed Roth';
+  return 'Optimized Roth';
 }
 
 function scenarioLabel(summary: ScenarioSummary): string {
   const socialSecurity = summary.claimAge === null ? 'Already Receiving Benefits' : `Claim at ${summary.claimAge}`;
-  return `${socialSecurity} | ${rothConversionLabel(summary.rothConvType)}`;
+  const rothConversion = summary.rothConversionLabel ?? rothConversionLabel(summary.rothConvType);
+  return `${socialSecurity} | ${rothConversion}`;
 }
 
 function fundingScore(summary: ScenarioSummary): number {
@@ -36,13 +37,24 @@ export function selectScenarioHighlights(summaries: readonly ScenarioSummary[]):
   };
 
   const baselineCandidates = [
-    ...summaries.filter(
-      (summary) => summary.claimAge === 62 && summary.rothConvType === RothConversionType.None
-    ),
+    ...summaries.filter((summary) => summary.claimAge === 62 && summary.rothConvType === RothConversionType.None),
     ...summaries.filter((summary) => summary.rothConvType === RothConversionType.None),
     ...summaries
   ];
   addFirstUnused('Baseline', baselineCandidates);
+
+  const optimizedScenarios = summaries
+    .filter((summary) => summary.rothConvType === RothConversionType.Optimized)
+    .sort((left, right) => {
+      if (left.depletionAge === null && right.depletionAge !== null) return -1;
+      if (left.depletionAge !== null && right.depletionAge === null) return 1;
+
+      const fundingDifference = (right.depletionAge ?? 0) - (left.depletionAge ?? 0);
+      if (fundingDifference !== 0) return fundingDifference;
+
+      return right.endPortfolioCurrentDollars - left.endPortfolioCurrentDollars;
+    });
+  addFirstUnused('Optimized Roth Schedule', optimizedScenarios);
 
   const highestHorizonBalance = Math.max(...summaries.map((summary) => summary.horizonPortfolioCurrentDollars));
   addFirstUnused(
@@ -107,6 +119,11 @@ export function ScenarioCards({
         <p>
           A highlighted characteristic does not make a scenario the best overall strategy or a financial
           recommendation. Select a card to view its full projection in the tables and chart below.
+        </p>
+        <p>
+          When one or more Optimized Roth schedules have been applied, the strongest one is shown explicitly.
+          The panel prefers a schedule with no projected spending shortfall, then later funding and a higher
+          inflation-adjusted ending balance.
         </p>
       `}>
       <div className="scenario-grid">

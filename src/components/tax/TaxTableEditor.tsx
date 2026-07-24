@@ -54,8 +54,11 @@ const federalPanelInfo = `
     Social Security thresholds determine how much of the annual benefit is included in federal AGI.
   </p>
   <p>
-    Changes are saved in this browser and immediately recalculate projections. The selected
-    configuration remains a planning estimate and is currently used for all projection years.
+    Changes are saved in this browser and immediately recalculate projections. The planner uses
+    an exact configuration-year table when one is available. For other projection years, it
+    inflation-adjusts the nearest usable table's indexed monetary brackets and deductions.
+    Federal Social Security provisional-income thresholds remain fixed because they are not
+    inflation indexed under current law.
   </p>
 `;
 
@@ -84,7 +87,8 @@ const statePanelInfo = `
   <p>
     Changes are saved in this browser and immediately recalculate projections. The bundled
     configurations use published 2026 statewide schedules. Local, county, and municipal income
-    taxes are not included.
+    taxes are not included. The planner uses an exact configuration-year table when available
+    and otherwise inflation-adjusts the nearest usable table's monetary amounts.
   </p>
 `;
 
@@ -117,11 +121,34 @@ export function TaxTableEditor<T extends JurisdictionTaxConfig>({
   const [selectedStateCode, setSelectedStateCode] = useState<StateCode | undefined>(
     initialStateCode ?? STATE_OPTIONS.find((state) => availableStateCodes.has(state.value))?.value
   );
-  const selected = configurations.find(
-    (configuration) =>
-      configuration.filingStatus === selectedFilingStatus &&
-      (!isStateTaxConfig(configuration) || configuration.stateCode === selectedStateCode)
+  const matchingConfigurations = configurations
+    .filter(
+      (configuration) =>
+        configuration.filingStatus === selectedFilingStatus &&
+        (!isStateTaxConfig(configuration) || configuration.stateCode === selectedStateCode)
+    )
+    .sort((left, right) => right.year - left.year);
+  const [selectedYear, setSelectedYear] = useState(
+    () =>
+      configurations
+        .filter(
+          (configuration) =>
+            configuration.filingStatus === initialFilingStatus &&
+            (!isStateTaxConfig(configuration) ||
+              configuration.stateCode ===
+                (initialStateCode ??
+                  STATE_OPTIONS.find((state) => availableStateCodes.has(state.value))?.value))
+        )
+        .sort((left, right) => right.year - left.year)[0]?.year ??
+      configurations[0]?.year ??
+      new Date().getFullYear()
   );
+  const selected =
+    matchingConfigurations.find((configuration) => configuration.year === selectedYear) ??
+    matchingConfigurations[0];
+  const availableYears = Array.from(
+    new Set(matchingConfigurations.map((configuration) => configuration.year))
+  ).sort((left, right) => right - left);
 
   if (!selected) {
     return (
@@ -180,6 +207,19 @@ export function TaxTableEditor<T extends JurisdictionTaxConfig>({
           {Object.entries(FILING_STATUS_LABELS).map(([value, label]) => (
             <option key={value} value={value}>
               {label}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="tax-configuration-select">
+        Configuration Year
+        <select
+          value={selected.year}
+          onChange={(event) => setSelectedYear(Number(event.target.value))}>
+          {availableYears.map((year) => (
+            <option key={year} value={year}>
+              {year}
             </option>
           ))}
         </select>

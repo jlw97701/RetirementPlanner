@@ -38,6 +38,7 @@ export interface RetirementRiskScenarioResult {
   scenarioId: string;
   claimAge: SSClaimAge | null;
   rothConvType: RothConversionType;
+  rothConversionLabel?: string;
   horizonFullyFundedRate: number;
   fullyFundedRate: number;
   depletionRisk: number;
@@ -70,8 +71,8 @@ export interface RetirementRiskAnalysisParameters {
   assetAllocation: AssetAllocation;
   retirementScenarios: readonly RetirementScenario[];
   economicScenarioSettings: EconomicScenarioSettings;
-  federalTaxConfig: FederalTaxConfig;
-  stateTaxConfig: StateTaxConfig;
+  federalTaxConfigurations: readonly FederalTaxConfig[];
+  stateTaxConfigurations: readonly StateTaxConfig[];
   irmaaConfigurations: readonly IrmaaConfiguration[];
 }
 
@@ -204,8 +205,8 @@ export async function runRetirementRiskAnalysis(
     assetAllocation,
     retirementScenarios,
     economicScenarioSettings,
-    federalTaxConfig,
-    stateTaxConfig,
+    federalTaxConfigurations,
+    stateTaxConfigurations,
     irmaaConfigurations
   } = parameters;
   const period = getProjectionPeriod(inputs.birthDate, inputs.startAge, inputs.endAge);
@@ -250,8 +251,8 @@ export async function runRetirementRiskAnalysis(
         assetAllocation,
         accumulator.scenario,
         {
-          federalTaxConfig,
-          stateTaxConfig,
+          federalTaxConfigurations,
+          stateTaxConfigurations,
           economicScenario,
           irmaaConfigurations
         }
@@ -301,6 +302,7 @@ export async function runRetirementRiskAnalysis(
         scenarioId: accumulator.scenario.id,
         claimAge: accumulator.scenario.claimAge,
         rothConvType: accumulator.scenario.rothConvType,
+        rothConversionLabel: accumulator.scenario.rothConversionLabel,
         horizonFullyFundedRate: accumulator.horizonFullyFundedCount / simulations,
         fullyFundedRate: accumulator.fullyFundedCount / simulations,
         depletionRisk: accumulator.depletionCount / simulations,

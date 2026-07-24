@@ -6,6 +6,7 @@ import {
   SSMonthlyIncome,
   RetirementScenario,
   RothConversionType,
+  SSClaimAge,
   ColaStrategyType,
   SSColaSettings,
   AssetAllocation,
@@ -19,26 +20,67 @@ import { calculateHistoricalAverageCOLA } from '../services/SocialSecurityEngine
 import { formatDecimal } from '../utils/format';
 import { EconomicScenarioMethod } from '../services/EconomicScenarioEngine';
 import type { EconomicScenarioSettings } from '../models/EconomicScenarioSettings';
+import type { RothConversionOptimizerSettings } from '../models/RothConversionOptimizerTypes';
+
+// export const DEFAULT_INPUTS: PlannerInputs = {
+//   birthDate: '1970-01-01', // Using ISO date strings avoids ambiguous parsing
+//   filingStatus: 'single',
+//   residenceState: 'OR',
+//   startAge: 62,
+//   endAge: 95,
+//   horizonAge: 80,
+//   stopConvAge: 75,
+//   taxableAcct: 50000,
+//   tradIra: 500000,
+//   rothIra: 0,
+//   annualSpend: 50000,
+//   medicareModel: MedicareModelType.SimpleDeterministic,
+//   annualSpendingIncludesHealthcare: true,
+//   medicareStartAge: 65,
+//   monthlyPartDOtherPremium: 0,
+//   annualOutOfPocketHealthcare: 0,
+//   annualRothConversion: 25000,
+//   inflation: 0.03,
+//   ssBenefitValueType: SSBenefitValueType.CurrentDollars,
+//   ssEstimateYear: 2026,
+//   actualMonthlySS: 0,
+//   actualBenefitYear: 2026,
+//   irmaaMagiTwoYearsPrior: 0,
+//   irmaaMagiOneYearPrior: 0
+// };
+
+// export const DEFAULT_MONTHLY_SS: SSMonthlyIncome[] = [
+//   { age: 62, amount: 2500 },
+//   { age: 63, amount: 2750 },
+//   { age: 64, amount: 3000 },
+//   { age: 65, amount: 3250 },
+//   { age: 66, amount: 3500 },
+//   { age: 67, amount: 3750 },
+//   { age: 68, amount: 4000 },
+//   { age: 69, amount: 4250 },
+//   { age: 70, amount: 4500 }
+// ];
+
+// jlw - TO DO: remove my defaults after testing...
 
 export const DEFAULT_INPUTS: PlannerInputs = {
-  birthDate: '1970-01-01', // Using ISO date strings avoids ambiguous parsing
-  filingStatus: 'single',
+  birthDate: '1964-03-30', // Using ISO date strings avoids ambiguous parsing
+  filingStatus: 'headOfHousehold',
   residenceState: 'OR',
   startAge: 62,
   endAge: 95,
   horizonAge: 80,
   stopConvAge: 75,
-  taxableAcct: 50000,
-  tradIra: 500000,
+  taxableAcct: 25000,
+  tradIra: 590000,
   rothIra: 0,
-  annualSpend: 50000,
+  annualSpend: 60000,
   medicareModel: MedicareModelType.SimpleDeterministic,
   annualSpendingIncludesHealthcare: true,
   medicareStartAge: 65,
   monthlyPartDOtherPremium: 0,
   annualOutOfPocketHealthcare: 0,
-  rothBaseConv: 25000,
-  rothAggressiveConv: 50000,
+  annualRothConversion: 25000,
   inflation: 0.03,
   ssBenefitValueType: SSBenefitValueType.CurrentDollars,
   ssEstimateYear: 2026,
@@ -49,15 +91,15 @@ export const DEFAULT_INPUTS: PlannerInputs = {
 };
 
 export const DEFAULT_MONTHLY_SS: SSMonthlyIncome[] = [
-  { age: 62, amount: 2500 },
-  { age: 63, amount: 2750 },
-  { age: 64, amount: 3000 },
-  { age: 65, amount: 3250 },
-  { age: 66, amount: 3500 },
-  { age: 67, amount: 3750 },
-  { age: 68, amount: 4000 },
-  { age: 69, amount: 4250 },
-  { age: 70, amount: 4500 }
+  { age: 62, amount: 2685 },
+  { age: 63, amount: 2830 },
+  { age: 64, amount: 3038 },
+  { age: 65, amount: 3311 },
+  { age: 66, amount: 3582 },
+  { age: 67, amount: 3854 },
+  { age: 68, amount: 4126 },
+  { age: 69, amount: 4451 },
+  { age: 70, amount: 4831 }
 ];
 
 export const DEFAULT_COLA_SETTINGS: SSColaSettings = {
@@ -116,143 +158,27 @@ export const DEFAULT_ECONOMIC_SCENARIO_SETTINGS: EconomicScenarioSettings = {
   }
 };
 
-export const DEFAULT_RETIREMENT_SCENARIOS: RetirementScenario[] = [
+export const DEFAULT_ROTH_CONVERSION_OPTIMIZER_SETTINGS: RothConversionOptimizerSettings = {
+  maxFederalBracketRate: 0.22,
+  maxAnnualConversion: 50_000,
+  terminalTraditionalTaxRate: 0.2,
+  irmaaGuardrail: 'avoid-increase'
+};
+
+const DEFAULT_CLAIM_AGES: SSClaimAge[] = [62, 63, 64, 65, 66, 67, 68, 69, 70];
+
+export const DEFAULT_RETIREMENT_SCENARIOS: RetirementScenario[] = DEFAULT_CLAIM_AGES.flatMap((claimAge) => [
   {
-    id: 'ss62-none',
-    claimAge: 62,
+    id: `ss${claimAge}-none`,
+    claimAge,
     rothConvType: RothConversionType.None
   },
   {
-    id: 'ss62-base',
-    claimAge: 62,
-    rothConvType: RothConversionType.Base
-  },
-  {
-    id: 'ss62-aggressive',
-    claimAge: 62,
-    rothConvType: RothConversionType.Aggressive
-  },
-  {
-    id: 'ss63-none',
-    claimAge: 63,
-    rothConvType: 0
-  },
-  {
-    id: 'ss63-base',
-    claimAge: 63,
-    rothConvType: RothConversionType.Base
-  },
-  {
-    id: 'ss63-aggressive',
-    claimAge: 63,
-    rothConvType: RothConversionType.Aggressive
-  },
-  {
-    id: 'ss64-none',
-    claimAge: 64,
-    rothConvType: 0
-  },
-  {
-    id: 'ss64-base',
-    claimAge: 64,
-    rothConvType: RothConversionType.Base
-  },
-  {
-    id: 'ss64-aggressive',
-    claimAge: 64,
-    rothConvType: RothConversionType.Aggressive
-  },
-  {
-    id: 'ss65-none',
-    claimAge: 65,
-    rothConvType: 0
-  },
-  {
-    id: 'ss65-base',
-    claimAge: 65,
-    rothConvType: RothConversionType.Base
-  },
-  {
-    id: 'ss65-aggressive',
-    claimAge: 65,
-    rothConvType: RothConversionType.Aggressive
-  },
-  {
-    id: 'ss66-none',
-    claimAge: 66,
-    rothConvType: 0
-  },
-  {
-    id: 'ss66-base',
-    claimAge: 66,
-    rothConvType: RothConversionType.Base
-  },
-  {
-    id: 'ss66-aggressive',
-    claimAge: 66,
-    rothConvType: RothConversionType.Aggressive
-  },
-  {
-    id: 'ss67-none',
-    claimAge: 67,
-    rothConvType: 0
-  },
-  {
-    id: 'ss67-base',
-    claimAge: 67,
-    rothConvType: RothConversionType.Base
-  },
-  {
-    id: 'ss67-aggressive',
-    claimAge: 67,
-    rothConvType: RothConversionType.Aggressive
-  },
-  {
-    id: 'ss68-none',
-    claimAge: 68,
-    rothConvType: 0
-  },
-  {
-    id: 'ss68-base',
-    claimAge: 68,
-    rothConvType: RothConversionType.Base
-  },
-  {
-    id: 'ss68-aggressive',
-    claimAge: 68,
-    rothConvType: RothConversionType.Aggressive
-  },
-  {
-    id: 'ss69-none',
-    claimAge: 69,
-    rothConvType: 0
-  },
-  {
-    id: 'ss69-base',
-    claimAge: 69,
-    rothConvType: RothConversionType.Base
-  },
-  {
-    id: 'ss69-aggressive',
-    claimAge: 69,
-    rothConvType: RothConversionType.Aggressive
-  },
-  {
-    id: 'ss70-none',
-    claimAge: 70,
-    rothConvType: 0
-  },
-  {
-    id: 'ss70-base',
-    claimAge: 70,
-    rothConvType: RothConversionType.Base
-  },
-  {
-    id: 'ss70-aggressive',
-    claimAge: 70,
-    rothConvType: RothConversionType.Aggressive
+    id: `ss${claimAge}-fixed`,
+    claimAge,
+    rothConvType: RothConversionType.Fixed
   }
-];
+]);
 
 export const ACTUAL_BENEFIT_SCENARIOS: RetirementScenario[] = [
   {
@@ -261,14 +187,9 @@ export const ACTUAL_BENEFIT_SCENARIOS: RetirementScenario[] = [
     rothConvType: RothConversionType.None
   },
   {
-    id: 'actual-ss-base',
+    id: 'actual-ss-fixed',
     claimAge: null,
-    rothConvType: RothConversionType.Base
-  },
-  {
-    id: 'actual-ss-aggressive',
-    claimAge: null,
-    rothConvType: RothConversionType.Aggressive
+    rothConvType: RothConversionType.Fixed
   }
 ];
 

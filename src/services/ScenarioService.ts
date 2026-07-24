@@ -13,6 +13,7 @@ export function summarizeRetirementScenario(
     scenarioId: scenario.id,
     claimAge: scenario.claimAge,
     rothConvType: scenario.rothConvType,
+    rothConversionLabel: scenario.rothConversionLabel,
     firstAnnualSS: firstSSRow?.socialSecurity ?? 0,
 
     horizonPortfolioAge: horizon.endPortfolio,

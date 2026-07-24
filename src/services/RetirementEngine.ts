@@ -11,7 +11,13 @@ import {
 } from '../models/RetirementTypes';
 
 import { convertCurrentDollarsToYear, getAnnualSSCola, getDefaultRmdStartAge } from './SocialSecurityEngine';
-import { calculateFederalTax, calculateStateTax } from './TaxEngine';
+import {
+  calculateFederalTax,
+  calculateStateTax,
+  resolveFederalTaxConfiguration,
+  resolveStateTaxConfiguration,
+  type ResolvedTaxConfiguration
+} from './TaxEngine';
 import { EconomicScenario, EconomicYear } from './EconomicScenarioEngine';
 
 import { RMD_FACTORS } from '../data/rmdFactors';
@@ -38,14 +44,24 @@ import type { IrmaaConfiguration, IrmaaFilingStatus } from '../data/irmaaTables'
 const WITHDRAWAL_TOLERANCE = 0.01;
 const MAX_SOLVER_ITERATIONS = 100;
 
-interface RetirementCalculationContext {
-  federalTaxConfig: FederalTaxConfig;
-  stateTaxConfig: StateTaxConfig;
+export interface RetirementCalculationContext {
+  federalTaxConfigurations: readonly FederalTaxConfig[];
+  stateTaxConfigurations: readonly StateTaxConfig[];
   economicScenario: EconomicScenario;
   irmaaConfigurations?: readonly IrmaaConfiguration[];
 }
 
-function toIrmaaFilingStatus(filingStatus: FederalTaxConfig['filingStatus']): IrmaaFilingStatus {
+interface AnnualTaxCalculationContext {
+  federalTaxConfig: FederalTaxConfig;
+  stateTaxConfig: StateTaxConfig;
+}
+
+export interface ResolvedProjectionTaxConfigurations {
+  federal: ResolvedTaxConfiguration<FederalTaxConfig>;
+  state: ResolvedTaxConfiguration<StateTaxConfig>;
+}
+
+function toIrmaaFilingStatus(filingStatus: PlannerInputs['filingStatus']): IrmaaFilingStatus {
   if (filingStatus === 'marriedFilingJointly') return 'marriedJoint';
   if (filingStatus === 'marriedFilingSeparately') return 'marriedSeparate';
   return 'single';
@@ -97,7 +113,7 @@ function evaluateTraditionalWithdrawal(
   requestedRothConversion: number,
   spending: number,
   socialSecurity: number,
-  context: RetirementCalculationContext
+  context: AnnualTaxCalculationContext
 ): WithdrawalEvaluation {
   const tradCashWithdraw = Math.min(availableTradIra, Math.max(0, proposedCashWithdrawal));
   const rothConv = Math.min(requestedRothConversion, Math.max(0, availableTradIra - tradCashWithdraw));
@@ -153,7 +169,7 @@ function solveTraditionalWithdrawal(
   rmd: number,
   spending: number,
   socialSecurity: number,
-  context: RetirementCalculationContext
+  context: AnnualTaxCalculationContext
 ): WithdrawalSolution {
   const minimumWithdrawal = Math.min(availableTradIra, Math.max(0, rmd));
   const maximumWithdrawal = availableTradIra;
@@ -235,13 +251,16 @@ function solveTraditionalWithdrawal(
   };
 }
 
-function getAnnualRothConversion(inputs: PlannerInputs, scenario: RetirementScenario): number {
-  switch (scenario.rothConvType) {
-    case RothConversionType.Base:
-      return inputs.rothBaseConv;
+function getAnnualRothConversion(inputs: PlannerInputs, scenario: RetirementScenario, age: number): number {
+  const scheduledConversion = scenario.rothConversionSchedule?.[age];
 
-    case RothConversionType.Aggressive:
-      return inputs.rothAggressiveConv;
+  if (scheduledConversion !== undefined) {
+    return Math.max(0, scheduledConversion);
+  }
+
+  switch (scenario.rothConvType) {
+    case RothConversionType.Fixed:
+      return inputs.annualRothConversion;
 
     default:
       return 0;
@@ -279,8 +298,7 @@ function validateProjectionInputs(inputs: PlannerInputs): void {
   requireNonnegativeFinite(inputs.rothIra, 'Roth IRA balance');
   requireNonnegativeFinite(inputs.taxableAcct, 'Taxable account balance');
   requireNonnegativeFinite(inputs.annualSpend, 'Annual spending');
-  requireNonnegativeFinite(inputs.rothBaseConv, 'Annual base Roth conversion');
-  requireNonnegativeFinite(inputs.rothAggressiveConv, 'Annual aggressive Roth conversion');
+  requireNonnegativeFinite(inputs.annualRothConversion, 'Annual fixed Roth conversion');
   if (inputs.medicareModel === MedicareModelType.Custom) {
     requireNonnegativeFinite(inputs.monthlyPartDOtherPremium, 'Monthly Part D or other coverage premium');
     requireNonnegativeFinite(inputs.annualOutOfPocketHealthcare, 'Annual out-of-pocket healthcare');
@@ -338,7 +356,7 @@ function annualToHalfYearReturn(annualReturn: number): number {
   return Math.sqrt(1 + annualReturn) - 1;
 }
 
-function calculateIrmaaInflationFactor(
+function calculateProjectionInflationFactor(
   configurationYear: number,
   premiumYear: number,
   projectionStartYear: number,
@@ -365,6 +383,45 @@ function calculateIrmaaInflationFactor(
   return factor;
 }
 
+/**
+ * Resolves the tax tables used for a single projection year.
+ *
+ * An exact table for the requested year wins. Otherwise, monetary thresholds,
+ * deductions, credits, and exclusions from the nearest usable source table are
+ * adjusted by the modeled inflation path.
+ */
+export function resolveProjectionTaxConfigurations(
+  inputs: PlannerInputs,
+  projectionYear: number,
+  context: RetirementCalculationContext,
+  projectionStartYear = getProjectionPeriod(inputs.birthDate, inputs.startAge, inputs.endAge).startYear
+): ResolvedProjectionTaxConfigurations {
+  const inflationFactorForSourceYear = (sourceYear: number) =>
+    calculateProjectionInflationFactor(
+      sourceYear,
+      projectionYear,
+      projectionStartYear,
+      context.economicScenario,
+      inputs.inflation
+    );
+
+  return {
+    federal: resolveFederalTaxConfiguration(
+      context.federalTaxConfigurations,
+      inputs.filingStatus,
+      projectionYear,
+      inflationFactorForSourceYear
+    ),
+    state: resolveStateTaxConfiguration(
+      context.stateTaxConfigurations,
+      inputs.residenceState,
+      inputs.filingStatus,
+      projectionYear,
+      inflationFactorForSourceYear
+    )
+  };
+}
+
 export function calculateRetirementProjection(
   inputs: PlannerInputs,
   ssIncome: SSMonthlyIncome[],
@@ -384,7 +441,6 @@ export function calculateRetirementProjection(
   const startYear = period.startYear;
   const projectionYears = period.yearCount;
   const rmdStartAge = getDefaultRmdStartAge(inputs.birthDate);
-  const configuredAnnualRothConv = getAnnualRothConversion(inputs, retirementScenario);
   const years: RetirementYear[] = [];
 
   let tradIra = inputs.tradIra;
@@ -482,7 +538,7 @@ export function calculateRetirementProjection(
   const annualOutOfPocketHealthcare = usesSimpleMedicareModel ? 0 : inputs.annualOutOfPocketHealthcare;
   const irmaaMagiTwoYearsPrior = usesSimpleMedicareModel ? 0 : inputs.irmaaMagiTwoYearsPrior;
   const irmaaMagiOneYearPrior = usesSimpleMedicareModel ? 0 : inputs.irmaaMagiOneYearPrior;
-  const irmaaFilingStatus = toIrmaaFilingStatus(context.federalTaxConfig.filingStatus);
+  const irmaaFilingStatus = toIrmaaFilingStatus(inputs.filingStatus);
 
   // Update benefits inside the annual loop
   for (let age = inputs.startAge; age <= inputs.endAge; age++) {
@@ -503,6 +559,17 @@ export function calculateRetirementProjection(
       );
     }
 
+    const resolvedTaxConfigurations = resolveProjectionTaxConfigurations(
+      inputs,
+      year,
+      context,
+      startYear
+    );
+    const annualTaxContext: AnnualTaxCalculationContext = {
+      federalTaxConfig: resolvedTaxConfigurations.federal.configuration,
+      stateTaxConfig: resolvedTaxConfigurations.state.configuration
+    };
+
     if (yearIndex > 0) {
       const annualInflationFactor = 1 + economicYear.inflation;
       annualSpending *= annualInflationFactor;
@@ -516,7 +583,7 @@ export function calculateRetirementProjection(
           ? irmaaMagiOneYearPrior
           : irmaaMagiTwoYearsPrior;
     const resolvedIrmaa = resolveIrmaaConfiguration(year, irmaaFilingStatus, context.irmaaConfigurations);
-    const irmaaInflationFactor = calculateIrmaaInflationFactor(
+    const irmaaInflationFactor = calculateProjectionInflationFactor(
       resolvedIrmaa.configuration.premiumYear,
       year,
       startYear,
@@ -586,7 +653,12 @@ export function calculateRetirementProjection(
      * Conversions and withdrawals occur at midyear.
      */
     const requestedRothConversion =
-      age < inputs.stopConvAge ? Math.min(configuredAnnualRothConv, Math.max(0, tradIraAtMidyear - rmd)) : 0;
+      age < inputs.stopConvAge
+        ? Math.min(
+            getAnnualRothConversion(inputs, retirementScenario, age),
+            Math.max(0, tradIraAtMidyear - rmd)
+          )
+        : 0;
 
     const withdrawalSolution = solveTraditionalWithdrawal(
       age,
@@ -595,7 +667,7 @@ export function calculateRetirementProjection(
       rmd,
       spending,
       socialSecurity,
-      context
+      annualTaxContext
     );
 
     const {
@@ -659,7 +731,7 @@ export function calculateRetirementProjection(
       age,
       tradCashWithdraw,
       socialSecurity,
-      context.federalTaxConfig
+      annualTaxContext.federalTaxConfig
     ).agi;
     const lookbackMagiWithoutRothConversion =
       yearIndex >= 2 ? years[yearIndex - 2].irmaaMagiWithoutRothConversion : irmaaLookbackMagi;
@@ -705,14 +777,16 @@ export function calculateRetirementProjection(
       federalAgi,
       federalTaxableIncome,
       federalTax,
+      federalTaxConfigurationYear: resolvedTaxConfigurations.federal.sourceYear,
+      federalTaxIsEstimated: resolvedTaxConfigurations.federal.isEstimated,
       stateTaxableIncome,
       stateTax,
-      stateCode: context.stateTaxConfig.stateCode,
+      stateCode: annualTaxContext.stateTaxConfig.stateCode,
       stateTaxableSocialSecurity,
       stateRetirementIncomeExclusion,
       statePersonalCredit,
-      stateTaxConfigurationYear: context.stateTaxConfig.year,
-      stateTaxIsEstimated: context.stateTaxConfig.estimated,
+      stateTaxConfigurationYear: resolvedTaxConfigurations.state.sourceYear,
+      stateTaxIsEstimated: resolvedTaxConfigurations.state.isEstimated,
       totalTax,
       irmaaMagi,
       irmaaMagiWithoutRothConversion,

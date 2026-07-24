@@ -5,14 +5,15 @@ import { CollapsiblePanel } from '../shared/CollapsiblePanel';
 import { RothConversionType, type RetirementYear, type RetirementScenario } from '../../models/RetirementTypes';
 
 export function ScenarioChart({ rows, scenario }: { rows: RetirementYear[]; scenario: RetirementScenario }) {
-  let title = scenario.claimAge === null ? 'Actual Social Security' : `Social Security at ${scenario.claimAge}`;
-  title +=
+  let subtitle = scenario.claimAge === null ? 'Actual Social Security' : `Social Security at ${scenario.claimAge}`;
+  subtitle +=
     ' · ' +
-    (scenario.rothConvType === RothConversionType.None
-      ? 'No'
-      : scenario.rothConvType === RothConversionType.Base
-        ? 'Base'
-        : 'Aggressive') +
+    (scenario.rothConversionLabel ??
+      (scenario.rothConvType === RothConversionType.None
+        ? 'No'
+        : scenario.rothConvType === RothConversionType.Fixed
+          ? 'Fixed'
+          : 'Optimized')) +
     ' Roth Conversion';
 
   const data = rows.map((row) => ({
@@ -24,17 +25,12 @@ export function ScenarioChart({ rows, scenario }: { rows: RetirementYear[]; scen
     'Total Inflation-Adjusted Dollars': Math.round(row.endPortfolioCurrentDollars)
   }));
 
-  const customOrder = [
-    'Traditional',
-    'Roth',
-    'Savings',
-    'Total Future Dollars',
-    'Total Inflation-Adjusted Dollars'
-  ];
+  const customOrder = ['Traditional', 'Roth', 'Savings', 'Total Future Dollars', 'Total Inflation-Adjusted Dollars'];
 
   return (
     <CollapsiblePanel
-      title={title}
+      title="Portfolio Projection"
+      subtitle={subtitle}
       icon={<TrendingUp />}
       info={`
         <h3>Portfolio Projection</h3>

@@ -9,11 +9,20 @@ import type {
   TaxBracket
 } from '../models/TaxTypes';
 
+export interface ResolvedTaxConfiguration<T extends JurisdictionTaxConfig> {
+  configuration: T;
+  sourceYear: number;
+  projectionYear: number;
+  isEstimated: boolean;
+}
+
 export function selectTaxConfiguration<T extends JurisdictionTaxConfig>(
   configurations: readonly T[],
   filingStatus: FilingStatus
 ): T {
-  const configuration = configurations.find((item) => item.filingStatus === filingStatus);
+  const configuration = configurations
+    .filter((item) => item.filingStatus === filingStatus)
+    .sort((left, right) => right.year - left.year)[0];
   if (!configuration) throw new Error(`Missing ${filingStatus} tax configuration.`);
   return configuration;
 }
@@ -23,11 +32,163 @@ export function selectStateTaxConfiguration(
   stateCode: StateCode,
   filingStatus: FilingStatus
 ): StateTaxConfig {
-  const configuration = configurations.find(
-    (item) => item.stateCode === stateCode && item.filingStatus === filingStatus
-  );
+  const configuration = configurations
+    .filter((item) => item.stateCode === stateCode && item.filingStatus === filingStatus)
+    .sort((left, right) => right.year - left.year)[0];
   if (!configuration) throw new Error(`Missing ${stateCode} ${filingStatus} tax configuration.`);
   return configuration;
+}
+
+function selectConfigurationForProjectionYear<T extends JurisdictionTaxConfig>(
+  configurations: readonly T[],
+  projectionYear: number,
+  missingConfigurationMessage: string
+): T {
+  const ordered = [...configurations].sort((left, right) => left.year - right.year);
+  const exact = ordered.find((configuration) => configuration.year === projectionYear);
+  const latestPrior = ordered.filter((configuration) => configuration.year < projectionYear).at(-1);
+  const source = exact ?? latestPrior ?? ordered[0];
+
+  if (!source) throw new Error(missingConfigurationMessage);
+  return source;
+}
+
+function requireInflationFactor(value: number): number {
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error('Tax-table inflation factor must be a positive finite number.');
+  }
+  return value;
+}
+
+function projectTaxBrackets(brackets: readonly TaxBracket[], inflationFactor: number): TaxBracket[] {
+  return brackets.map((bracket) => ({
+    ...bracket,
+    lowerBound: bracket.lowerBound * inflationFactor,
+    upperBound: bracket.upperBound === null ? null : bracket.upperBound * inflationFactor
+  }));
+}
+
+function projectDeductions(deductions: DeductionConfig, inflationFactor: number): DeductionConfig {
+  return {
+    standardDeduction: deductions.standardDeduction * inflationFactor,
+    additionalDeduction65: deductions.additionalDeduction65 * inflationFactor
+  };
+}
+
+function projectFederalTaxConfiguration(
+  source: FederalTaxConfig,
+  projectionYear: number,
+  inflationFactor: number
+): FederalTaxConfig {
+  return {
+    ...source,
+    year: projectionYear,
+    brackets: projectTaxBrackets(source.brackets, inflationFactor),
+    deductions: projectDeductions(source.deductions, inflationFactor),
+    // Federal Social Security provisional-income thresholds are statutory
+    // fixed-dollar amounts and are not inflation indexed.
+    socialSecurity: source.socialSecurity
+  };
+}
+
+function projectStateTaxConfiguration(
+  source: StateTaxConfig,
+  projectionYear: number,
+  inflationFactor: number
+): StateTaxConfig {
+  return {
+    ...source,
+    year: projectionYear,
+    brackets: projectTaxBrackets(source.brackets, inflationFactor),
+    deductions: projectDeductions(source.deductions, inflationFactor),
+    socialSecurityExemptionIncomeLimit:
+      source.socialSecurityExemptionIncomeLimit === undefined
+        ? undefined
+        : source.socialSecurityExemptionIncomeLimit * inflationFactor,
+    personalExemption: source.personalExemption * inflationFactor,
+    personalCredit: source.personalCredit * inflationFactor,
+    retirementIncomeExclusions: source.retirementIncomeExclusions.map((exclusion) => ({
+      ...exclusion,
+      maximumAmount:
+        exclusion.maximumAmount === null ? null : exclusion.maximumAmount * inflationFactor,
+      incomeLimit:
+        exclusion.incomeLimit === undefined ? undefined : exclusion.incomeLimit * inflationFactor,
+      phaseoutStart:
+        exclusion.phaseoutStart === undefined ? undefined : exclusion.phaseoutStart * inflationFactor
+    }))
+  };
+}
+
+/**
+ * Resolves the federal table for one projection year.
+ *
+ * Exact-year tables are used unchanged. If one is not available, the most
+ * recent prior table (or the earliest future table for an earlier projection)
+ * is inflation-adjusted to the projection year.
+ */
+export function resolveFederalTaxConfiguration(
+  configurations: readonly FederalTaxConfig[],
+  filingStatus: FilingStatus,
+  projectionYear: number,
+  inflationFactorForSourceYear: (sourceYear: number) => number
+): ResolvedTaxConfiguration<FederalTaxConfig> {
+  const matching = configurations.filter(
+    (configuration) => configuration.filingStatus === filingStatus
+  );
+  const source = selectConfigurationForProjectionYear(
+    matching,
+    projectionYear,
+    `Missing ${filingStatus} federal tax configuration.`
+  );
+  const isEstimated = source.year !== projectionYear;
+  const inflationFactor = isEstimated
+    ? requireInflationFactor(inflationFactorForSourceYear(source.year))
+    : 1;
+
+  return {
+    configuration: isEstimated
+      ? projectFederalTaxConfiguration(source, projectionYear, inflationFactor)
+      : source,
+    sourceYear: source.year,
+    projectionYear,
+    isEstimated
+  };
+}
+
+/**
+ * Resolves the state table for one projection year using the same exact-year
+ * then inflation-adjusted fallback contract as the federal resolver.
+ */
+export function resolveStateTaxConfiguration(
+  configurations: readonly StateTaxConfig[],
+  stateCode: StateCode,
+  filingStatus: FilingStatus,
+  projectionYear: number,
+  inflationFactorForSourceYear: (sourceYear: number) => number
+): ResolvedTaxConfiguration<StateTaxConfig> {
+  const matching = configurations.filter(
+    (configuration) =>
+      configuration.stateCode === stateCode &&
+      configuration.filingStatus === filingStatus
+  );
+  const source = selectConfigurationForProjectionYear(
+    matching,
+    projectionYear,
+    `Missing ${stateCode} ${filingStatus} state tax configuration.`
+  );
+  const usesProjectedYear = source.year !== projectionYear;
+  const inflationFactor = usesProjectedYear
+    ? requireInflationFactor(inflationFactorForSourceYear(source.year))
+    : 1;
+
+  return {
+    configuration: usesProjectedYear
+      ? projectStateTaxConfiguration(source, projectionYear, inflationFactor)
+      : source,
+    sourceYear: source.year,
+    projectionYear,
+    isEstimated: usesProjectedYear || source.estimated
+  };
 }
 
 export function calculateProgressiveTax(taxableIncome: number, brackets: TaxBracket[]): number {

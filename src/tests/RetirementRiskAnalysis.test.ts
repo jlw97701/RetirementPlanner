@@ -18,7 +18,6 @@ import {
   resolveRiskMarketAssumption,
   runRetirementRiskAnalysis
 } from '../services/RetirementRiskAnalysisService';
-import { selectStateTaxConfiguration, selectTaxConfiguration } from '../services/TaxEngine';
 
 describe('retirement risk analysis', () => {
   it('calculates linearly interpolated percentiles', () => {
@@ -91,12 +90,8 @@ describe('retirement risk analysis', () => {
       colaSettings: DEFAULT_COLA_SETTINGS,
       assetAllocation: DEFAULT_ASSET_ALLOCATION,
       retirementScenarios,
-      federalTaxConfig: selectTaxConfiguration(DEFAULT_TAX_CONFIG.federal, DEFAULT_INPUTS.filingStatus),
-      stateTaxConfig: selectStateTaxConfiguration(
-        DEFAULT_TAX_CONFIG.state,
-        DEFAULT_INPUTS.residenceState,
-        DEFAULT_INPUTS.filingStatus
-      ),
+      federalTaxConfigurations: DEFAULT_TAX_CONFIG.federal,
+      stateTaxConfigurations: DEFAULT_TAX_CONFIG.state,
       irmaaConfigurations: IRMAA_CONFIGURATIONS
     };
     const belowAverage = await runRetirementRiskAnalysis({
@@ -149,12 +144,8 @@ describe('retirement risk analysis', () => {
           seed: 24680
         }
       },
-      federalTaxConfig: selectTaxConfiguration(DEFAULT_TAX_CONFIG.federal, DEFAULT_INPUTS.filingStatus),
-      stateTaxConfig: selectStateTaxConfiguration(
-        DEFAULT_TAX_CONFIG.state,
-        DEFAULT_INPUTS.residenceState,
-        DEFAULT_INPUTS.filingStatus
-      ),
+      federalTaxConfigurations: DEFAULT_TAX_CONFIG.federal,
+      stateTaxConfigurations: DEFAULT_TAX_CONFIG.state,
       irmaaConfigurations: IRMAA_CONFIGURATIONS
     };
 
@@ -195,12 +186,8 @@ describe('retirement risk analysis', () => {
         ...DEFAULT_ECONOMIC_SCENARIO_SETTINGS,
         monteCarlo: { ...DEFAULT_ECONOMIC_SCENARIO_SETTINGS.monteCarlo, simulations: 1 }
       },
-      federalTaxConfig: selectTaxConfiguration(DEFAULT_TAX_CONFIG.federal, DEFAULT_INPUTS.filingStatus),
-      stateTaxConfig: selectStateTaxConfiguration(
-        DEFAULT_TAX_CONFIG.state,
-        DEFAULT_INPUTS.residenceState,
-        DEFAULT_INPUTS.filingStatus
-      ),
+      federalTaxConfigurations: DEFAULT_TAX_CONFIG.federal,
+      stateTaxConfigurations: DEFAULT_TAX_CONFIG.state,
       irmaaConfigurations: IRMAA_CONFIGURATIONS
     });
 

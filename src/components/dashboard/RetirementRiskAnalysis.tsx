@@ -4,6 +4,7 @@ import { Info, LoaderCircle, RefreshCw, ShieldCheck } from 'lucide-react';
 import { RothConversionType } from '../../models/RetirementTypes';
 import type { PlannerInputs } from '../../models/RetirementTypes';
 import { Popover } from '../shared/Popover';
+import { CollapsiblePanel } from '../shared/CollapsiblePanel';
 
 import { formatMoney } from '../../utils/format';
 
@@ -93,13 +94,15 @@ const riskChartInfo = `
 
 function scenarioLabel(scenario: RetirementRiskScenarioResult): string {
   const socialSecurity = scenario.claimAge === null ? 'Already Claimed' : `Claim at ${scenario.claimAge}`;
-  return `${socialSecurity} · ${rothConversionLabel(scenario.rothConvType)} Roth Conversion`;
+  return `${socialSecurity} · ${
+    scenario.rothConversionLabel ?? rothConversionLabel(scenario.rothConvType)
+  } Roth Conversion`;
 }
 
 function rothConversionLabel(type: RothConversionType): string {
   if (type === RothConversionType.None) return 'No';
-  if (type === RothConversionType.Base) return 'Base';
-  return 'Aggressive';
+  if (type === RothConversionType.Fixed) return 'Fixed';
+  return 'Optimized';
 }
 
 function formatPercent(value: number): string {
@@ -257,16 +260,9 @@ export function RetirementRiskAnalysis({
   const horizonResult = selectedResult?.portfolioPercentiles.find((point) => point.age === inputs.horizonAge);
 
   return (
-    <section className="panel risk-analysis-panel">
+    <CollapsiblePanel title="Retirement Risk Analysis" icon={<ShieldCheck />} info={riskAnalysisInfo}>
       <div className="risk-analysis-heading">
         <div>
-          <div className="risk-analysis-title">
-            <h2>
-              <ShieldCheck />
-              Retirement Risk Analysis
-            </h2>
-            <Popover trigger={<Info />} html={riskAnalysisInfo} placement="bottom-start" />
-          </div>
           <p className="risk-analysis-description">
             Optionally test every retirement strategy across the same {formatCount(simulations)} seeded market and
             inflation paths.
@@ -276,16 +272,18 @@ export function RetirementRiskAnalysis({
             {formatNaturalPercent(marketAssumption.targetPortfolioReturn)}
           </p>
         </div>
+      </div>
+
+      <div className="risk-analysis-run">
+        <p className="risk-analysis-disclaimer">
+          This is sensitivity analysis, not a forecast. A path is fully funded only when all modeled spending is met
+          through the ending age. Results depend on the planner inputs and simulated-path assumptions.
+        </p>
         <button className="risk-analysis-button" type="button" disabled={status === 'running'} onClick={startAnalysis}>
           {status === 'running' ? <LoaderCircle className="spinning" /> : result ? <RefreshCw /> : <ShieldCheck />}
           {status === 'running' ? 'Running Risk Analysis' : result ? 'Run Again' : 'Run Retirement Risk Analysis'}
         </button>
       </div>
-
-      <p className="risk-analysis-disclaimer">
-        This is sensitivity analysis, not a forecast. A path is fully funded only when all modeled spending is met
-        through the ending age. Results depend on the planner inputs and simulated-path assumptions.
-      </p>
 
       {status === 'running' && (
         <div className="risk-analysis-progress" aria-live="polite">
@@ -438,11 +436,12 @@ export function RetirementRiskAnalysis({
                     onClick={() => onSelect(scenario.scenarioId)}>
                     <td>{scenario.claimAge ?? 'Already Claimed'}</td>
                     <td>
-                      {scenario.rothConvType === RothConversionType.None
-                        ? 'None'
-                        : scenario.rothConvType === RothConversionType.Base
-                          ? 'Base'
-                          : 'Aggressive'}
+                      {scenario.rothConversionLabel ??
+                        (scenario.rothConvType === RothConversionType.None
+                          ? 'None'
+                          : scenario.rothConvType === RothConversionType.Fixed
+                            ? 'Fixed'
+                            : 'Optimized')}
                     </td>
                     <td>{formatPercent(scenario.horizonFullyFundedRate)}</td>
                     <td>{formatPercent(scenario.fullyFundedRate)}</td>
@@ -460,6 +459,6 @@ export function RetirementRiskAnalysis({
           </div>
         </>
       )}
-    </section>
+    </CollapsiblePanel>
   );
 }

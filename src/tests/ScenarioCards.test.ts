@@ -9,7 +9,7 @@ function summary({
   return {
     scenarioId,
     claimAge: 67,
-    rothConvType: RothConversionType.Base,
+    rothConvType: RothConversionType.Fixed,
     firstAnnualSS: 30_000,
     horizonPortfolioAge: 0,
     endPortfolioAge: 0,
@@ -100,5 +100,36 @@ describe('scenario highlights', () => {
     });
 
     expect(selectScenarioHighlights([onlyScenario])).toEqual([{ reason: 'Baseline', summary: onlyScenario }]);
+  });
+
+  it('includes the strongest applied Optimized Roth schedule after the baseline', () => {
+    const baseline = summary({
+      scenarioId: 'baseline',
+      claimAge: 62,
+      rothConvType: RothConversionType.None,
+      endPortfolioCurrentDollars: 100,
+      depletionAge: 85
+    });
+    const earlierDepletion = summary({
+      scenarioId: 'optimized-earlier-depletion',
+      rothConvType: RothConversionType.Optimized,
+      endPortfolioCurrentDollars: 1_000,
+      depletionAge: 90
+    });
+    const fullyFunded = summary({
+      scenarioId: 'optimized-fully-funded',
+      rothConvType: RothConversionType.Optimized,
+      endPortfolioCurrentDollars: 500,
+      depletionAge: null
+    });
+
+    const highlights = selectScenarioHighlights([baseline, earlierDepletion, fullyFunded]);
+
+    expect(highlights[0]).toEqual({ reason: 'Baseline', summary: baseline });
+    expect(highlights[1]).toEqual({
+      reason: 'Optimized Roth Schedule',
+      summary: fullyFunded
+    });
+    expect(highlights).toHaveLength(3);
   });
 });

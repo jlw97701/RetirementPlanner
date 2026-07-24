@@ -61,7 +61,7 @@ interface InputsInterface {
   setEconomicScenarioSettings: (v: EconomicScenarioSettings) => void;
 }
 
-export function PlannerInputsPanel({
+export function PlannerInputs({
   inputs,
   setInputs,
   ssIncome,
@@ -73,8 +73,8 @@ export function PlannerInputsPanel({
   economicScenarioSettings,
   setEconomicScenarioSettings
 }: InputsInterface) {
-  //console.log('PlannerInputsPanel: inputs = ', inputs);
-  //console.log('PlannerInputsPanel: income = ', income);
+  //console.log('PlannerInputs: inputs = ', inputs);
+  //console.log('PlannerInputs: income = ', income);
 
   const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
 
@@ -422,18 +422,11 @@ export function PlannerInputsPanel({
             onChange={(v) => setInputs({ ...inputs, annualSpend: v })}
           />
           <NumberInput
-            label="Annual Base Roth Conversion"
-            value={inputs.rothBaseConv}
+            label="Annual Fixed Roth Conversion"
+            value={inputs.annualRothConversion}
             min={0}
             step={1000}
-            onChange={(v) => setInputs({ ...inputs, rothBaseConv: v })}
-          />
-          <NumberInput
-            label="Annual Aggressive Conversion"
-            value={inputs.rothAggressiveConv}
-            min={0}
-            step={1000}
-            onChange={(v) => setInputs({ ...inputs, rothAggressiveConv: v })}
+            onChange={(v) => setInputs({ ...inputs, annualRothConversion: v })}
           />
           <NumberInput
             label="Inflation"

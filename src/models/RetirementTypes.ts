@@ -2,8 +2,8 @@ import type { FilingStatus, StateCode } from './TaxTypes';
 
 export enum RothConversionType {
   None,
-  Base,
-  Aggressive
+  Fixed,
+  Optimized
 }
 
 export enum ColaStrategyType {
@@ -44,8 +44,7 @@ export interface PlannerInputs {
   medicareStartAge: number;
   monthlyPartDOtherPremium: number;
   annualOutOfPocketHealthcare: number;
-  rothBaseConv: number;
-  rothAggressiveConv: number;
+  annualRothConversion: number;
   inflation: number;
   irmaaMagiTwoYearsPrior: number;
   irmaaMagiOneYearPrior: number;
@@ -81,6 +80,15 @@ export interface RetirementScenario {
   id: string;
   claimAge: SSClaimAge | null; // Null means the user is already receiving an actual benefit
   rothConvType: RothConversionType;
+  rothConversionLabel?: string;
+  optimizerSourceKey?: string;
+  /**
+   * Optional requested Roth-conversion amounts by attained age.
+   * When present, the schedule takes precedence over the Fixed amount.
+   * The engine can still reduce a requested amount to preserve the RMD,
+   * fund spending and taxes, and stay within the Traditional IRA balance.
+   */
+  rothConversionSchedule?: Readonly<Record<number, number>>;
 }
 
 export interface RetirementYear {
@@ -113,6 +121,8 @@ export interface RetirementYear {
   federalAgi: number;
   federalTaxableIncome: number;
   federalTax: number;
+  federalTaxConfigurationYear: number;
+  federalTaxIsEstimated: boolean;
   stateTaxableIncome: number;
   stateTax: number;
   stateCode: StateCode;
@@ -150,6 +160,7 @@ export interface ScenarioSummary {
   scenarioId: string;
   claimAge: SSClaimAge | null;
   rothConvType: RothConversionType;
+  rothConversionLabel?: string;
   firstAnnualSS: number;
 
   //Existing fields are nominal future dollars

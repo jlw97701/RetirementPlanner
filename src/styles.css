@@ -38,7 +38,7 @@ h1 {
   margin: 0;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 header p {
@@ -178,8 +178,7 @@ header p {
 }
 
 .tax-editor-heading,
-.irmaa-editor-heading,
-.risk-analysis-title {
+.irmaa-editor-heading {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -332,7 +331,7 @@ header p {
   box-shadow: 0 8px 24px rgba(25, 55, 88, 0.08);
   h2 {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     align-items: center;
     margin: 0 0 10px 0;
   }
@@ -593,6 +592,15 @@ header p {
   }
 }
 
+.optimizer-run,
+.risk-analysis-run {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  margin: 10px 0 0 0;
+}
+
 .risk-analysis-button {
   display: inline-flex;
   flex: 0 0 auto;
@@ -606,20 +614,17 @@ header p {
   background: #2563eb;
   color: white;
   cursor: pointer;
-}
-
-.risk-analysis-button:disabled {
-  cursor: wait;
-  opacity: 0.72;
-}
-
-.risk-analysis-button svg {
-  width: 18px;
-  height: 18px;
-}
-
-.risk-analysis-button .spinning {
-  animation: risk-analysis-spin 900ms linear infinite;
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+  .spinning {
+    animation: risk-analysis-spin 900ms linear infinite;
+  }
+  &:disabled {
+    cursor: wait;
+    opacity: 0.72;
+  }
 }
 
 .risk-market-assumption {
@@ -629,8 +634,8 @@ header p {
   line-height: 1.4;
 }
 
+.optimizer-disclaimer,
 .risk-analysis-disclaimer {
-  margin: 14px 0 0;
   padding: 10px 12px;
   border-left: 4px solid #3182bd;
   border-radius: 0 8px 8px 0;
@@ -756,6 +761,178 @@ header p {
   margin-top: 12px;
 }
 
+.optimizer-description {
+  margin: 0 0 14px;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.optimizer-settings {
+  width: fit-content;
+  padding: 14px;
+  border: 1px solid #dce5f0;
+  border-radius: 12px;
+  background: #f8fafc;
+  font-size: 15px;
+  .dropdown-container {
+    .dropdown-label {
+      grid-template-columns: 1fr 260px;
+      gap: 15px;
+      margin: 0;
+    }
+    .dropdown-menu {
+      width: 260px;
+    }
+  }
+}
+
+.optimizer-run-button {
+  min-width: 250px;
+}
+
+.optimizer-recommendation {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.optimizer-recommendation > div {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #dce5f0;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.optimizer-recommendation span {
+  color: #526174;
+  font-size: 12px;
+}
+
+.optimizer-recommendation strong {
+  font-size: 17px;
+  overflow-wrap: anywhere;
+}
+
+.optimizer-recommendation .positive {
+  color: #108533;
+}
+
+.optimizer-recommendation .negative {
+  color: #b42318;
+}
+
+.optimizer-result-summary,
+.optimizer-empty-schedule {
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  border-left: 4px solid #3182bd;
+  border-radius: 0 8px 8px 0;
+  background: #eff6ff;
+  color: #334155;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.optimizer-result-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.optimizer-result-actions p {
+  margin: 0;
+  color: #526174;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.apply-optimized-schedule-button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #108533;
+  border-radius: 10px;
+  padding: 10px 14px;
+  background: #108533;
+  color: white;
+  cursor: pointer;
+}
+
+.apply-optimized-schedule-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.apply-optimized-schedule-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.optimizer-results-table,
+.optimizer-schedule-table {
+  margin-top: 12px;
+}
+
+.optimizer-schedule-heading {
+  margin-top: 20px;
+}
+
+.optimizer-schedule-heading h3,
+.optimizer-schedule-heading p,
+.optimizer-risk-validation h3,
+.optimizer-risk-validation p {
+  margin: 0;
+}
+
+.optimizer-schedule-heading p,
+.optimizer-risk-validation p {
+  margin-top: 4px;
+  color: #526174;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.optimizer-risk-validation {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.optimizer-risk-result {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid #dce5f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.optimizer-risk-result svg {
+  flex: 0 0 auto;
+  margin-top: 3px;
+}
+
+.optimizer-risk-result p {
+  margin: 0;
+}
+
 @keyframes risk-analysis-spin {
   to {
     transform: rotate(360deg);
@@ -764,6 +941,10 @@ header p {
 
 @media (max-width: 900px) {
   .risk-metrics {
+    grid-template-columns: repeat(2, minmax(130px, 1fr));
+  }
+
+  .optimizer-recommendation {
     grid-template-columns: repeat(2, minmax(130px, 1fr));
   }
 }
@@ -779,6 +960,32 @@ header p {
 
   .risk-metrics {
     grid-template-columns: 1fr;
+  }
+
+  .optimizer-settings,
+  .optimizer-recommendation {
+    grid-template-columns: 1fr;
+  }
+
+  .optimizer-run-button {
+    width: 100%;
+  }
+
+  .optimizer-risk-validation {
+    flex-direction: column;
+  }
+
+  .optimizer-result-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .apply-optimized-schedule-button {
+    width: 100%;
+  }
+
+  .optimizer-risk-validation .risk-analysis-button {
+    width: 100%;
   }
 }
 
@@ -811,7 +1018,7 @@ tr:hover td {
 }
 
 .table-container {
-  max-height: 395px;
+  max-height: 385px;
   overflow-y: auto;
   .sticky-table {
     th {
@@ -847,7 +1054,7 @@ tr:hover td {
 .accordion-group {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   .accordion-panel {
     .collapsible h2 {
       font-size: 20px;
@@ -871,6 +1078,13 @@ tr:hover td {
     display: flex;
     gap: 5px;
     cursor: pointer;
+    .collapsible-subtitle {
+      position: relative;
+      top: -4px;
+      margin: 15px;
+      font-size: 18px;
+      font-weight: 600;
+    }
     .collapsible-button {
       flex: auto;
       text-align: end;
@@ -934,7 +1148,7 @@ tr:hover td {
   .dropdown-label {
     display: grid;
     grid-template-columns: 1fr 145px;
-    gap: 10px;
+    gap: 15px;
     align-items: center;
     margin: 10px 0;
   }
@@ -985,7 +1199,7 @@ tr:hover td {
     }
 
     .dropdown-item.selected {
-      background-color: #f0f0f0;
+      background-color: #eaf2fb;
       font-weight: bold;
     }
   }

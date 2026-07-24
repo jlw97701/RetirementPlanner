@@ -27,8 +27,7 @@ describe('calculateRetirementProjection', () => {
       rothIra: 5_000,
       taxableAcct: 10_000,
       annualSpend: 3_000,
-      rothBaseConv: 0,
-      rothAggressiveConv: 0,
+      annualRothConversion: 0,
       inflation: 0,
 
       // Apply test-specific values last.
@@ -100,10 +99,8 @@ describe('calculateRetirementProjection', () => {
       assetAllocation,
       retirementScenario,
       {
-        federalTaxConfig: DEFAULT_TAX_CONFIG.federal[0],
-        stateTaxConfig: DEFAULT_TAX_CONFIG.state.find(
-          (configuration) => configuration.stateCode === 'OR' && configuration.filingStatus === 'single'
-        )!,
+        federalTaxConfigurations: DEFAULT_TAX_CONFIG.federal,
+        stateTaxConfigurations: DEFAULT_TAX_CONFIG.state,
         economicScenario
       }
     );
