@@ -225,10 +225,10 @@ export function RothConversionOptimizer({
     }
 
     if (!fixedCandidate.withinSelectedLimits) {
-      return `For ${selectedPlan}, the optimizer estimates that making no Roth conversions produces the best result. The Fixed strategy would convert ${formatMoney(fixedCandidate.totalConversion)} over several years, but at least one year exceeds a conversion, tax-bracket, or Medicare premium limit you selected.`;
+      return `For ${selectedPlan}, the optimizer estimates that making no Roth conversions produces the best result. The Fixed strategy of ${formatMoney(inputs.annualRothConversion)} per year would convert ${formatMoney(fixedCandidate.totalConversion)} over several years, but at least one year exceeds a conversion, tax-bracket, or Medicare premium limit you selected.`;
     }
 
-    return `For ${selectedPlan}, the optimizer estimates that making no Roth conversions produces the best result. It tested the Fixed strategy, which would convert ${formatMoney(fixedCandidate.totalConversion)} over several years, but the added taxes and possible Medicare premium increases outweighed its projected benefits.`;
+    return `For ${selectedPlan}, the optimizer estimates that making no Roth conversions produces the best result. It tested the Fixed strategy of ${formatMoney(inputs.annualRothConversion)} per year, which would convert ${formatMoney(fixedCandidate.totalConversion)} over several years, but the added taxes and possible Medicare premium increases outweighed its projected benefits.`;
   })();
 
   return (

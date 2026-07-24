@@ -439,7 +439,7 @@ export function PlannerInputs({
           title="Social Security"
           icon={<Settings />}
           info={`
-            <h3>Social Security Inputs</h3>
+            <h3>Social Security</h3>
             <p>
               Select how the entered Social Security benefit amounts should be interpreted.
               The selected method determines which scenarios are projected and how benefits
@@ -642,7 +642,7 @@ export function PlannerInputs({
           title="Medicare/IRMAA"
           icon={<Settings />}
           info={`
-            <h3>Medicare/IRMAA Inputs</h3>
+            <h3>Medicare/IRMAA</h3>
             <p>
               The default Simple Deterministic model requires no additional input. It starts Medicare at age 65,
               reads the standard Part B premium from the applicable maintained table, assumes Annual Spending already
