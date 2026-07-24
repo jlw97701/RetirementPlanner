@@ -181,7 +181,10 @@ describe('calculateRetirementProjection', () => {
     const rows = createTestProjection();
 
     for (const row of rows) {
-      expect(row.endTradlIra).toBeCloseTo(row.startTradIra + row.tradGrowth - row.traditionalDist, 2);
+      expect(row.endTradlIra).toBeCloseTo(
+        row.startTradIra + row.futureTradIraDeposit + row.tradGrowth - row.traditionalDist,
+        2
+      );
 
       expect(row.endRothIra).toBeCloseTo(row.startRothIra + row.rothGrowth + row.rothConv - row.rothWithdraw, 2);
 
@@ -204,6 +207,49 @@ describe('calculateRetirementProjection', () => {
     expect(rows[1].inflationIndex).toBeCloseTo(1.1, 8);
 
     expect(rows[1].endPortfolioCurrentDollars).toBeCloseTo(rows[1].endPortfolio / 1.1, 2);
+  });
+
+  test('adds a future Traditional IRA rollover in the selected year without including it in that year’s RMD', () => {
+    const rows = createTestProjection({
+      annualSpend: 0,
+      futureTradIraDeposit: 10_000,
+      futureTradIraDepositYear: 2040
+    });
+    const rolloverYear = rows[1];
+
+    expect(rows[0].futureTradIraDeposit).toBe(0);
+    expect(rolloverYear.year).toBe(2040);
+    expect(rolloverYear.futureTradIraDeposit).toBe(10_000);
+    expect(rolloverYear.startTradIra).toBeCloseTo(rows[0].endTradlIra, 2);
+    expect(rolloverYear.rmd).toBeCloseTo(rolloverYear.startTradIra / 23.7, 2);
+    expect(rolloverYear.endTradlIra).toBeCloseTo(
+      rolloverYear.startTradIra +
+        rolloverYear.futureTradIraDeposit +
+        rolloverYear.tradGrowth -
+        rolloverYear.traditionalDist,
+      2
+    );
+  });
+
+  test('allows a future Traditional IRA rollover during the first projection year', () => {
+    const rows = createTestProjection({
+      endAge: 75,
+      horizonAge: 75,
+      annualSpend: 0,
+      futureTradIraDeposit: 10_000,
+      futureTradIraDepositYear: 2039
+    });
+    const firstYear = rows[0];
+
+    expect(firstYear.futureTradIraDeposit).toBe(10_000);
+    expect(firstYear.rmd).toBeCloseTo(firstYear.startTradIra / 24.6, 2);
+    expect(firstYear.endTradlIra).toBeCloseTo(
+      firstYear.startTradIra +
+        firstYear.futureTradIraDeposit +
+        firstYear.tradGrowth -
+        firstYear.traditionalDist,
+      2
+    );
   });
 
   test('estimates IRMAA using the two-year MAGI lookback without deducting it from cash flow', () => {

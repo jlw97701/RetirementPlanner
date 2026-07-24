@@ -33,6 +33,8 @@ export const DEFAULT_INPUTS: PlannerInputs = {
   taxableAcct: 50000,
   tradIra: 500000,
   rothIra: 0,
+  futureTradIraDeposit: 0,
+  futureTradIraDepositYear: 0,
   annualSpend: 50000,
   medicareModel: MedicareModelType.SimpleDeterministic,
   annualSpendingIncludesHealthcare: true,
@@ -97,7 +99,7 @@ export const DEFAULT_ECONOMIC_SCENARIO_SETTINGS: EconomicScenarioSettings = {
   },
   monteCarlo: {
     seed: 12345,
-    simulations: 100,
+    simulations: 1000,
     assumptions: {
       inflation: { mean: 0.03, standardDeviation: 0.015, minimum: -0.02, maximum: 0.1 },
       domesticStockReturn: { mean: 0.07, standardDeviation: 0.18, minimum: -0.6, maximum: 0.6 },

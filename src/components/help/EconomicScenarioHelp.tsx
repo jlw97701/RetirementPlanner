@@ -27,14 +27,14 @@ export function EconomicScenarioHelp() {
         <section>
           <h3>Deterministic</h3>
           <p>
-            The three predefined profiles are calculated from rolling 10- or 20-year annualized portfolio returns in the
+            The four predefined profiles are calculated from rolling 10- or 20-year annualized portfolio returns in the
             1975–2025 historical dataset. Each historical year is weighted using the selected asset allocation, the
-            window's returns are compounded and annualized, and the resulting windows form a distribution. Significantly
-            Below Average uses its 10th percentile as a severe stress test; Below Average, Average, and Above Average
-            use its 25th, 50th, and 75th percentiles, respectively.
+            window's returns are compounded and annualized, and the resulting long-term returns are sorted from weakest
+            to strongest.
           </p>
           <p>
-            The selected portfolio-level rate is then applied every projection year. Custom Market instead lets you
+            The selected portfolio-level rate is then applied smoothly every projection year. It does not reproduce the
+            annual gains and losses that occurred inside the historical periods. Custom Return instead lets you
             enter separate U.S. stock, foreign stock, bond, cash, and Other assumptions. The planner's inflation input
             controls annual spending inflation for either approach.
           </p>
@@ -49,29 +49,33 @@ export function EconomicScenarioHelp() {
               </thead>
               <tbody>
                 <tr>
-                  <td>Significantly Below Avg Market</td>
-                  <td>Uses the 10th-percentile return to test prolonged, unusually weak portfolio performance.</td>
+                  <td>Very Low Historical Return</td>
+                  <td>
+                    Uses a low-end long-term return. Only about 1 out of 10 rolling historical periods was weaker.
+                  </td>
                 </tr>
                 <tr>
-                  <td>Average Market</td>
-                  <td>Uses the baseline long-term return assumptions to create an understandable reference result.</td>
+                  <td>Lower Historical Return</td>
+                  <td>
+                    Uses a cautious long-term return. About 1 out of 4 rolling historical periods was weaker.
+                  </td>
                 </tr>
                 <tr>
-                  <td>Below Average Market</td>
-                  <td>Uses lower returns to test whether essential spending remains funded.</td>
+                  <td>Middle Historical Return</td>
+                  <td>Uses the middle historical result: half of the rolling periods were weaker and half stronger.</td>
                 </tr>
                 <tr>
-                  <td>Above Average Market</td>
-                  <td>Uses stronger returns to illustrate the plan's upside range.</td>
+                  <td>Higher Historical Return</td>
+                  <td>Uses a stronger result that about 3 out of 4 rolling historical periods finished below.</td>
                 </tr>
               </tbody>
             </table>
           </div>
           <p className="help-callout">
             Limitation: overlapping rolling periods are not independent observations, and steady annual returns do not
-            capture market volatility or the timing of gains and losses. These historical percentiles are planning
-            assumptions, not forecasts or confidence intervals. Significantly Below Average is not a prediction of a
-            particular recession.
+            capture market volatility or the timing of gains and losses. These historical return levels are planning
+            assumptions, not forecasts or probabilities. Very Low Historical Return is not a prediction of a particular
+            recession or market event.
           </p>
         </section>
 
@@ -93,8 +97,8 @@ export function EconomicScenarioHelp() {
             seed until a favorable result appears.
           </p>
           <p className="help-callout">
-            A single simulated path is not a complete Monte Carlo analysis. It does not calculate probability of
-            success, percentiles, or confidence intervals.
+            A single simulated path is not a complete risk analysis. It does not calculate probability of success or
+            show a range of possible results.
           </p>
         </section>
 
@@ -102,20 +106,25 @@ export function EconomicScenarioHelp() {
           <h3>Retirement Risk Analysis</h3>
           <p>
             Retirement Risk Analysis is an optional multi-path stress test. When Deterministic is selected, the active
-            Market Assumption supplies its target average portfolio return. Custom Market supplies the asset-class
+            Market Assumption supplies its target average portfolio return. Custom Return supplies the asset-class
             averages directly. The analysis continues to use the Single Simulated Path volatility, correlation, return
             limits, inflation, and seed assumptions. The normal deterministic projection remains the default experience.
           </p>
           <p>
             Every Social Security claiming and Roth-conversion strategy is evaluated against the same generated paths
-            (100 by default). Using identical paths makes the strategy comparison fair and keeps the result
-            reproducible.
+            (1,000 by default). Using identical paths makes the strategy comparison fair and keeps the result
+            reproducible. At least 1,000 simulated futures is recommended when comparing results with another planner.
           </p>
           <p>
-            <strong>Fully Funded Paths</strong> is the percentage of paths in which every modeled spending need is met
-            through the ending age. <strong>Depletion Risk</strong> is the percentage with at least one unfunded need.
-            Ending-balance percentiles and the shaded chart use inflation-adjusted dollars expressed in the purchasing
-            power of the first projection year.
+            <strong>Spending Covered Through an Age</strong> is the percentage of simulated futures in which every
+            modeled spending need is met through that stated age. The Primary Horizon Age and Ending Age rates answer
+            different questions, so compare planners only when they use the same age.
+          </p>
+          <p>
+            The possible-balance table shows a Very Cautious result, a Cautious result, and the Middle result from the
+            same simulations. It shows each result in both Future Dollars and Inflation-Adjusted Dollars. About 9 out
+            of 10 simulated futures finish above the Very Cautious result, about 3 out of 4 finish above the Cautious
+            result, and half finish above the Middle result.
           </p>
           <p className="help-callout">
             These percentages measure sensitivity to the configured assumptions; they are not forecasts or guarantees.
@@ -190,10 +199,11 @@ export function EconomicScenarioHelp() {
           <h3>Recommended workflow</h3>
           <ol>
             <li>Verify balances, spending, Social Security, allocation, conversion amounts, and projection ages.</li>
-            <li>Run the Average Market deterministic profile as a baseline.</li>
-            <li>Run the Below Average Market profile and test a higher inflation input.</li>
+            <li>Run the Middle Historical Return deterministic profile as a baseline.</li>
+            <li>Run the Lower Historical Return profile and test a higher inflation input.</li>
             <li>Run several single simulated paths using predetermined seeds.</li>
-            <li>Keep the same scenario and seed when comparing claiming or Roth-conversion strategies.</li>
+            <li>Run Retirement Risk Analysis with at least 1,000 simulated futures.</li>
+            <li>Keep the same assumptions and ages when comparing claiming or Roth-conversion strategies.</li>
             <li>Look for results that remain workable across unfavorable conditions, not only the best result.</li>
           </ol>
         </section>

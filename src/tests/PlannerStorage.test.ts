@@ -1,7 +1,11 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
-import { DEFAULT_TAX_CONFIG } from '../data/defaults';
-import { loadTaxConfigurations } from '../services/PlannerStorage';
+import { DEFAULT_INPUTS, DEFAULT_TAX_CONFIG } from '../data/defaults';
+import {
+  loadPlannerInputs,
+  loadTaxConfigurations,
+  savePlannerInputs
+} from '../services/PlannerStorage';
 
 function createLocalStorage(): Storage {
   const values = new Map<string, string>();
@@ -70,5 +74,23 @@ describe('tax configuration storage migration', () => {
           exclusion.phaseoutStartInflationIndexed === false
       )
     ).toBe(true);
+  });
+});
+
+describe('planner input storage', () => {
+  test('saves and restores a future Traditional IRA rollover', () => {
+    const storage = createLocalStorage();
+    vi.stubGlobal('localStorage', storage);
+
+    savePlannerInputs({
+      ...DEFAULT_INPUTS,
+      futureTradIraDeposit: 72_821,
+      futureTradIraDepositYear: 2027
+    });
+
+    const loaded = loadPlannerInputs(DEFAULT_INPUTS);
+
+    expect(loaded.futureTradIraDeposit).toBe(72_821);
+    expect(loaded.futureTradIraDepositYear).toBe(2027);
   });
 });

@@ -30,7 +30,8 @@ The application is not intended to replace a comprehensive household financial p
 investment management, or professional advice. It currently does not model:
 
 - separate spouses, spousal or survivor Social Security benefits, or filing-status changes after a spouse's death;
-- pensions, annuities, employment or rental income, debts, real estate, estate planning, or one-time financial events;
+- recurring pensions, annuities, employment or rental income, debts, real estate, estate planning, or general
+  one-time financial events beyond the single future Traditional IRA rollover or deposit;
 - changing spending phases or separate essential and discretionary spending goals;
 - taxable-investment cost basis, dividends, capital gains, qualified charitable distributions, the net investment
   income tax, ACA subsidies, itemized deductions, local taxes, or every federal and state tax provision; or
@@ -46,6 +47,7 @@ decisions and current rules with qualified financial and tax professionals.
 - Includes an optional Roth Conversion Optimizer with federal-bracket, annual-cap, IRMAA, and future-tax-rate controls.
 - Supports an entered benefit for someone already receiving Social Security.
 - Projects Traditional IRA, Roth IRA, and non-interest-bearing taxable savings balances.
+- Supports one dated, tax-free future rollover or deposit into the Traditional IRA.
 - Applies the withdrawal order Traditional IRA, taxable savings, then Roth IRA.
 - Models annual spending, inflation, Social Security COLAs, taxes, RMDs, Medicare costs, and IRMAA.
 - Includes Conservative, Balanced, Growth, and Aggressive Growth asset allocations plus a persistent custom allocation.
@@ -85,8 +87,8 @@ for the selected strategy.
 ### Year-by-Year Details
 
 The detailed table exposes the annual cash flow and calculation results, including investment growth, Social Security,
-withdrawals, conversions, RMDs, taxable income, federal and state taxes, Medicare, IRMAA, account balances, and any
-unfunded spending.
+a future Traditional IRA rollover or deposit, withdrawals, conversions, RMDs, taxable income, federal and state taxes,
+Medicare, IRMAA, account balances, and any unfunded spending.
 
 ### Roth Conversion Optimizer
 
@@ -120,7 +122,7 @@ Retirement Risk Analysis is an optional multi-path stress test. Every active cla
 against the same seeded market and inflation paths so strategy comparisons use identical economic conditions.
 
 When the active scenario method is Deterministic, the selected Market Assumption supplies the risk analysis target
-average portfolio return. Custom Market values become the simulated asset-class averages. Volatility, correlations,
+average portfolio return. Custom Return values become the simulated asset-class averages. Volatility, correlations,
 return limits, inflation, and the seed remain controlled by the Single Simulated Path settings. The risk panel displays
 the effective market assumption and target return used for each run.
 
@@ -128,10 +130,16 @@ The analysis reports:
 
 - modeled probability of covering all spending through the Primary Horizon Age;
 - modeled probability of covering all spending through the Ending Age;
-- median inflation-adjusted portfolio balance at the Primary Horizon Age;
+- Very Cautious, Cautious, and Middle portfolio balances at the Primary Horizon Age in both Future Dollars and
+  Inflation-Adjusted Dollars;
 - typical first spending-shortfall age among paths that experienced a shortfall;
 - typical total inflation-adjusted shortfall among paths that experienced a shortfall; and
-- an age-by-age chart showing the P10-to-P90 portfolio range and median result.
+- an age-by-age chart showing a broad range of simulated balances and the middle result.
+
+About 9 out of 10 simulated futures finish above the Very Cautious balance, about 3 out of 4 finish above the Cautious
+balance, and half finish above the Middle balance. These are different outcomes from the same simulations, not separate
+market-return assumptions. The default 1,000 simulated futures provides a more stable comparison than a small run;
+larger runs take longer.
 
 “Modeled probability of success” is the percentage of generated paths that cover all modeled spending through the
 stated age. It is a sensitivity result based on the configured assumptions, not the user's actual probability of
@@ -139,9 +147,11 @@ success, a forecast, or a guarantee.
 
 ## Economic scenarios
 
-The default experience uses a deterministic Below Average Market profile. Deterministic market presets are derived
-from rolling 10- or 20-year annualized portfolio returns in the bundled 1975–2025 historical dataset. A Custom Market
-profile accepts user-entered asset-class returns.
+The default experience uses the deterministic Lower Historical Return profile. Deterministic market presets are
+derived from rolling 10- or 20-year annualized portfolio returns in the bundled 1975–2025 historical dataset. The
+available profiles are Very Low, Lower, Middle, and Higher Historical Return, plus a Custom Return profile that accepts
+user-entered asset-class returns. A deterministic profile applies one smooth return every year; it is not a probability
+result and does not model the timing of annual gains and losses.
 
 The bundled historical model uses separate annual U.S. and international stock returns. U.S. stocks use S&amp;P 500
 total returns from the NYU Stern dataset. International stocks use the value-weighted market return from the
@@ -187,6 +197,8 @@ The planner uses complete calendar-year periods:
 - Annual spending applies to the complete first calendar year and increases in later years using modeled inflation.
 - Claim-age scenarios assume 12 Social Security payments in the year the selected claim age is reached.
 - RMDs are based on the January 1 Traditional IRA balance.
+- A configured future Traditional IRA rollover or deposit arrives near the beginning of its selected year, after that
+  year's RMD balance is measured and before investment growth. It is treated as a tax-free account deposit.
 - Investment growth is split into compounded first-half and second-half periods.
 - Spending, Social Security, taxes, withdrawals, RMDs, and Roth conversions are modeled at midyear.
 - Same-year Roth conversions cannot be used to fund that year's spending.

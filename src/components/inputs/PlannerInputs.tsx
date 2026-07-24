@@ -111,6 +111,7 @@ export function PlannerInputs({
   const parsedBirthDate = parseIsoDate(inputs.birthDate);
   const birthYear = parsedBirthDate.getFullYear();
   const projectionStartYear = birthYear + inputs.startAge;
+  const projectionEndYear = birthYear + inputs.endAge;
   const usesSimpleMedicareDefaults = inputs.medicareModel === MedicareModelType.SimpleDeterministic;
 
   const updateIncome = (v: SSMonthlyIncome) => {
@@ -305,6 +306,13 @@ export function PlannerInputs({
               Roth IRA, and taxable savings balances as of that date.
             </p>
             <p>
+              <strong>Future IRA Rollover / Deposit</strong> is for a known tax-free amount,
+              such as a pension lump sum that will be rolled into a Traditional IRA after
+              the projection begins. It is added near the beginning of the selected year,
+              after that year's RMD balance is measured and before investment growth.
+              Do not also include it in the starting Traditional IRA balance.
+            </p>
+            <p>
               Each projection row represents a complete calendar year. Investment returns
               are split around midyear cash flows. Spending, Social Security, taxes,
               withdrawals, RMDs, and Roth conversions are modeled at midyear.
@@ -407,6 +415,35 @@ export function PlannerInputs({
             step={1000}
             onChange={(v) => setInputs({ ...inputs, tradIra: v })}
           />
+          <NumberInput
+            label="Future IRA Rollover / Deposit"
+            value={inputs.futureTradIraDeposit}
+            min={0}
+            step={1000}
+            onChange={(v) =>
+              setInputs({
+                ...inputs,
+                futureTradIraDeposit: v,
+                futureTradIraDepositYear:
+                  v > 0 &&
+                  (!Number.isInteger(inputs.futureTradIraDepositYear) ||
+                    inputs.futureTradIraDepositYear < projectionStartYear ||
+                    inputs.futureTradIraDepositYear > projectionEndYear)
+                    ? projectionStartYear
+                    : inputs.futureTradIraDepositYear
+              })
+            }
+          />
+          {inputs.futureTradIraDeposit > 0 && (
+            <NumberInput
+              label="Rollover / Deposit Year"
+              value={inputs.futureTradIraDepositYear}
+              min={projectionStartYear}
+              max={projectionEndYear}
+              step={1}
+              onChange={(v) => setInputs({ ...inputs, futureTradIraDepositYear: Math.trunc(v) })}
+            />
+          )}
           <NumberInput
             label={`Roth IRA on<br/>Jan 1, ${projectionStartYear}`}
             value={inputs.rothIra}
@@ -885,10 +922,10 @@ export function PlannerInputs({
               No scenario predicts the future or guarantees a particular result.
             </p>
             <p>
-              <strong>Deterministic</strong> applies the selected market return every year. Significantly Below
-              Average is a 10th-percentile stress test; Below Average, Average, and Above Average use the 25th, 50th,
-              and 75th percentiles of rolling annualized historical portfolio returns for the selected asset
-              allocation. Custom Market accepts your own asset-class assumptions.
+              <strong>Deterministic</strong> applies one smooth market return every year. Very Low, Lower, Middle,
+              and Higher Historical Return are derived from rolling long-term historical results for the selected
+              portfolio. These settings do not include yearly market swings and should not be read as probabilities.
+              Custom Return accepts your own asset-class assumptions.
             </p>
             <p>
               <strong>Single Simulated Path</strong> generates one repeatable sequence of variable annual results.
@@ -905,6 +942,11 @@ export function PlannerInputs({
               Compare several methods and starting years. A more resilient plan can fund essential spending
               across steady assumptions, unfavorable historical periods, and volatile simulated paths.
             </p>
+            <p>
+              <strong>Simulated Futures for Risk Analysis</strong> controls how many possible market and inflation
+              paths are tested by Retirement Risk Analysis. At least 1,000 is recommended when comparing results
+              with another planner. Larger counts are more stable but take longer to run.
+            </p>
           `}
           isOpen={expandedIndex === 5}
           onToggle={() => setSelectedPanel(5)}>
@@ -916,6 +958,22 @@ export function PlannerInputs({
               setEconomicScenarioSettings({
                 ...economicScenarioSettings,
                 method: String(value) as EconomicScenarioMethod
+              })
+            }
+          />
+          <NumberInput
+            label="Simulated Futures for Risk Analysis"
+            value={economicScenarioSettings.monteCarlo.simulations}
+            min={100}
+            max={5000}
+            step={100}
+            onChange={(simulations) =>
+              setEconomicScenarioSettings({
+                ...economicScenarioSettings,
+                monteCarlo: {
+                  ...economicScenarioSettings.monteCarlo,
+                  simulations: Math.trunc(simulations)
+                }
               })
             }
           />

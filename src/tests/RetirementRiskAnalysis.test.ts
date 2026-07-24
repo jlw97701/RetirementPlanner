@@ -40,7 +40,7 @@ describe('retirement risk analysis', () => {
       DEFAULT_ASSET_ALLOCATION.cash * resolved.assumptions.cashReturn.mean +
       DEFAULT_ASSET_ALLOCATION.other * resolved.assumptions.otherReturn.mean;
 
-    expect(resolved.label).toContain('Below Average');
+    expect(resolved.label).toContain('Lower Historical Return');
     expect(resolved.targetPortfolioReturn).toBeCloseTo(expectedTarget, 12);
     expect(weightedResolvedMean).toBeCloseTo(expectedTarget, 12);
     expect(resolved.assumptions.domesticStockReturn.standardDeviation).toBe(
@@ -51,7 +51,7 @@ describe('retirement risk analysis', () => {
     );
   });
 
-  it('uses Custom Market returns as the simulated asset-class averages', () => {
+  it('uses Custom Return values as the simulated asset-class averages', () => {
     const settings = {
       ...DEFAULT_ECONOMIC_SCENARIO_SETTINGS,
       deterministic: {
@@ -66,7 +66,7 @@ describe('retirement risk analysis', () => {
     };
     const resolved = resolveRiskMarketAssumption(settings, DEFAULT_ASSET_ALLOCATION);
 
-    expect(resolved.label).toBe('Custom Market');
+    expect(resolved.label).toBe('Custom Return');
     expect(resolved.assumptions.domesticStockReturn.mean).toBe(0.11);
     expect(resolved.assumptions.internationalStockReturn.mean).toBe(0.08);
     expect(resolved.assumptions.bondReturn.mean).toBe(0.04);
@@ -114,8 +114,8 @@ describe('retirement risk analysis', () => {
     });
 
     expect(aboveAverage.targetPortfolioReturn).toBeGreaterThan(belowAverage.targetPortfolioReturn);
-    expect(aboveAverage.scenarios[0].endingPortfolioP50).toBeGreaterThan(
-      belowAverage.scenarios[0].endingPortfolioP50
+    expect(aboveAverage.scenarios[0].endingBalances.inflationAdjustedDollars.middle).toBeGreaterThan(
+      belowAverage.scenarios[0].endingBalances.inflationAdjustedDollars.middle
     );
   });
 
@@ -170,8 +170,14 @@ describe('retirement risk analysis', () => {
         expect(scenario.medianFirstShortfallAge).toBeGreaterThanOrEqual(parameters.inputs.startAge);
         expect(scenario.medianFirstShortfallAge).toBeLessThanOrEqual(parameters.inputs.endAge);
       }
-      expect(scenario.endingPortfolioP10).toBeLessThanOrEqual(scenario.endingPortfolioP50);
-      expect(scenario.endingPortfolioP50).toBeLessThanOrEqual(scenario.endingPortfolioP90);
+      for (const balances of [
+        scenario.endingBalances.futureDollars,
+        scenario.endingBalances.inflationAdjustedDollars
+      ]) {
+        expect(balances.veryCautious).toBeLessThanOrEqual(balances.cautious);
+        expect(balances.cautious).toBeLessThanOrEqual(balances.middle);
+        expect(balances.middle).toBeLessThanOrEqual(balances.higher);
+      }
     }
   });
 

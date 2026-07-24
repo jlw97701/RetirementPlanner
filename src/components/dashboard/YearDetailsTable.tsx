@@ -19,8 +19,14 @@ export function YearDetailsTable({ rows, scenario }: { rows: RetirementYear[]; s
           Each row represents one complete calendar year, with the listed age being the age reached during that year.
         </p>
         <p>
-          It includes spending, Social Security, investment growth, RMDs, withdrawals, Roth conversions, taxes, and taxable savings activity. 
+          It includes spending, Social Security, future Traditional IRA rollovers or deposits, investment growth,
+          RMDs, withdrawals, Roth conversions, taxes, and taxable savings activity.
           Account balances and annual amounts are shown in the dollars projected for each future year.
+        </p>
+        <p>
+          <strong>Future IRA Rollover / Deposit</strong> is a tax-free amount added near the beginning of the
+          selected year. It is not treated as spending money or taxable income. It receives investment growth after
+          it is deposited and is excluded from that same year's RMD calculation.
         </p>
         <p>
           <strong>State Taxable Income</strong> reflects the selected residence state's configured Social Security
@@ -86,6 +92,11 @@ export function YearDetailsTable({ rows, scenario }: { rows: RetirementYear[]; s
                 Social
                 <br />
                 Security
+              </th>
+              <th>
+                Future IRA
+                <br />
+                Rollover / Deposit
               </th>
               <th>
                 Trad IRA
@@ -164,6 +175,7 @@ export function YearDetailsTable({ rows, scenario }: { rows: RetirementYear[]; s
                 <td>{formatMoney(r.totalMedicareHealthcareCost)}</td>
                 <td>{formatMoney(r.medicareHealthcareAddedToSpending)}</td>
                 <td>{formatMoney(r.socialSecurity)}</td>
+                <td>{formatMoney(r.futureTradIraDeposit)}</td>
                 <td>{formatMoney(r.traditionalDist)}</td>
                 <td>{formatMoney(r.rothConv)}</td>
                 <td>{formatMoney(r.federalTax)}</td>

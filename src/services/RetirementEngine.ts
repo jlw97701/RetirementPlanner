@@ -34,6 +34,8 @@ import type { IrmaaConfiguration, IrmaaFilingStatus } from '../data/irmaaTables'
  * - Initial balances are January 1 balances.
  * - Ending balances are December 31 balances.
  * - Age is the age attained during the calendar year.
+ * - A configured future Traditional IRA deposit arrives after the
+ *   current year's RMD balance is measured and before investment growth.
  * - Investment returns are split into two compounded
  *   half-year periods.
  * - Annual income, spending, taxes, withdrawals, RMDs,
@@ -297,8 +299,22 @@ function validateProjectionInputs(inputs: PlannerInputs): void {
   requireNonnegativeFinite(inputs.tradIra, 'Traditional IRA balance');
   requireNonnegativeFinite(inputs.rothIra, 'Roth IRA balance');
   requireNonnegativeFinite(inputs.taxableAcct, 'Taxable account balance');
+  requireNonnegativeFinite(inputs.futureTradIraDeposit, 'Future Traditional IRA deposit');
   requireNonnegativeFinite(inputs.annualSpend, 'Annual spending');
   requireNonnegativeFinite(inputs.annualRothConversion, 'Annual fixed Roth conversion');
+  if (inputs.futureTradIraDeposit > 0) {
+    const period = getProjectionPeriod(inputs.birthDate, inputs.startAge, inputs.endAge);
+
+    if (
+      !Number.isInteger(inputs.futureTradIraDepositYear) ||
+      inputs.futureTradIraDepositYear < period.startYear ||
+      inputs.futureTradIraDepositYear > period.endYear
+    ) {
+      throw new Error(
+        'Future Traditional IRA deposit year must be within the projection.'
+      );
+    }
+  }
   if (inputs.medicareModel === MedicareModelType.Custom) {
     requireNonnegativeFinite(inputs.monthlyPartDOtherPremium, 'Monthly Part D or other coverage premium');
     requireNonnegativeFinite(inputs.annualOutOfPocketHealthcare, 'Annual out-of-pocket healthcare');
@@ -625,15 +641,22 @@ export function calculateRetirementProjection(
     const startTradIra = tradIra;
     const startRothIra = rothIra;
     const startTaxableAcct = taxableAcct;
+    const futureTradIraDeposit = year === inputs.futureTradIraDepositYear ? inputs.futureTradIraDeposit : 0;
 
     const portfolioReturn = calculatePortfolioReturn(economicYear, assetAllocation);
     const halfYearReturn = annualToHalfYearReturn(portfolioReturn);
 
     /*
+     * A future rollover or deposit arrives after the January 1 balance used
+     * for the current year's RMD is measured and before first-half growth.
+     */
+    const tradIraAfterFutureDeposit = startTradIra + futureTradIraDeposit;
+
+    /*
      * First-half investment growth.
      */
-    const firstHalfTradGrowth = startTradIra * halfYearReturn;
-    const tradIraAtMidyear = Math.max(0, startTradIra + firstHalfTradGrowth);
+    const firstHalfTradGrowth = tradIraAfterFutureDeposit * halfYearReturn;
+    const tradIraAtMidyear = Math.max(0, tradIraAfterFutureDeposit + firstHalfTradGrowth);
     const firstHalfRothGrowth = startRothIra * halfYearReturn;
     const rothIraAtMidyear = Math.max(0, startRothIra + firstHalfRothGrowth);
     const availableTaxableAcct = startTaxableAcct;
@@ -767,6 +790,7 @@ export function calculateRetirementProjection(
       startTradIra,
       startRothIra,
       startTaxableAcct,
+      futureTradIraDeposit,
       tradGrowth,
       rothGrowth,
       rmd,

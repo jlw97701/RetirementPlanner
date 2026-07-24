@@ -734,7 +734,7 @@ header p {
 
 .risk-metrics {
   display: grid;
-  grid-template-columns: repeat(5, minmax(130px, 1fr));
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
   gap: 10px;
   margin-top: 12px;
 }
@@ -758,6 +758,25 @@ header p {
 .risk-metric strong {
   font-size: 18px;
   overflow-wrap: anywhere;
+}
+
+.risk-balance-outcomes {
+  margin-top: 20px;
+}
+
+.risk-balance-outcomes h3 {
+  margin: 0 0 4px;
+}
+
+.risk-balance-outcomes > p {
+  margin: 0 0 10px;
+  color: #526174;
+  font-size: 13px;
+}
+
+.risk-balance-outcomes td:nth-child(2) {
+  min-width: 260px;
+  white-space: normal;
 }
 
 .risk-chart-heading {

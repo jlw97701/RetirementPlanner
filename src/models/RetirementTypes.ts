@@ -38,6 +38,8 @@ export interface PlannerInputs {
   tradIra: number;
   rothIra: number;
   taxableAcct: number;
+  futureTradIraDeposit: number;
+  futureTradIraDepositYear: number;
   annualSpend: number;
   medicareModel: MedicareModelType;
   annualSpendingIncludesHealthcare: boolean;
@@ -109,6 +111,7 @@ export interface RetirementYear {
   startRothIra: number;
   startTaxableAcct: number;
 
+  futureTradIraDeposit: number;
   tradGrowth: number;
   rothGrowth: number;
 

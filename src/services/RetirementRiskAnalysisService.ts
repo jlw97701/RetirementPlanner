@@ -27,11 +27,24 @@ import { calculateRetirementProjection } from './RetirementEngine';
 const UNFUNDED_NEED_TOLERANCE = 0.01;
 const MAX_SIMULATIONS = 5_000;
 
-export interface RetirementRiskPercentilePoint {
+export interface RetirementRiskBalanceOutcomes {
+  /** About 90% of simulated balances are at or above this amount. */
+  veryCautious: number;
+  /** About 75% of simulated balances are at or above this amount. */
+  cautious: number;
+  /** Half of simulated balances are below and half are above this amount. */
+  middle: number;
+  /** About 10% of simulated balances are above this amount. */
+  higher: number;
+}
+
+export interface RetirementRiskBalanceViews {
+  futureDollars: RetirementRiskBalanceOutcomes;
+  inflationAdjustedDollars: RetirementRiskBalanceOutcomes;
+}
+
+export interface RetirementRiskPercentilePoint extends RetirementRiskBalanceViews {
   age: number;
-  p10: number;
-  p50: number;
-  p90: number;
 }
 
 export interface RetirementRiskScenarioResult {
@@ -44,9 +57,7 @@ export interface RetirementRiskScenarioResult {
   depletionRisk: number;
   medianFirstShortfallAge: number | null;
   medianTotalUnfundedSpending: number;
-  endingPortfolioP10: number;
-  endingPortfolioP50: number;
-  endingPortfolioP90: number;
+  endingBalances: RetirementRiskBalanceViews;
   portfolioPercentiles: RetirementRiskPercentilePoint[];
 }
 
@@ -88,7 +99,8 @@ interface ScenarioAccumulator {
   depletionCount: number;
   firstShortfallAges: number[];
   totalUnfundedSpending: number[];
-  portfolioBalancesByAge: number[][];
+  futureDollarBalancesByAge: number[][];
+  inflationAdjustedBalancesByAge: number[][];
 }
 
 function calculateWeightedReturn(
@@ -164,7 +176,7 @@ export function resolveRiskMarketAssumption(
       otherReturn: economicScenarioSettings.deterministic.otherReturn
     };
     return {
-      label: 'Custom Market',
+      label: 'Custom Return',
       targetPortfolioReturn: calculateWeightedReturn(assetAllocation, customMeans),
       assumptions: withReturnMeans(baseAssumptions, customMeans)
     };
@@ -221,7 +233,8 @@ export async function runRetirementRiskAnalysis(
     depletionCount: 0,
     firstShortfallAges: [],
     totalUnfundedSpending: [],
-    portfolioBalancesByAge: Array.from({ length: period.yearCount }, () => [])
+    futureDollarBalancesByAge: Array.from({ length: period.yearCount }, () => []),
+    inflationAdjustedBalancesByAge: Array.from({ length: period.yearCount }, () => [])
   }));
   const simulationsPerYield = Math.max(1, Math.floor(25 / Math.max(1, retirementScenarios.length)));
 
@@ -275,7 +288,8 @@ export async function runRetirementRiskAnalysis(
       }
 
       rows.forEach((row, rowIndex) => {
-        accumulator.portfolioBalancesByAge[rowIndex].push(row.endPortfolioCurrentDollars);
+        accumulator.futureDollarBalancesByAge[rowIndex].push(row.endPortfolio);
+        accumulator.inflationAdjustedBalancesByAge[rowIndex].push(row.endPortfolioCurrentDollars);
       });
     }
 
@@ -290,13 +304,14 @@ export async function runRetirementRiskAnalysis(
     marketAssumptionLabel: marketAssumption.label,
     targetPortfolioReturn: marketAssumption.targetPortfolioReturn,
     scenarios: accumulators.map((accumulator) => {
-      const portfolioPercentiles = accumulator.portfolioBalancesByAge.map((balances, index) => ({
+      const portfolioPercentiles = accumulator.futureDollarBalancesByAge.map((futureDollarBalances, index) => ({
         age: inputs.startAge + index,
-        p10: percentile(balances, 0.1),
-        p50: percentile(balances, 0.5),
-        p90: percentile(balances, 0.9)
+        futureDollars: summarizeBalanceOutcomes(futureDollarBalances),
+        inflationAdjustedDollars: summarizeBalanceOutcomes(
+          accumulator.inflationAdjustedBalancesByAge[index]
+        )
       }));
-      const ending = portfolioPercentiles[portfolioPercentiles.length - 1];
+      const ending = portfolioPercentiles[portfolioPercentiles.length - 1] ?? createEmptyBalanceViews();
 
       return {
         scenarioId: accumulator.scenario.id,
@@ -314,12 +329,32 @@ export async function runRetirementRiskAnalysis(
           accumulator.totalUnfundedSpending.length > 0
             ? percentile(accumulator.totalUnfundedSpending, 0.5)
             : 0,
-        endingPortfolioP10: ending?.p10 ?? 0,
-        endingPortfolioP50: ending?.p50 ?? 0,
-        endingPortfolioP90: ending?.p90 ?? 0,
+        endingBalances: {
+          futureDollars: ending.futureDollars,
+          inflationAdjustedDollars: ending.inflationAdjustedDollars
+        },
         portfolioPercentiles
       };
     })
+  };
+}
+
+function summarizeBalanceOutcomes(values: readonly number[]): RetirementRiskBalanceOutcomes {
+  return {
+    veryCautious: percentile(values, 0.1),
+    cautious: percentile(values, 0.25),
+    middle: percentile(values, 0.5),
+    higher: percentile(values, 0.9)
+  };
+}
+
+function createEmptyBalanceViews(): RetirementRiskPercentilePoint {
+  const empty = summarizeBalanceOutcomes([]);
+
+  return {
+    age: 0,
+    futureDollars: empty,
+    inflationAdjustedDollars: empty
   };
 }
 

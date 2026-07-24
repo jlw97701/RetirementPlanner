@@ -13,6 +13,7 @@ type AnalysisStatus = 'idle' | 'running' | 'complete' | 'error';
 import type {
   RetirementRiskAnalysisOptions,
   RetirementRiskAnalysisResult,
+  RetirementRiskPercentilePoint,
   RetirementRiskScenarioResult,
   ResolvedRiskMarketAssumption
 } from '../../services/RetirementRiskAnalysisService';
@@ -20,11 +21,11 @@ import { getScenarioLabel } from '../../utils/scenario';
 
 interface RiskChartPoint {
   age: number;
-  p10: number;
-  p50: number;
-  p90: number;
-  percentileFloor: number;
-  percentileRange: number;
+  veryCautious: number;
+  middle: number;
+  higher: number;
+  outcomeFloor: number;
+  outcomeRange: number;
 }
 
 const riskAnalysisInfo = `
@@ -35,7 +36,7 @@ const riskAnalysisInfo = `
     that target while preserving their relative differences.
   </p>
   <p>
-    Custom Market values become the simulated asset-class averages. Volatility, correlations, return limits,
+    Custom Return values become the simulated asset-class averages. Volatility, correlations, return limits,
     inflation assumptions, and the seed continue to come from Single Simulated Path. When another scenario method
     is selected, the analysis uses the Single Simulated Path return averages as well.
   </p>
@@ -44,15 +45,23 @@ const riskAnalysisInfo = `
     generated paths. Paired paths make strategy comparisons fair and keep repeated runs reproducible.
   </p>
   <p>
-    <strong>Fully Funded Paths</strong> is the percentage of paths with no unfunded spending through the ending age. 
+    <strong>Spending Covered Through an Age</strong> is the percentage of simulated futures with no unfunded
+    spending through that stated age. Always compare results using the same horizon or ending age.
   </p>
   <p>
-    <strong>Depletion Risk</strong> is the percentage with at least one unfunded need.
+    <strong>Paths With a Spending Shortfall</strong> is the percentage with at least one unfunded need by the
+    ending age.
   </p>
   <p>
-    P10 means 10% of outcomes ended at or below that balance, the median divides outcomes in half,
-    and P90 means 90% ended at or below that balance. Balances use inflation-adjusted dollars expressed
-    in first-projection-year purchasing power.
+    <strong>Very Cautious</strong> is a low-end result that about 9 out of 10 simulated futures
+    finished above. <strong>Cautious</strong> is a lower result that about 3 out of 4 finished above.
+    <strong>Middle</strong> divides the results in half. These are outcomes from the same set of
+    simulations, not three different return assumptions.
+  </p>
+  <p>
+    The possible-balance table shows both Future Dollars and Inflation-Adjusted Dollars at the
+    Primary Horizon Age. Future Dollars are the projected dollars in that future year.
+    Inflation-Adjusted Dollars express the same balances in first-projection-year purchasing power.
   </p>
   <p>
     In the comparison table, <strong>Typical First Shortfall Age</strong> and
@@ -73,9 +82,9 @@ const riskChartInfo = `
     finished above it and half finished below it.
   </p>
   <p>
-    The <strong>shaded area</strong> contains the middle 80% of results. About 1 in 10 paths fell
-    below its lower edge and about 1 in 10 rose above its upper edge. A wider area means the
-    possible outcomes vary more.
+    The <strong>shaded area</strong> contains the middle 80% of results. About 9 in 10 simulated
+    futures finished above its lower edge, while only about 1 in 10 finished above its upper edge.
+    A wider area means the possible outcomes vary more.
   </p>
   <p>
     Dollar amounts use <strong>Inflation-Adjusted Dollars</strong>, removing projected inflation and using
@@ -84,8 +93,8 @@ const riskChartInfo = `
   </p>
   <p>
     If the shaded area reaches zero, some paths used the entire portfolio. Check
-    <strong>Depletion Risk</strong> to see how often the plan could not fully cover spending; a zero
-    portfolio does not always mean a shortfall when Social Security or other income still covers expenses.
+    <strong>Paths With a Spending Shortfall</strong> to see how often the plan could not fully cover spending;
+    a zero portfolio does not always mean a shortfall when Social Security or other income still covers expenses.
   </p>
   <p>
     Focus on whether the plan remains workable across weaker outcomes, not on treating the blue
@@ -101,8 +110,10 @@ function formatCount(value: number): string {
   return Math.trunc(value).toLocaleString('en-US');
 }
 
-function getMedianPortfolioAtAge(scenario: RetirementRiskScenarioResult, age: number): number {
-  return scenario.portfolioPercentiles.find((point) => point.age === age)?.p50 ?? 0;
+function getMiddlePortfolioAtAge(scenario: RetirementRiskScenarioResult, age: number): number {
+  return (
+    scenario.portfolioPercentiles.find((point) => point.age === age)?.inflationAdjustedDollars.middle ?? 0
+  );
 }
 
 function formatNaturalPercent(value: number): string {
@@ -173,10 +184,67 @@ function RiskChartTooltip({ active, payload }: { active?: boolean; payload?: Arr
   return (
     <div className="risk-chart-tooltip">
       <strong>Age {point.age}</strong>
-      <span>10th percentile: {formatMoney(point.p10)}</span>
-      <span>Median: {formatMoney(point.p50)}</span>
-      <span>90th percentile: {formatMoney(point.p90)}</span>
+      <span>Very cautious result: {formatMoney(point.veryCautious)}</span>
+      <span>Middle result: {formatMoney(point.middle)}</span>
+      <span>Higher result: {formatMoney(point.higher)}</span>
     </div>
+  );
+}
+
+function PossibleBalanceTable({
+  age,
+  point
+}: {
+  age: number;
+  point: RetirementRiskPercentilePoint;
+}) {
+  const rows = [
+    {
+      key: 'veryCautious' as const,
+      label: 'Very cautious result',
+      meaning: 'About 9 out of 10 simulated futures finished with more.'
+    },
+    {
+      key: 'cautious' as const,
+      label: 'Cautious result',
+      meaning: 'About 3 out of 4 simulated futures finished with more.'
+    },
+    {
+      key: 'middle' as const,
+      label: 'Middle result',
+      meaning: 'Half of the simulated futures finished with more and half with less.'
+    }
+  ];
+
+  return (
+    <section className="risk-balance-outcomes">
+      <h3>Possible Portfolio Balances at Age {age}</h3>
+      <p>
+        These are different outcomes from the same simulated futures. They are not separate market-return settings.
+      </p>
+      <div className="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Outcome</th>
+              <th>What It Means</th>
+              <th>Future Dollars</th>
+              <th>Inflation-Adjusted Dollars</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.key}>
+                <td>{row.label}</td>
+                <td>{row.meaning}</td>
+                <td>{formatMoney(point.futureDollars[row.key])}</td>
+                <td>{formatMoney(point.inflationAdjustedDollars[row.key])}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 
@@ -244,9 +312,15 @@ export function RetirementRiskAnalysis({
     result?.scenarios.find((scenario) => scenario.scenarioId === selectedId) ?? result?.scenarios[0];
 
   const chartData: RiskChartPoint[] = (selectedResult?.portfolioPercentiles ?? []).map((point) => ({
-    ...point,
-    percentileFloor: point.p10,
-    percentileRange: Math.max(0, point.p90 - point.p10)
+    age: point.age,
+    veryCautious: point.inflationAdjustedDollars.veryCautious,
+    middle: point.inflationAdjustedDollars.middle,
+    higher: point.inflationAdjustedDollars.higher,
+    outcomeFloor: point.inflationAdjustedDollars.veryCautious,
+    outcomeRange: Math.max(
+      0,
+      point.inflationAdjustedDollars.higher - point.inflationAdjustedDollars.veryCautious
+    )
   }));
 
   const horizonResult = selectedResult?.portfolioPercentiles.find((point) => point.age === inputs.horizonAge);
@@ -265,7 +339,7 @@ export function RetirementRiskAnalysis({
             inflation paths.
           </p>
           <p className="risk-market-assumption">
-            <strong>Effective market assumption:</strong> {marketAssumption.label}; target average portfolio return{' '}
+            <strong>Market return used for these simulations:</strong> {marketAssumption.label}; long-run average{' '}
             {formatNaturalPercent(marketAssumption.targetPortfolioReturn)}
           </p>
         </div>
@@ -303,28 +377,32 @@ export function RetirementRiskAnalysis({
           </div>
 
           <div className="risk-metrics">
-            <RiskMetric label="Fully Funded Paths" value={formatPercent(selectedResult.fullyFundedRate)} />
-            <RiskMetric label="Depletion Risk" value={formatPercent(selectedResult.depletionRisk)} />
             <RiskMetric
-              label="P10 Ending (Inflation-Adjusted Dollars)"
-              value={formatMoney(selectedResult.endingPortfolioP10)}
+              label={`Spending Covered Through Age ${inputs.horizonAge}`}
+              value={formatPercent(selectedResult.horizonFullyFundedRate)}
             />
             <RiskMetric
-              label="Median Ending (Inflation-Adjusted Dollars)"
-              value={formatMoney(selectedResult.endingPortfolioP50)}
+              label={`Spending Covered Through Age ${inputs.endAge}`}
+              value={formatPercent(selectedResult.fullyFundedRate)}
             />
             <RiskMetric
-              label="P90 Ending (Inflation-Adjusted Dollars)"
-              value={formatMoney(selectedResult.endingPortfolioP90)}
+              label="Paths With a Spending Shortfall"
+              value={formatPercent(selectedResult.depletionRisk)}
+            />
+            <RiskMetric
+              label="Typical First Shortfall Age"
+              value={selectedResult.medianFirstShortfallAge?.toString() ?? 'None'}
             />
           </div>
+
+          {horizonResult && <PossibleBalanceTable age={inputs.horizonAge} point={horizonResult} />}
 
           <div className="risk-chart-heading">
             <div className="risk-chart-title">
               <h3>Portfolio Range in Inflation-Adjusted Dollars</h3>
               <Popover trigger={<Info />} html={riskChartInfo} placement="bottom-start" />
             </div>
-            <p>The shaded area contains the middle 80% of simulated outcomes; the line is the median.</p>
+            <p>The shaded area contains the middle 80% of simulated outcomes; the line is the middle result.</p>
           </div>
           <ResponsiveContainer width="100%" height={320}>
             <AreaChart data={chartData}>
@@ -333,22 +411,22 @@ export function RetirementRiskAnalysis({
               <Tooltip content={<RiskChartTooltip />} />
               <Area
                 type="monotone"
-                dataKey="percentileFloor"
-                stackId="percentile-band"
+                dataKey="outcomeFloor"
+                stackId="outcome-band"
                 stroke="none"
                 fill="transparent"
                 isAnimationActive={false}
               />
               <Area
                 type="monotone"
-                dataKey="percentileRange"
-                stackId="percentile-band"
+                dataKey="outcomeRange"
+                stackId="outcome-band"
                 stroke="none"
                 fill="#93c5fd"
                 fillOpacity={0.38}
                 isAnimationActive={false}
               />
-              <Line type="monotone" dataKey="p50" stroke="#2563eb" strokeWidth={3} dot={false} />
+              <Line type="monotone" dataKey="middle" stroke="#2563eb" strokeWidth={3} dot={false} />
             </AreaChart>
           </ResponsiveContainer>
 
@@ -384,10 +462,12 @@ export function RetirementRiskAnalysis({
               had about{' '}
               {horizonResult && inputs.horizonAge !== inputs.endAge && (
                 <>
-                  <strong>{formatMoney(horizonResult.p50)}</strong> remaining at age {inputs.horizonAge} and{' '}
+                  <strong>{formatMoney(horizonResult.inflationAdjustedDollars.middle)}</strong> remaining at age{' '}
+                  {inputs.horizonAge} and{' '}
                 </>
               )}
-              <strong>{formatMoney(selectedResult.endingPortfolioP50)}</strong> remaining by age {inputs.endAge},
+              <strong>{formatMoney(selectedResult.endingBalances.inflationAdjustedDollars.middle)}</strong> remaining
+              by age {inputs.endAge},
               suggesting the current spending level {describeSustainability(selectedResult.fullyFundedRate)}.
             </p>
           </div>
@@ -409,7 +489,7 @@ export function RetirementRiskAnalysis({
                     Age {inputs.endAge}
                   </th>
                   <th>
-                    Median Balance at Age {inputs.horizonAge}
+                    Middle Balance at Age {inputs.horizonAge}
                     <br />
                     (Inflation-Adjusted Dollars)
                   </th>
@@ -442,7 +522,7 @@ export function RetirementRiskAnalysis({
                     </td>
                     <td>{formatPercent(scenario.horizonFullyFundedRate)}</td>
                     <td>{formatPercent(scenario.fullyFundedRate)}</td>
-                    <td>{formatMoney(getMedianPortfolioAtAge(scenario, inputs.horizonAge))}</td>
+                    <td>{formatMoney(getMiddlePortfolioAtAge(scenario, inputs.horizonAge))}</td>
                     <td>{scenario.medianFirstShortfallAge ?? '—'}</td>
                     <td>
                       {scenario.medianFirstShortfallAge === null

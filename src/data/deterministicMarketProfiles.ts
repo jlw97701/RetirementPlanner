@@ -16,11 +16,11 @@ export interface DeterministicMarketProfile {
 }
 
 export const DETERMINISTIC_MARKET_PROFILES: readonly DeterministicMarketProfile[] = [
-  { id: 'significantly-below-average', label: 'Significantly Below Average', percentile: 0.1 },
-  { id: 'below-average', label: 'Below Average', percentile: 0.25 },
-  { id: 'average', label: 'Average', percentile: 0.5 },
-  { id: 'above-average', label: 'Above Average', percentile: 0.75 },
-  { id: 'custom-market', label: 'Custom', percentile: null }
+  { id: 'significantly-below-average', label: 'Very Low Historical Return', percentile: 0.1 },
+  { id: 'below-average', label: 'Lower Historical Return', percentile: 0.25 },
+  { id: 'average', label: 'Middle Historical Return', percentile: 0.5 },
+  { id: 'above-average', label: 'Higher Historical Return', percentile: 0.75 },
+  { id: 'custom-market', label: 'Custom Return', percentile: null }
 ];
 
 export function calculateRollingAnnualizedPortfolioReturns(
