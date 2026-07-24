@@ -181,16 +181,17 @@ export default function App() {
                     return scenarioId;
                   }}
                 />
+                <RetirementRiskAnalysis
+                  inputs={inputs}
+                  selectedScenario={selected.scenario}
+                  simulations={economicScenarioSettings.monteCarlo.simulations}
+                  marketAssumption={riskMarketAssumption}
+                  selectedId={selected.scenario.id ?? ''}
+                  onSelect={setSelectedId}
+                  runAnalysis={runRiskAnalysis}
+                />
               </>
             )}
-            <RetirementRiskAnalysis
-              inputs={inputs}
-              simulations={economicScenarioSettings.monteCarlo.simulations}
-              marketAssumption={riskMarketAssumption}
-              selectedId={selected?.scenario.id ?? ''}
-              onSelect={setSelectedId}
-              runAnalysis={runRiskAnalysis}
-            />
             <div className="notice">
               Educational planning model only. Verify tax rules, Social Security amounts, Medicare IRMAA, and conversion
               strategy with a qualified professional.

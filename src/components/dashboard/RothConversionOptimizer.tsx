@@ -19,6 +19,7 @@ import type {
   RetirementRiskAnalysisOptions,
   RetirementRiskAnalysisResult
 } from '../../services/RetirementRiskAnalysisService';
+import { getScenarioLabel } from '../../utils/scenario';
 
 const optimizerInfo = `
   <h3>Roth Conversion Optimizer</h3>
@@ -121,10 +122,6 @@ export function RothConversionOptimizer({
     label: `${formatWholePercent(bracket.rate)} federal bracket`,
     value: bracket.rate
   }));
-  const selectedClaimLabel =
-    selectedScenario.claimAge === null
-      ? 'Already receiving benefits'
-      : `Claim Social Security at age ${selectedScenario.claimAge}`;
 
   const startOptimizer = async () => {
     const runId = optimizerRunIdRef.current + 1;
@@ -199,13 +196,16 @@ export function RothConversionOptimizer({
 
   const baseline = result?.baseline;
   const recommended = result?.recommended;
+
   const afterTaxDifference =
     baseline && recommended
       ? recommended.afterTaxEndPortfolioCurrentDollars - baseline.afterTaxEndPortfolioCurrentDollars
       : 0;
+
   const recommendedRisk = riskResult?.scenarios.find((scenario) => scenario.scenarioId === recommended?.id);
   const baselineRisk = riskResult?.scenarios.find((scenario) => scenario.scenarioId === baseline?.id);
   const fixedCandidate = result?.candidates.find((candidate) => candidate.kind === 'fixed');
+
   const emptyScheduleMessage = (() => {
     if (!recommended || recommended.kind !== 'no-conversion') {
       return 'No conversion could be scheduled under the current assumptions.';
@@ -232,10 +232,13 @@ export function RothConversionOptimizer({
   })();
 
   return (
-    <CollapsiblePanel title="Roth Conversion Optimizer" icon={<Award />} info={optimizerInfo}>
+    <CollapsiblePanel
+      title="Roth Conversion Optimizer"
+      subtitle={getScenarioLabel(selectedScenario)}
+      icon={<Award />}
+      info={optimizerInfo}>
       <p className="optimizer-description">
-        Optionally compare conversion policies for <strong>{selectedClaimLabel}</strong>. Existing scenario calculations
-        remain unchanged.
+        Optionally compare conversion policies. Existing scenario calculations remain unchanged.
       </p>
 
       <div className="optimizer-settings">
@@ -385,14 +388,46 @@ export function RothConversionOptimizer({
                 <tr>
                   <th>Rank</th>
                   <th>Policy</th>
-                  <th>Within Selected Limits</th>
-                  <th>Funds Through Age {inputs.horizonAge}</th>
-                  <th>Funds Through Age {inputs.endAge}</th>
-                  <th>After-Tax/IRMAA at Age {inputs.horizonAge}</th>
-                  <th>After-Tax/IRMAA at Age {inputs.endAge}</th>
-                  <th>Total Conversions</th>
-                  <th>Taxes</th>
-                  <th>IRMAA Surcharges</th>
+                  <th>
+                    Within Selected
+                    <br />
+                    Limits
+                  </th>
+                  <th>
+                    Funds Through
+                    <br />
+                    Age {inputs.horizonAge}
+                  </th>
+                  <th>
+                    Funds Through
+                    <br />
+                    Age {inputs.endAge}
+                  </th>
+                  <th>
+                    After-Tax/IRMAA
+                    <br />
+                    at Age {inputs.horizonAge}
+                  </th>
+                  <th>
+                    After-Tax/IRMAA
+                    <br />
+                    at Age {inputs.endAge}
+                  </th>
+                  <th>
+                    Total
+                    <br />
+                    Conversions
+                  </th>
+                  <th>
+                    Total
+                    <br />
+                    Taxes
+                  </th>
+                  <th>
+                    IRMAA
+                    <br />
+                    Surcharges
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -431,9 +466,20 @@ export function RothConversionOptimizer({
                     <th>Year</th>
                     <th>Requested</th>
                     <th>Actual</th>
-                    <th>Federal Taxable Income</th>
-                    <th>Target Bracket</th>
-                    <th>IRMAA Two Years Later</th>
+                    <th>
+                      Federal Taxable
+                      <br />
+                      Income
+                    </th>
+                    <th>
+                      Target
+                      <br />
+                      Bracket
+                    </th>
+                    <th>
+                      IRMAA
+                      <br />2 Years Later
+                    </th>
                   </tr>
                 </thead>
                 <tbody>

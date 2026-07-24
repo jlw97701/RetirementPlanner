@@ -1,16 +1,16 @@
 import { Table } from 'lucide-react';
 import { formatMoney } from '../../utils/format';
 import { CollapsiblePanel } from '../shared/CollapsiblePanel';
-import type { RetirementScenario, RetirementYear } from '../../models/RetirementTypes';
+import { type RetirementScenario, type RetirementYear } from '../../models/RetirementTypes';
+import { getScenarioLabel } from '../../utils/scenario';
 
 export function YearDetailsTable({ rows, scenario }: { rows: RetirementYear[]; scenario: RetirementScenario }) {
-  const subtitle = scenario.claimAge === null ? 'Actual Social Security' : `Social Security at ${scenario.claimAge}`;
   const showIrmaa = rows.some((row) => row.annualIrmaaSurcharge > 0);
 
   return (
     <CollapsiblePanel
       title="Year-By-Year Details"
-      subtitle={subtitle}
+      subtitle={getScenarioLabel(scenario)}
       icon={<Table />}
       info={`
         <h3>Year-By-Year Details</h3>

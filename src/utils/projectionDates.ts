@@ -1,5 +1,3 @@
-import { isValid } from 'date-fns';
-
 export interface ProjectionPeriod {
   startYear: number;
   endYear: number;
@@ -55,3 +53,4 @@ export function parseIsoDate(value: string): Date {
 export function getBirthYear(birthDate: string): number {
   return parseIsoDate(birthDate).getFullYear();
 }
+

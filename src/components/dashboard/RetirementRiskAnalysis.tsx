@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Area, AreaChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Info, LoaderCircle, RefreshCw, ShieldCheck } from 'lucide-react';
 import { RothConversionType } from '../../models/RetirementTypes';
-import type { PlannerInputs } from '../../models/RetirementTypes';
+import type { PlannerInputs, RetirementScenario } from '../../models/RetirementTypes';
 import { Popover } from '../shared/Popover';
 import { CollapsiblePanel } from '../shared/CollapsiblePanel';
 
@@ -16,6 +16,7 @@ import type {
   RetirementRiskScenarioResult,
   ResolvedRiskMarketAssumption
 } from '../../services/RetirementRiskAnalysisService';
+import { getScenarioLabel } from '../../utils/scenario';
 
 interface RiskChartPoint {
   age: number;
@@ -91,19 +92,6 @@ const riskChartInfo = `
     line as the future that is most likely to occur.
   </p>
 `;
-
-function scenarioLabel(scenario: RetirementRiskScenarioResult): string {
-  const socialSecurity = scenario.claimAge === null ? 'Already Claimed' : `Claim at ${scenario.claimAge}`;
-  return `${socialSecurity} · ${
-    scenario.rothConversionLabel ?? rothConversionLabel(scenario.rothConvType)
-  } Roth Conversion`;
-}
-
-function rothConversionLabel(type: RothConversionType): string {
-  if (type === RothConversionType.None) return 'No';
-  if (type === RothConversionType.Fixed) return 'Fixed';
-  return 'Optimized';
-}
 
 function formatPercent(value: number): string {
   return `${(value * 100).toFixed(1)}%`;
@@ -194,6 +182,7 @@ function RiskChartTooltip({ active, payload }: { active?: boolean; payload?: Arr
 
 export function RetirementRiskAnalysis({
   inputs,
+  selectedScenario,
   simulations,
   marketAssumption,
   selectedId,
@@ -201,6 +190,7 @@ export function RetirementRiskAnalysis({
   runAnalysis
 }: {
   inputs: PlannerInputs;
+  selectedScenario: RetirementScenario;
   simulations: number;
   marketAssumption: ResolvedRiskMarketAssumption;
   selectedId: string;
@@ -252,15 +242,22 @@ export function RetirementRiskAnalysis({
 
   const selectedResult =
     result?.scenarios.find((scenario) => scenario.scenarioId === selectedId) ?? result?.scenarios[0];
+
   const chartData: RiskChartPoint[] = (selectedResult?.portfolioPercentiles ?? []).map((point) => ({
     ...point,
     percentileFloor: point.p10,
     percentileRange: Math.max(0, point.p90 - point.p10)
   }));
+
   const horizonResult = selectedResult?.portfolioPercentiles.find((point) => point.age === inputs.horizonAge);
+  const subtitle = getScenarioLabel(selectedScenario);
 
   return (
-    <CollapsiblePanel title="Retirement Risk Analysis" icon={<ShieldCheck />} info={riskAnalysisInfo}>
+    <CollapsiblePanel
+      title="Retirement Risk Analysis"
+      subtitle={subtitle}
+      icon={<ShieldCheck />}
+      info={riskAnalysisInfo}>
       <div className="risk-analysis-heading">
         <div>
           <p className="risk-analysis-description">
@@ -299,7 +296,7 @@ export function RetirementRiskAnalysis({
       {result && selectedResult && (
         <>
           <div className="risk-analysis-context">
-            <strong>{scenarioLabel(selectedResult)}</strong>
+            <strong>{subtitle}</strong>
             <span>
               {formatCount(result.simulations)} reproducible paths · base seed {result.baseSeed}
             </span>

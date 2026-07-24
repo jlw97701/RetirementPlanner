@@ -123,9 +123,7 @@ function project(parameters: RothConversionOptimizerParameters, scenario: Retire
   );
 }
 
-function getCalculationContext(
-  parameters: RothConversionOptimizerParameters
-): RetirementCalculationContext {
+function getCalculationContext(parameters: RothConversionOptimizerParameters): RetirementCalculationContext {
   return {
     federalTaxConfigurations: parameters.federalTaxConfigurations,
     stateTaxConfigurations: parameters.stateTaxConfigurations,
@@ -134,16 +132,9 @@ function getCalculationContext(
   };
 }
 
-function getBracketAtOrBelowRate(
-  federalTaxConfig: FederalTaxConfig,
-  maximumRate: number
-): TaxBracket | undefined {
+function getBracketAtOrBelowRate(federalTaxConfig: FederalTaxConfig, maximumRate: number): TaxBracket | undefined {
   return federalTaxConfig.brackets
-    .filter(
-      (bracket) =>
-        bracket.upperBound !== null &&
-        bracket.rate <= maximumRate + Number.EPSILON
-    )
+    .filter((bracket) => bracket.upperBound !== null && bracket.rate <= maximumRate + Number.EPSILON)
     .sort((left, right) => left.lowerBound - right.lowerBound)
     .at(-1);
 }
@@ -198,11 +189,7 @@ function buildBracketTargetSchedule(
 ): Readonly<Record<number, number>> {
   const schedule: Record<number, number> = {};
   const claimAge = parameters.retirementScenario.claimAge;
-  const period = getProjectionPeriod(
-    parameters.inputs.birthDate,
-    parameters.inputs.startAge,
-    parameters.inputs.endAge
-  );
+  const period = getProjectionPeriod(parameters.inputs.birthDate, parameters.inputs.startAge, parameters.inputs.endAge);
   const calculationContext = getCalculationContext(parameters);
 
   for (
@@ -215,16 +202,10 @@ function buildBracketTargetSchedule(
     const rowIndex = age - parameters.inputs.startAge;
     const baselineRow = baselineRows[rowIndex];
     const federalTaxConfig = baselineRow
-      ? resolveProjectionTaxConfigurations(
-          parameters.inputs,
-          baselineRow.year,
-          calculationContext,
-          period.startYear
-        ).federal.configuration
+      ? resolveProjectionTaxConfigurations(parameters.inputs, baselineRow.year, calculationContext, period.startYear)
+          .federal.configuration
       : undefined;
-    const bracket = federalTaxConfig
-      ? getBracketAtOrBelowRate(federalTaxConfig, targetBracketRate)
-      : undefined;
+    const bracket = federalTaxConfig ? getBracketAtOrBelowRate(federalTaxConfig, targetBracketRate) : undefined;
 
     if (
       !baselineRow ||
@@ -246,15 +227,7 @@ function buildBracketTargetSchedule(
       const trialScenario = createScheduledScenario(claimAge, 'optimizer-working-trial', trialSchedule);
       const trialRows = project(parameters, trialScenario);
 
-      if (
-        isConversionWithinPolicy(
-          trialRows,
-          baselineRows,
-          rowIndex,
-          bracket.upperBound,
-          parameters.settings
-        )
-      ) {
+      if (isConversionWithinPolicy(trialRows, baselineRows, rowIndex, bracket.upperBound, parameters.settings)) {
         bestRequestedConversion = requestedConversion;
         lower = requestedConversion;
       } else {
@@ -278,20 +251,10 @@ function afterTaxPortfolioCurrentDollars(row: RetirementYear | undefined, termin
   );
 }
 
-function irmaaNotSeparatelyAddedToSpendingCurrentDollars(
-  rows: readonly RetirementYear[],
-  throughAge: number
-): number {
+function irmaaNotSeparatelyAddedToSpendingCurrentDollars(rows: readonly RetirementYear[], throughAge: number): number {
   return rows
-    .filter(
-      (row) =>
-        row.age <= throughAge &&
-        row.medicareHealthcareAddedToSpending <= CONVERSION_TOLERANCE
-    )
-    .reduce(
-      (sum, row) => sum + row.annualIrmaaSurcharge / row.inflationIndex,
-      0
-    );
+    .filter((row) => row.age <= throughAge && row.medicareHealthcareAddedToSpending <= CONVERSION_TOLERANCE)
+    .reduce((sum, row) => sum + row.annualIrmaaSurcharge / row.inflationIndex, 0);
 }
 
 function createCandidate(
@@ -310,8 +273,7 @@ function createCandidate(
     .filter(
       (row) =>
         row.age < parameters.inputs.stopConvAge &&
-        getRequestedConversion(parameters.inputs, scenario, row.age) >
-          CONVERSION_TOLERANCE
+        getRequestedConversion(parameters.inputs, scenario, row.age) > CONVERSION_TOLERANCE
     )
     .map((row) => {
       const premiumRow = rows.find((candidate) => candidate.age === row.age + 2);
@@ -362,29 +324,13 @@ function applyIncrementalIrmaaAdjustment(
   baseline: RothConversionOptimizerCandidate,
   inputs: PlannerInputs
 ): void {
-  const candidateHorizonIrmaa =
-    irmaaNotSeparatelyAddedToSpendingCurrentDollars(
-      candidate.rows,
-      inputs.horizonAge
-    );
-  const baselineHorizonIrmaa =
-    irmaaNotSeparatelyAddedToSpendingCurrentDollars(
-      baseline.rows,
-      inputs.horizonAge
-    );
-  const candidateEndIrmaa = irmaaNotSeparatelyAddedToSpendingCurrentDollars(
-    candidate.rows,
-    inputs.endAge
-  );
-  const baselineEndIrmaa = irmaaNotSeparatelyAddedToSpendingCurrentDollars(
-    baseline.rows,
-    inputs.endAge
-  );
+  const candidateHorizonIrmaa = irmaaNotSeparatelyAddedToSpendingCurrentDollars(candidate.rows, inputs.horizonAge);
+  const baselineHorizonIrmaa = irmaaNotSeparatelyAddedToSpendingCurrentDollars(baseline.rows, inputs.horizonAge);
+  const candidateEndIrmaa = irmaaNotSeparatelyAddedToSpendingCurrentDollars(candidate.rows, inputs.endAge);
+  const baselineEndIrmaa = irmaaNotSeparatelyAddedToSpendingCurrentDollars(baseline.rows, inputs.endAge);
 
-  candidate.afterTaxHorizonPortfolioCurrentDollars -=
-    candidateHorizonIrmaa - baselineHorizonIrmaa;
-  candidate.afterTaxEndPortfolioCurrentDollars -=
-    candidateEndIrmaa - baselineEndIrmaa;
+  candidate.afterTaxHorizonPortfolioCurrentDollars -= candidateHorizonIrmaa - baselineHorizonIrmaa;
+  candidate.afterTaxEndPortfolioCurrentDollars -= candidateEndIrmaa - baselineEndIrmaa;
 }
 
 function compareCandidates(left: RothConversionOptimizerCandidate, right: RothConversionOptimizerCandidate): number {
@@ -418,11 +364,7 @@ function candidateIsWithinSelectedLimits(
   if (candidate.kind === 'no-conversion') return true;
 
   const configuredTierLimit = getIrmaaTierLimit(parameters.settings);
-  const period = getProjectionPeriod(
-    parameters.inputs.birthDate,
-    parameters.inputs.startAge,
-    parameters.inputs.endAge
-  );
+  const period = getProjectionPeriod(parameters.inputs.birthDate, parameters.inputs.startAge, parameters.inputs.endAge);
   const calculationContext = getCalculationContext(parameters);
 
   return candidate.rows.every((row) => {
@@ -439,35 +381,25 @@ function candidateIsWithinSelectedLimits(
       calculationContext,
       period.startYear
     ).federal.configuration;
-    const highestBracket = getBracketAtOrBelowRate(
-      federalTaxConfig,
-      parameters.settings.maxFederalBracketRate
-    );
+    const highestBracket = getBracketAtOrBelowRate(federalTaxConfig, parameters.settings.maxFederalBracketRate);
 
     if (
       !highestBracket ||
       highestBracket.upperBound === null ||
-      requestedConversion >
-        parameters.settings.maxAnnualConversion + CONVERSION_TOLERANCE ||
-      row.federalTaxableIncome >
-        highestBracket.upperBound + BRACKET_TOLERANCE
+      requestedConversion > parameters.settings.maxAnnualConversion + CONVERSION_TOLERANCE ||
+      row.federalTaxableIncome > highestBracket.upperBound + BRACKET_TOLERANCE
     ) {
       return false;
     }
 
-    const premiumRow = candidate.rows.find(
-      (candidateRow) => candidateRow.age === row.age + 2
-    );
+    const premiumRow = candidate.rows.find((candidateRow) => candidateRow.age === row.age + 2);
     if (configuredTierLimit === null || !premiumRow) {
       return true;
     }
 
-    const baselinePremiumTier =
-      baseline.rows.find((baselineRow) => baselineRow.age === premiumRow.age)
-        ?.irmaaTier ?? 0;
+    const baselinePremiumTier = baseline.rows.find((baselineRow) => baselineRow.age === premiumRow.age)?.irmaaTier ?? 0;
 
-    return premiumRow.irmaaTier <=
-      Math.max(configuredTierLimit, baselinePremiumTier);
+    return premiumRow.irmaaTier <= Math.max(configuredTierLimit, baselinePremiumTier);
   });
 }
 
@@ -513,11 +445,7 @@ export function optimizeRothConversions(parameters: RothConversionOptimizerParam
   const targetBrackets = getRothConversionTargetBrackets(
     resolveProjectionTaxConfigurations(
       parameters.inputs,
-      getProjectionPeriod(
-        parameters.inputs.birthDate,
-        parameters.inputs.startAge,
-        parameters.inputs.endAge
-      ).startYear,
+      getProjectionPeriod(parameters.inputs.birthDate, parameters.inputs.startAge, parameters.inputs.endAge).startYear,
       getCalculationContext(parameters)
     ).federal.configuration,
     parameters.settings.maxFederalBracketRate
@@ -563,9 +491,7 @@ export function createAppliedRothConversionScenario(
   optimizerSourceKey: string
 ): RetirementScenario {
   if (result.recommended.kind !== 'bracket-target') {
-    throw new Error(
-      'Only a bracket-target recommendation can be applied as an optimized Roth schedule.'
-    );
+    throw new Error('Only a bracket-target recommendation can be applied as an optimized Roth schedule.');
   }
 
   const schedule: Record<number, number> = {};

@@ -3,19 +3,9 @@ import { TrendingUp } from 'lucide-react';
 import { formatMoney } from '../../utils/format';
 import { CollapsiblePanel } from '../shared/CollapsiblePanel';
 import { RothConversionType, type RetirementYear, type RetirementScenario } from '../../models/RetirementTypes';
+import { getScenarioLabel } from '../../utils/scenario';
 
 export function ScenarioChart({ rows, scenario }: { rows: RetirementYear[]; scenario: RetirementScenario }) {
-  let subtitle = scenario.claimAge === null ? 'Actual Social Security' : `Social Security at ${scenario.claimAge}`;
-  subtitle +=
-    ' · ' +
-    (scenario.rothConversionLabel ??
-      (scenario.rothConvType === RothConversionType.None
-        ? 'No'
-        : scenario.rothConvType === RothConversionType.Fixed
-          ? 'Fixed'
-          : 'Optimized')) +
-    ' Roth Conversion';
-
   const data = rows.map((row) => ({
     age: row.age,
     Traditional: Math.round(row.endTradlIra),
@@ -30,7 +20,7 @@ export function ScenarioChart({ rows, scenario }: { rows: RetirementYear[]; scen
   return (
     <CollapsiblePanel
       title="Portfolio Projection"
-      subtitle={subtitle}
+      subtitle={getScenarioLabel(scenario)}
       icon={<TrendingUp />}
       info={`
         <h3>Portfolio Projection</h3>
